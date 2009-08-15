@@ -1,5 +1,7 @@
-#include <usb.h>
 #include <iostream>
+#include <sstream>
+#include <stdint.h>
+#include <usb.h>
 
 class USBDev
 {
@@ -7,13 +9,17 @@ class USBDev
     USBDev();
     ~USBDev();
     inline bool Failed() const { return fFail; }
+    inline operator bool() const { return !fFail; }
+    void SetOutput(uint8_t data);
     
   private:
     usb_dev_handle* fHandle;
-    bool fFail;
+    bool fFail, fOpen;
     
     static const int VENDOR_ID = 0x04b4;
     static const int PRODUCT_ID = 0x8613;
+    // static const int VENDOR_ID = 0xfffe;
+    // static const int PRODUCT_ID = 0x0002;
     static const int USB_TIMEOUT = 1000; // ms
 };
 
@@ -26,6 +32,7 @@ USBDev::USBDev()
   struct usb_device *tDev = NULL;
   
   fFail = false;
+  fOpen = false;
   
   // Init USB subsystem
   usb_init();
@@ -49,16 +56,18 @@ USBDev::USBDev()
     return;
   }
   
-  // Open the USBMCA device
+  // Open the USB device
   fHandle = usb_open(tDev);
-  usb_claim_interface(fHandle, 0);
-  usb_set_altinterface(fHandle, 1);
+  // usb_claim_interface(fHandle, 0);
+  // usb_set_altinterface(fHandle, 1);
+  
+  fOpen = true;
 }
 
 // Close the connection to the USB device
 USBDev::~USBDev()
 {
-  if(fFail)
+  if(!fOpen)
     return;
   
   if(usb_close(fHandle) < 0) {
@@ -67,12 +76,40 @@ USBDev::~USBDev()
   }
 }
 
-int main()
+void USBDev::SetOutput(uint8_t data)
 {
-  USBDev dev;
-  if(dev.Failed()) {
-    std::cerr << "Error: Failed to open USB device." << std::endl;
+  if(fFail)
+    return;
+  
+  if(usb_control_msg(fHandle, 0x40, 0x80, data, 0, NULL, 0, USB_TIMEOUT) != 0)
+    fFail = true;
+}
+
+int main(int argc, char** argv)
+{
+  if(argc != 2) {
+    std::cerr << "Usage: " << argv[0] << " <value>" << std::endl;
     return -1;
+  }
+  
+  std::istringstream args(argv[1]);
+  int value;
+  args >> value;
+  if(!args) {
+    std::cerr << "Error: Failed to parse value." << std::endl;
+    return 1;
+  }
+
+  USBDev dev;
+  if(!dev) {
+    std::cerr << "Error: Failed to open USB device." << std::endl;
+    return 2;
+  }
+  
+  dev.SetOutput(value);
+  if(!dev) {
+    std::cerr << "Error: failed to write value." << std::endl;
+    return 3;
   }
 }
 
