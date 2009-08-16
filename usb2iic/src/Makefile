@@ -5,6 +5,7 @@ XLDFLAGS=-L../lib -mmcs51 --no-xinit-opt --code-loc 0x0000 --code-size 0x1800 --
 LIBS=libfx2.lib
 XAS=asx8051
 RELS=vectors.rel main.rel usb_descriptors.rel _startup.rel
+PROG_HOST=rubia.ikp.uni-koeln.de
 
 .PHONY: upload
 
@@ -12,8 +13,8 @@ main.ihx: $(RELS) Makefile
 	$(XCC) $(XLDFLAGS) $(LIBS) -o main.ihx -mmcs51 $(RELS)
 	
 upload: main.ihx
-	scp main.ihx kiwi.ikp.uni-koeln.de:xrp-1/fx2/main.ihx
-	ssh kiwi.ikp.uni-koeln.de "/home/braun/bin/cycfx2prog prg:xrp-1/fx2/main.ihx run"
+	scp main.ihx $(PROG_HOST):xrp-1/usb2iic/fw_bin/main.ihx
+	ssh $(PROG_HOST) "/home/braun/bin/cycfx2prog prg:xrp-1/usb2iic/fw_bin/main.ihx run"
 	
 main.rel: main.c Makefile
 	$(XCC) $(XCCFLAGS) -mmcs51 -c main.c
