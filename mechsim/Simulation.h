@@ -1,29 +1,21 @@
 #ifndef __SIMULATION_H__
 #define __SIMULATION_H__
 
-#include <ode/ode.h>
-
 class SimulationState {
   public:
-    double fT;
-    double fX1, fY1, fZ1;
-    double fX2, fY2, fZ2;
+    virtual void Draw() const = 0;
 };
 
 class Simulation {
   public:
-    Simulation();
-    ~Simulation();
+    Simulation() {};
+    virtual ~Simulation() {};
     
-    void AdvanceTo(double t);
-    SimulationState GetCurrentState();
+    virtual double GetTimestep() = 0;    // in units of seconds
+    virtual int GetDefaultEndTime() = 0; // in units of TIMESTEPs
     
-    dWorldID fWorld;
-    dBodyID fBall1, fBall2;
-    
-    double fTime;
-    
-    static const double TIMESTEP;
+    virtual const SimulationState* GetState(int t) = 0;  // t in units of TIMESTEPs
+    virtual const char* GetTitle() = 0;
 };
 
 #endif

@@ -1,19 +1,20 @@
-#include "Simulation.h"
-#include "Display.h"
-#include <GL/glut.h>
+#include <QWidget>
+#include <QSlider>
+#include <QHBoxLayout>
+#include <QGLWidget>
+#include <QApplication>
 
-Simulation simulation;
+#include "DoublePendulum.h"
+#include "GLWidget.h"
+#include "SimulationViewer.h"
 
 int main(int argc, char** argv)
 {
-    glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_DEPTH | GLUT_RGB | GLUT_DOUBLE);
-    glutInitWindowPosition(1280, 0);
-    glutInitWindowSize(640, 480);
-    glutCreateWindow("Double pendulum test");
+    QApplication app(argc, argv);
+    DoublePendulum sim;
+    SimulationViewer v(&sim);
     
-    Display::Init();
-    Display::Run();
+    v.show();
     
-    return 0;
+    return app.exec();
 }

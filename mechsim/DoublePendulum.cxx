@@ -1,8 +1,22 @@
-#include "Simulation.h"
+#include "DoublePendulum.h"
+#include "GLWidget.h"
+#include <iostream>
 
-const double Simulation::TIMESTEP = 0.01;
+const int DoublePendulum::STEP_PER_SEC = 16;
+// Integration intervals per timestep
+const int DoublePendulum::INT_PER_STEP = 16;
+const char DoublePendulum::TITLE[] = "Double pendulum";
 
-Simulation::Simulation()
+void DPState::Draw() const
+{
+    GLWidget::drawSphere(.2, fB1_pos);
+    GLWidget::drawSphere(.2, fB2_pos);
+    
+    GLWidget::drawTube(.1, Vector::Null, fB1_pos);
+    GLWidget::drawTube(.1, fB1_pos, fB2_pos);
+}
+
+DoublePendulum::DoublePendulum()
 {
     fWorld = dWorldCreate();
     
@@ -31,38 +45,34 @@ Simulation::Simulation()
     dJointSetHingeAnchor(j2, 1., 0., 1.);
     dJointSetHingeAxis(j2, 0.,1.,0.);
     
-    fTime = 0.0;
+    fCurStep = 0;
 }
 
-Simulation::~Simulation()
+DoublePendulum::~DoublePendulum()
 {
     dWorldDestroy(fWorld);
 }
 
-void Simulation::AdvanceTo(double t)
+void DoublePendulum::Advance()
 {
-    while(fTime < t) {
-        dWorldStep(fWorld, TIMESTEP);
-        fTime += TIMESTEP;
-    };
+    for(int i=0; i<INT_PER_STEP; ++i) {
+        dWorldStep(fWorld, 1./(STEP_PER_SEC * INT_PER_STEP));
+        ++fCurStep;
+    }
 }
 
-SimulationState Simulation::GetCurrentState()
+DPState DoublePendulum::GetCurrentState()
 {
-    SimulationState state;
+    DPState state;
     const dReal* pos;
     
-    state.fT = fTime;
+    state.fT = fCurStep / STEP_PER_SEC;
     
     pos = dBodyGetPosition(fBall1);
-    state.fX1 = pos[0];
-    state.fY1 = pos[1];
-    state.fZ1 = pos[2];
+    state.fB1_pos = Vector3(pos);
     
     pos = dBodyGetPosition(fBall2);
-    state.fX2 = pos[0];
-    state.fY2 = pos[1];
-    state.fZ2 = pos[2];
+    state.fB2_pos = Vector3(pos);
     
     return state;
 }
