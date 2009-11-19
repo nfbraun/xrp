@@ -1,9 +1,12 @@
 #ifndef __SIMULATION_H__
 #define __SIMULATION_H__
 
+#include "Vector.h"
+
 class SimulationState {
   public:
     virtual void Draw() const = 0;
+    virtual Vector3 GetObjectPos() const { return Vector::Null; }
 };
 
 class Simulation {

@@ -4,14 +4,14 @@
 #include <QGLWidget>
 #include <QApplication>
 
-#include "DoublePendulum.h"
+#include "BallSlide.h"
 #include "GLWidget.h"
 #include "SimulationViewer.h"
 
 int main(int argc, char** argv)
 {
     QApplication app(argc, argv);
-    DoublePendulum sim;
+    BallSlide sim;
     SimulationViewer v(&sim);
     
     v.show();
