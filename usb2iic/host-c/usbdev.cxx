@@ -11,6 +11,7 @@ class USBDev
     inline bool Failed() const { return fFail; }
     inline operator bool() const { return !fFail; }
     void SetOutput(uint8_t data);
+    uint32_t GetData();
     
   private:
     usb_dev_handle* fHandle;
@@ -85,6 +86,18 @@ void USBDev::SetOutput(uint8_t data)
     fFail = true;
 }
 
+uint32_t USBDev::GetData()
+{
+  if(fFail)
+    return 0;
+  
+  uint32_t data;
+  if(usb_control_msg(fHandle, 0xC0, 0x80, 0, 0, (char*)&data, 4, USB_TIMEOUT) != 4)
+    fFail = true;
+
+  return data;
+}
+
 int main(int argc, char** argv)
 {
   if(argc != 2) {
@@ -106,10 +119,23 @@ int main(int argc, char** argv)
     return 2;
   }
   
-  dev.SetOutput(value);
+  /* dev.SetOutput(value);
+  if(!dev) {
+    std::cerr << "Error: failed to write value." << std::endl;
+    return 3;
+  } */
+  
+  while(1) {
+    uint32_t dat = dev.GetData();
+    int angle = ((dat & 0x000000FF) << 4) | ((dat & 0x0000C000) >> 12) | ((dat & 0xC0000000) >> 30);
+    std::cout << angle << std::endl;
+  }
+    
   if(!dev) {
     std::cerr << "Error: failed to write value." << std::endl;
     return 3;
   }
+  
+  return 0;
 }
 
