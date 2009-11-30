@@ -1,9 +1,9 @@
 MCU=atmega8
 POSTSTATE=noreset
 PROGTYPE=dapa
-SOURCES=twi.c twitest.c
-HEADERS=global.h twi.h
-TARGET=twitest
+SOURCES=motor.c serial.c ssi.c main.c
+HEADERS=global.h motor.h ssi.h serial.h
+TARGET=motor
 
 .PHONY: build upload
 

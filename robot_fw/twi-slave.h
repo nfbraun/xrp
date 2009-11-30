@@ -8,6 +8,11 @@
  *
  * -------------------------------------------------------------------------------------------------
  */
+
+/* NOTE: The CPU clock frequency in slave mode must be at least 16 times
+ * higher than the SCL frequency! (see datasheet section 20.2.2)
+ */
+
 #ifndef TWI_SLAVE_H
 #define TWI_SLAVE_H
 
