@@ -6,19 +6,15 @@
 #include <avr/sleep.h>
 #include <util/delay.h>
 
-#define SSI_CS0n 2
-
 void cmd_multi_angle(uint8_t n)
 {
   uint8_t i;
-  uint16_t val;
+  uint8_t val[4];
   
   for(i=0; i<n; ++i) {
-    _CLRBIT(PORTD, SSI_CS0n);
-    val = ssi_read();
-    _SETBIT(PORTD, SSI_CS0n);
+    twi_read(0x28, val, 4);
     _delay_ms(10);
-    s_puti16(val);
+    s_putdata(val, sizeof(val));
   }
 }
 
@@ -26,10 +22,8 @@ int main()
 {
   motor_init();
   serial_init();
-  ssi_init();
-  _SETBIT(DDRD, SSI_CS0n);
-  _SETBIT(PORTD, SSI_CS0n);
-  
+  twi_init();
+
   sei(); // enable interrupts
 
   while(1) {

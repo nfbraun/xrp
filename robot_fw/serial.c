@@ -40,7 +40,7 @@ void s_puti16(uint16_t x)
     s_putchr((x & 0xFF00) >> 8);
 }
 
-void s_putstr(const char* c, int n)
+void s_putdata(const char* c, int n)
 {
     int i;
     for(i=0; i<n; ++i)
