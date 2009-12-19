@@ -1,7 +1,10 @@
-#include "global.h"
+#include "bitset.h"
 #include <inttypes.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <avr/wdt.h>
+
+#define RESET_ON_ESC
 
 volatile uint8_t cmdbuf[8];
 volatile int8_t cmd_ready;
@@ -14,6 +17,15 @@ ISR(USART_RXC_vect)
     c = UDR;
     if(bit_is_clear(UCSRA, FE)) {
         cmdbuf[nread++] = c;
+        
+        #ifdef RESET_ON_ESC
+        if(nread == 1 && cmdbuf[0] == 0x1B) {
+            cli(); // Disable interrupts
+            wdt_enable(WDTO_15MS); // Setup watchdog
+            while(1);  // Enter endless loop waiting for watchdog
+        }
+        #endif
+        
         if(nread > (cmdbuf[0] & 0x07)) {
             cmd_ready = 1;
             nread = 0;

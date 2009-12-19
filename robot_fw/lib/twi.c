@@ -9,7 +9,6 @@
  */
 
 #include "twi.h"
-#include "global.h"  // for F_CPU
 #include <compat/twi.h>
 
 /*

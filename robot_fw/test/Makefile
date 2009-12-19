@@ -1,9 +1,12 @@
 MCU=atmega8
+MCUFREQ=-DF_CPU=8000000UL
 POSTSTATE=noreset
 PROGTYPE=dapa
-SOURCES=motor.c serial.c twi.c main.c
-HEADERS=global.h motor.h twi.h serial.h
-TARGET=motor
+SOURCES=blink.c
+LIBDIR=../lib
+# LIBS=$(LIBDIR)/serial.c
+INCDIR=../include
+TARGET=blink
 
 .PHONY: build upload
 
@@ -13,7 +16,7 @@ upload: build
 	avrdude -p $(MCU) -c $(PROGTYPE) -E $(POSTSTATE) -U flash:w:$(TARGET).hex
 
 $(TARGET).elf: $(SOURCES) $(HEADERS) Makefile
-	avr-gcc -Os -o $@ -mmcu=$(MCU) $(SOURCES)
+	avr-gcc -I$(INCDIR) $(MCUFREQ) -Os -o $@ -mmcu=$(MCU) $(LIBS) $(SOURCES)
 	
 $(TARGET).hex: $(TARGET).elf Makefile
 	avr-objcopy -O ihex -R .eeprom $< $@
