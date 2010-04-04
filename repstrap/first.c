@@ -1,5 +1,3 @@
-#define F_CPU 1000000UL
-
 #include <inttypes.h>
 #include <avr/io.h>
 #include <util/delay.h>
@@ -8,19 +6,19 @@
 
 int main()
 {
-    DDRD = 0x07;
+    DDRC = 0x07;
     uint8_t dir;
 
     while(1) {
         if(PINB & 0x06) {
-            dir = (PINB & 0x02) ? 0 : 1;
+            dir = (PINB & 0x02) ? 0 : 2;
             _delay_us(DELAY);
-            PORTD = 0x02 | dir;
+            PORTC = 0x05 | dir;
             _delay_us(DELAY);
-            PORTD = 0x00 | dir;
+            PORTC = 0x04 | dir;
             _delay_us(DELAY);
         } else {
-            PORTD = 0x04;
+            PORTC = 0x00;
         }
     }
 }
