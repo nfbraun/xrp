@@ -1,0 +1,19 @@
+* Bootloader available from:
+  http://www.siwawi.arubi.uni-kl.de/avr_projects/#avrprog_boot
+
+* Program high fuse:
+  avrdude -p atmega8 -c dapa -U hfuse:w:0xda:m
+  
+  Default value: 0xD9
+  Changes: Program BOOTRST, do not program BOOTSZ0
+  Boot program size: [BOOTSZ1:BOOTSZ0] = 01 -> 512 words = 1024 bytes
+  
+* Program bootloader
+  avrdude -p atmega8 -c dapa -E noreset -U flash:w:main.hex
+  
+* Program user code
+  Press RESET (500 ms timeout)
+  avrdude -p atmega8 -b 38400 -c butterfly -U flash:w:blink.hex
+  
+  If the user software handles ESC (0x1B) correctly, RESET is not needed on
+  subsequent programmings.
