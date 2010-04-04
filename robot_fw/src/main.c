@@ -42,6 +42,8 @@ ISR(TIMER2_COMP_vect)
     error = desired_speed_0 - speed;
     error_int_0 += error;
     
+    printf("%d ", error);
+    
     out_0 = error + (error_int_0 >> 1);
     
     if(out_0 > 100) out_0 = 100;
@@ -59,13 +61,15 @@ ISR(TIMER2_COMP_vect)
     error = desired_speed_1 - speed;
     error_int_1 += error;
     
+    printf("%d\n", error);
+    
     out_1 = error + (error_int_1 >> 1);
     
     if(out_1 > 100) out_1 = 100;
     if(abs(out_1) < 15) out_1 = 0;
     if(out_1 < -100) out_1 = -100;
     
-    printf("%d %d\n", out_0, out_1);
+    // printf("%d %d\n", out_0, out_1);
     
     set_speed(out_0, out_1);
 }
@@ -117,8 +121,27 @@ int main()
   timer2_init();
 
   sei(); // enable interrupts
-
+  
+  desired_speed_0 = 0;
+  desired_speed_1 = 0;
+  
+  _delay_ms(1000);
+  
+  desired_speed_0 = 40;
+  desired_speed_1 = 40;
+  
+  _delay_ms(1000);
+  
+  desired_speed_0 = 0;
+  desired_speed_1 = 0;
+  
+  // set_speed(70, 0);
+  
   while(1) {
+    sleep_mode();
+  }
+
+  /* while(1) {
     if(cmd_ready) {
       switch(cmdbuf[0]) {
         case 0x0A:
@@ -134,5 +157,5 @@ int main()
       cmd_ready = 0;
     }
     sleep_mode();
-  }
+  } */
 }

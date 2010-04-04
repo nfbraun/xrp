@@ -1,8 +1,9 @@
 MCU=atmega8
 MCUFREQ=-DF_CPU=8000000UL
+SERPORT=/dev/ttyS0
 PROGTYPE=butterfly
 BAUDRATE=38400
-SOURCES=pendulum.c
+SOURCES=pendulum.c speedctrl.c
 LIBDIR=../lib
 LIBS=motor.c twi.c ssi.c serial.c scons.c
 INCDIR=../include
@@ -14,7 +15,7 @@ TARGET=pendulum
 build: $(TARGET).hex
 
 upload: build
-	avrdude -p $(MCU) -c $(PROGTYPE) -b $(BAUDRATE) -U flash:w:$(TARGET).hex
+	avrdude -P $(SERPORT) -p $(MCU) -c $(PROGTYPE) -b $(BAUDRATE) -U flash:w:$(TARGET).hex
 
 $(TARGET).elf: $(SOURCES) $(HEADERS:%=$(INCDIR)/%) Makefile
 	avr-gcc -I$(INCDIR) $(MCUFREQ) -Os -o $@ -mmcu=$(MCU) $(SOURCES) $(LIBS:%=$(LIBDIR)/%)

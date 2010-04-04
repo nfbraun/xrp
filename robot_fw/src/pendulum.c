@@ -1,6 +1,7 @@
 #include "bitset.h"
 #include "motor.h"
 #include "serial.h"
+#include "speedctrl.h"
 #include <stdio.h>
 #include <inttypes.h>
 #include <avr/interrupt.h>
@@ -8,17 +9,6 @@
 
 #define SSI_CS0n 2
 #define SSI_CS1n 3
-
-int16_t get_wheel_pos(int8_t ch)
-{
-    uint16_t dat;
-
-    _CLRBIT(PORTD, ch);
-    dat = ssi_read();
-    _SETBIT(PORTD, ch);
-       
-    return (dat >> 6);
-}
 
 int16_t get_angle(void)
 {
@@ -32,48 +22,42 @@ int16_t get_angle(void)
   return angle;
 }
 
-#define MOTOR_CLAMP 80
-#define ERROR_INT_CLAMP 5000000L
+#if 0
+#define A1 2137
+#define A2 138462
+#define A3 5
+#define A4 8455
+#endif
 
-int32_t error_int;
+#define A1 3694
+#define A2 169700
+#define A3 11
+#define A4 9342
 
-int8_t motor_control(int16_t phi, int16_t phi_dot, int16_t pos, int16_t v)
+int32_t get_accel(int32_t x_dot, int32_t phi_dot, int32_t x, int32_t phi)
 {
-    int32_t error;
-    int32_t motor;
-
-    error = -500L * phi - 35000L * phi_dot + 2L * pos + 400L * v;
-    error_int += error;
-    
-    if(error_int > ERROR_INT_CLAMP) error_int = ERROR_INT_CLAMP;
-    else if(error_int < -ERROR_INT_CLAMP) error_int = -ERROR_INT_CLAMP;
-
-    #if 0
-    printf("%d %d %d %d %ld %ld\n", phi, phi_dot, pos, v, error, error_int);
-    #endif
-
-    motor = (error + 3 * error_int) / 100000L;
-    
-    if(motor > MOTOR_CLAMP) motor = MOTOR_CLAMP;
-    if(motor < -MOTOR_CLAMP) motor = -MOTOR_CLAMP;
-    
-    return (int8_t) motor;
+    return A1*x_dot + A2*phi_dot + A3*x + A4*phi;
 }
 
-int16_t old_wheel_pos, wheel_pos_0, wheel_pos_offset;
 int16_t old_phi;
 
 volatile int8_t holdoff = 1;
 
+wheelpos_t wheel_pos_0, wheel_pos_1;
+int16_t error_int_0, error_int_1;
+int32_t target_speed;
+
 void reset_controller(void)
 {
-    old_wheel_pos = get_wheel_pos(SSI_CS0n);
-    wheel_pos_0 = old_wheel_pos;
-    wheel_pos_offset = 0;
+    init_wheel_pos(&wheel_pos_0, SSI_CS0n);
+    init_wheel_pos(&wheel_pos_1, SSI_CS1n);
     
     old_phi = get_angle();
     
-    error_int = 0;
+    error_int_0 = 0;
+    error_int_1 = 0;
+    
+    target_speed = 0;
 }
 
 // Phi range for safety shutdown
@@ -82,7 +66,7 @@ void reset_controller(void)
 
 // Angle for upright pendulum
 // #define PHI_0 2270
-#define PHI_0 2240
+#define PHI_0 2275
 
 ISR(TIMER2_COMP_vect)
 {
@@ -102,8 +86,9 @@ int main()
     int8_t enable = 0;
     int8_t enable_count = 0;
 
-    int16_t phi, wheel_pos;
-    int8_t motor;
+    int16_t phi;
+    int16_t speed_0, speed_1;
+    int8_t motor_0, motor_1;
     
     twi_init();
     ssi_init();
@@ -128,27 +113,28 @@ int main()
         holdoff = 1;
     
         phi = get_angle();
+        printf("%d\n", phi);
     
         if(enable) {
             // Read out wheel position
-            wheel_pos = get_wheel_pos(SSI_CS0n);
-            if((wheel_pos - old_wheel_pos + wheel_pos_offset) > 800) {
-                wheel_pos_offset -= 1024;
-            } else if((wheel_pos - old_wheel_pos + wheel_pos_offset) < -800)  {
-                wheel_pos_offset += 1024;
-            }
-            wheel_pos += wheel_pos_offset;
+            speed_0 = get_speed(&wheel_pos_0);
+            speed_1 = get_speed(&wheel_pos_1);
             
-            // Note different sign convention for left and right encoder
-            motor = motor_control(phi - PHI_0,
-                                  phi - old_phi,
-                                  wheel_pos - wheel_pos_0,
-                                  wheel_pos - old_wheel_pos);
-                                    
-            set_speed(motor, motor);
-            
-            old_wheel_pos = wheel_pos;
+            target_speed += get_accel(target_speed >> 20,
+                                      phi - old_phi,
+                                      GET_WHEEL_POS(wheel_pos_0),
+                                      phi - PHI_0);
+                                      
             old_phi = phi;
+            
+            motor_0 = sp_ctrl_step(target_speed >> 20,
+                                   speed_0,
+                                   &error_int_0);
+            motor_1 = sp_ctrl_step(target_speed >> 20,
+                                   speed_1,
+                                   &error_int_1);
+            
+            set_speed(motor_0, motor_1);
         } else {
             set_speed(0, 0);
         }
