@@ -11,9 +11,11 @@ class _Vector3
     _Vector3() { }
     _Vector3(_Scalar_T _x, _Scalar_T _y, _Scalar_T _z)
       : fX(_x), fY(_y), fZ(_z) { }
-    _Vector3(const _Scalar_T* p)
+    _Vector3(const float* p)
       : fX(p[0]), fY(p[1]), fZ(p[2]) { }
-    _Vector3(const dReal* p)
+    _Vector3(const double* p)
+      : fX(p[0]), fY(p[1]), fZ(p[2]) { }
+    _Vector3(const long double* p)
       : fX(p[0]), fY(p[1]), fZ(p[2]) { }
     
     static _Vector3<_Scalar_T> Spherical(_Scalar_T r, _Scalar_T theta, _Scalar_T phi)

@@ -40,6 +40,8 @@ void BSState::Draw() const
 
 BallSlide::BallSlide()
 {
+    dInitODE();
+    
     fWorld = dWorldCreate();
     fSpace = dSimpleSpaceCreate(0);
     
