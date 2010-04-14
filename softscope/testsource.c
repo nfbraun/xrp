@@ -11,7 +11,7 @@ int main()
     int fd;
     fd = open("test.fifo", O_WRONLY);
     if(fd < 0) {
-        perror("Open test.pipe");
+        perror("Open test.fifo");
         return -1;
     }
     
