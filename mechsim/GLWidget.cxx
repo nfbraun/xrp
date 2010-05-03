@@ -16,7 +16,7 @@ const int GLWidget::ANG_STEPS_PER_PI = 3 * 180;
 const double GLWidget::ANG_STEP = M_PI / ANG_STEPS_PER_PI;
 const double GLWidget::WHEEL_STEP = 0.01;
 
-const Vector3 GLWidget::DEFAULT_CAM_POS = Vector3(0., 20., 15.);
+const Vector3 GLWidget::DEFAULT_CAM_POS = Vector3(0, 10., 0.);
 
 GLWidget::GLWidget(Simulation* sim, QWidget* parent)
     : QGLWidget(parent), fSimulation(sim)
@@ -221,6 +221,60 @@ void GLWidget::drawStatusText()
     renderText(2, QFontMetrics(QFont()).ascent(), s.str().c_str());
     
     glPopAttrib();
+}
+
+void GLWidget::drawDiscSegment(const double r, double h, const double alpha)
+{
+    const int n = 8;
+    const double alpha2n = alpha / (2 * n);
+    const double rc = r * cos(alpha / 2);
+    double phi;
+    double x1, x2, x3, x4;
+    double y1, y2, y3, y4;
+    
+    h /= 2.;
+    
+    phi = -n * alpha2n;
+    x3 = rc * tan(phi);
+    y3 = rc;
+    x4 = r * sin(phi);
+    y4 = r * cos(phi);
+
+    glBegin(GL_QUADS);
+    for(int i=-n+1; i<=n; ++i) {
+        phi = i * alpha2n;
+    
+        x1 = x3; y1 = y3; x2 = x4; y2 = y4;
+        x3 = rc * tan(phi);
+        y3 = rc;
+        x4 = r * sin(phi);
+        y4 = r * cos(phi);
+        
+        glNormal3f(0., 0., 1.);
+        glVertex3f(x1, y1, h);
+        glVertex3f(x2, y2, h);
+        glVertex3f(x4, y4, h);
+        glVertex3f(x3, y3, h);
+        
+        glNormal3f(0., 0., -1.);
+        glVertex3f(x1, y1, -h);
+        glVertex3f(x2, y2, -h);
+        glVertex3f(x4, y4, -h);
+        glVertex3f(x3, y3, -h);
+        
+        glNormal3f(-cos(phi), -sin(phi), 0.);
+        glVertex3f(x1, y1, h);
+        glVertex3f(x3, y3, h);
+        glVertex3f(x3, y3, -h);
+        glVertex3f(x1, y1, -h);
+        
+        glNormal3f(cos(phi), sin(phi), 0.);
+        glVertex3f(x2, y2, h);
+        glVertex3f(x4, y4, h);
+        glVertex3f(x4, y4, -h);
+        glVertex3f(x2, y2, -h);
+    }
+    glEnd();
 }
 
 void GLWidget::drawCheckerboardFloor()

@@ -30,6 +30,7 @@ class GLWidget : public QGLWidget
     void pause();
     
     static void drawSphere(double r, Vector3 p);
+    static void drawDiscSegment(double r, double h, double alpha);
     static void drawCheckerboardFloor();
     static void drawTube(double r, Vector3 p1, Vector3 p2);
     static void drawODEBox(dGeomID id, double lx, double ly, double lz);
