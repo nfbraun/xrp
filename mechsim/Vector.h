@@ -10,69 +10,71 @@ class _Vector3
   public:
     _Vector3() { }
     _Vector3(_Scalar_T _x, _Scalar_T _y, _Scalar_T _z)
-      : fX(_x), fY(_y), fZ(_z) { }
-    _Vector3(const float* p)
-      : fX(p[0]), fY(p[1]), fZ(p[2]) { }
-    _Vector3(const double* p)
-      : fX(p[0]), fY(p[1]), fZ(p[2]) { }
-    _Vector3(const long double* p)
-      : fX(p[0]), fY(p[1]), fZ(p[2]) { }
+       { fC[0] = _x; fC[1] = _y; fC[2] = _z; }
+    _Vector3(const float* c)
+       { fC[0] = c[0]; fC[1] = c[1]; fC[2] = c[2]; }
+    _Vector3(const double* c)
+       { fC[0] = c[0]; fC[1] = c[1]; fC[2] = c[2]; }
+    _Vector3(const long double* c)
+       { fC[0] = c[0]; fC[1] = c[1]; fC[2] = c[2]; }
+    
+    operator const _Scalar_T*() const { return fC; }
     
     static _Vector3<_Scalar_T> Spherical(_Scalar_T r, _Scalar_T theta, _Scalar_T phi)
       { return _Vector3<_Scalar_T>(r * sin(theta) * cos(phi), 
                                    r * sin(theta) * sin(phi),
                                    r * cos(theta)); }
                                    
-    _Scalar_T x() const { return fX; }
-    _Scalar_T y() const { return fY; }
-    _Scalar_T z() const { return fZ; }
+    _Scalar_T x() const { return fC[0]; }
+    _Scalar_T y() const { return fC[1]; }
+    _Scalar_T z() const { return fC[2]; }
       
     _Scalar_T mag2() const { return x()*x() + y()*y() + z()*z(); }
     _Scalar_T mag()  const { return sqrt(mag2()); }
     
     _Scalar_T r()     const { return mag(); }
-    _Scalar_T phi()   const { return atan2(fY, fX); }
-    _Scalar_T theta() const { return acos(fZ / mag()); }
+    _Scalar_T phi()   const { return atan2(y(), x()); }
+    _Scalar_T theta() const { return acos(z() / mag()); }
     
     _Vector3<_Scalar_T>& operator+=(const _Vector3<_Scalar_T>& w)
     {
-        fX += w.x();
-        fY += w.y();
-        fZ += w.z();
+        fC[0] += w.x();
+        fC[1] += w.y();
+        fC[2] += w.z();
     
         return *this;
     }
     
     _Vector3<_Scalar_T>& operator-=(const _Vector3<_Scalar_T>& w)
     {
-        fX -= w.x();
-        fY -= w.y();
-        fZ -= w.z();
+        fC[0] -= w.x();
+        fC[1] -= w.y();
+        fC[2] -= w.z();
         
         return *this;
     }
 
     _Vector3<_Scalar_T>& operator*=(_Scalar_T k)
     {
-        fX *= k;
-        fY *= k;
-        fZ *= k;
+        fC[0] *= k;
+        fC[1] *= k;
+        fC[2] *= k;
         
         return *this;
     }
     
     _Vector3<_Scalar_T>& operator/=(_Scalar_T k)
     {
-        fX /= k;
-        fY /= k;
-        fZ /= k;
+        fC[0] /= k;
+        fC[1] /= k;
+        fC[2] /= k;
         
         return *this;
     }
     
     bool operator==(const _Vector3<_Scalar_T>& w)
     {
-        return ((fX == w.x()) && (fY == w.y()) && (fZ == w.z()));
+        return ((x() == w.x()) && (y() == w.y()) && (z() == w.z()));
     }
     
     _Vector3<_Scalar_T> norm()
@@ -81,7 +83,7 @@ class _Vector3
     }
     
   private:    
-    _Scalar_T fX, fY, fZ;
+    _Scalar_T fC[3];
 };
 
 template<typename _Scalar_T>
@@ -115,13 +117,22 @@ _Vector3<_Scalar_T> operator*(_Scalar_T k, const _Vector3<_Scalar_T>& v)
 }
 
 template<typename _Scalar_T>
+_Vector3<_Scalar_T> operator/(const _Vector3<_Scalar_T>& v, _Scalar_T k)
+{
+    _Vector3<_Scalar_T> u(v);
+    u /= k;
+    return u;
+}
+
+template<typename _Scalar_T>
 std::ostream& operator<< (std::ostream& out, const _Vector3<_Scalar_T>& v)
 {
-    out << '(' << v.x << ", " << v.y << ", " << v.z << ')';
+    out << '(' << v.x() << ", " << v.y() << ", " << v.z() << ')';
     return out;
 }
 
 typedef _Vector3<double> Vector3;
+typedef _Vector3<float> Vector3f;
 
 namespace Vector {
     template<typename _Scalar_T>
