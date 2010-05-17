@@ -151,6 +151,9 @@ namespace Vector {
     }
     
     const Vector3 Null = Vector3(0., 0., 0.);
+    const Vector3 eX = Vector3(1., 0., 0.);
+    const Vector3 eY = Vector3(0., 1., 0.);
+    const Vector3 eZ = Vector3(0., 0., 1.);
 } // end namespace Vector
 
 const double DEG2RAD = M_PI / 180;

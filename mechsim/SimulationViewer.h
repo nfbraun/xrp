@@ -22,9 +22,7 @@ class SimulationViewer : public QWidget
     public slots:
         void toggleSimulationRunning();
         void updateCamInfo();
-        void setCamPos();
-        void setCamTheta();
-        void setCamPhi();
+        void setCamDist();
 
     protected:
         void keyPressEvent(QKeyEvent* ev);
@@ -35,7 +33,7 @@ class SimulationViewer : public QWidget
         GLWidget *fGLWidget;
         QSlider *fTimeSlide;
         QPushButton *fStartPauseButton, *fHomeButton;
-        QLineEdit *feX, *feY, *feZ, *feP, *feT;
+        QLineEdit *feZ, *fecx, *fecy, *fecz;
         
         static const char START[];
         static const char PAUSE[];

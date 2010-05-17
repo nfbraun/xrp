@@ -4,14 +4,14 @@
 #include <QGLWidget>
 #include <QApplication>
 
-#include "McGeer.h"
+#include "Bunny.h"
 #include "GLWidget.h"
 #include "SimulationViewer.h"
 
 int main(int argc, char** argv)
 {
     QApplication app(argc, argv);
-    McGeer sim;
+    Bunny sim;
     SimulationViewer v(&sim);
     
     v.show();

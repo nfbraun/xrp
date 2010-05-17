@@ -15,9 +15,12 @@ class MGState: public SimulationState {
 
   private:
     void DrawLeg(double t, double s) const;
+    void DrawSlide() const;
     
     static const double DISP_LEGDIST;
     static const double DISP_LEGWIDTH;
+    static const double DISP_SLIDEWIDTH;
+    static const int DISP_SLIDELEN2;
 };
 
 // void near_callback(void* data, dGeomID g1, dGeomID g2);
@@ -45,12 +48,15 @@ class McGeer: public CachedSimulation<MGState> {
     
     dBodyID fLeftThigh, fLeftShank;
     dBodyID fRightThigh, fRightShank;
+
+    dGeomID fFloorG;
     
     static const int STEP_PER_SEC;
     static const int INT_PER_STEP;
     static const char TITLE[];
     
     static const double GAMMA;
+    static const double FLOOR_DIST;
     static const double M_T;
     static const double R_GYR_T;
     static const double L_T;

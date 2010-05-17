@@ -4,6 +4,7 @@
 #include <QFont>
 #include <QFontMetrics>
 #include <GL/glu.h>
+#include <algorithm>
 #include <string>
 #include <sstream>
 #include <iomanip>
@@ -12,27 +13,33 @@
 
 const double GLWidget::RAD_TO_DEG = 180. / M_PI;
 const double GLWidget::DEG_TO_RAD = M_PI / 180.;
-const int GLWidget::ANG_STEPS_PER_PI = 3 * 180;
+const int GLWidget::ANG_STEPS_PER_PI = 90;
 const double GLWidget::ANG_STEP = M_PI / ANG_STEPS_PER_PI;
-const double GLWidget::WHEEL_STEP = 0.01;
+const double GLWidget::DIST_STEP = 0.01;
+const int GLWidget::DIST_WHEEL_CORRECTION = 10;
+const double GLWidget::SHIFT_STEP = 0.1;
 
-const Vector3 GLWidget::DEFAULT_CAM_POS = Vector3(0, 10., 0.);
+const double GLWidget::AXIS_LENGTH = 1.0;
+const float GLWidget::X_AXIS_COLOR[] = { 1.0, 0.0, 0.0 };
+const float GLWidget::Y_AXIS_COLOR[] = { 1.0, 1.0, 0.0 };
+const float GLWidget::Z_AXIS_COLOR[] = { 0.0, 1.0, 0.0 };
+
+const int GLWidget::DEFAULT_CAM_DIST = 5. / DIST_STEP;
 
 GLWidget::GLWidget(Simulation* sim, QWidget* parent)
-    : QGLWidget(parent), fSimulation(sim)
+    : QGLWidget(parent),
+      fX(0.), fZ(0.),
+      fDist(DEFAULT_CAM_DIST),
+      fRotation(Rotation::Unit),
+      fT(0),
+      fSimulation(sim)
 {
     fTimer = new QTimer(this);
     connect(fTimer, SIGNAL(timeout()), this, SLOT(timestep()));
     fTimer->start(sim->GetTimestep()*1000.);
     
-    fT = 0;
+    // fCenter = fSimulation->GetCenter();
     
-    fCamPos = DEFAULT_CAM_POS;
-    
-    Vector3 look = Vector::Null - fCamPos;
-    fPhi = look.phi() / ANG_STEP;
-    fTheta = look.theta() / ANG_STEP;
-    normalizeAngles();
     fPaused = false;
 }
 
@@ -51,45 +58,43 @@ QSize GLWidget::sizeHint() const
     return QSize(640, 480);
 }
 
-void GLWidget::setCamPos(double x, double y, double z)
+void GLWidget::setCamX(double x)
 {
-    fCamPos = Vector3(x, y, z);
+    fX = x;
     updateCam();
 }
 
-void GLWidget::setCamPhi(double phi)
+void GLWidget::setCamY(double y)
 {
-    fPhi = (int) ceil((phi * DEG_TO_RAD) / ANG_STEP - .5);
-    normalizeAngles();
+    fZ = y;
     updateCam();
 }
 
-void GLWidget::setCamTheta(double theta)
+void GLWidget::setCamDist(double d)
 {
-    fTheta = (int) ceil((theta * DEG_TO_RAD) / ANG_STEP - .5);
-    normalizeAngles();
+    double dist = log(d) / DIST_STEP;
+    fDist = (int) ceil(dist - .5);
+    updateCam();
+}
+
+void GLWidget::setCamRotation(const Rotation& r)
+{
+    fRotation = r;
+    updateCam();
+}
+
+void GLWidget::rotateCam(const Rotation &r)
+{
+    fRotation *= r;
     updateCam();
 }
 
 void GLWidget::resetCamPos()
 {
-    fCamPos = DEFAULT_CAM_POS;
-    Vector3 look = Vector::Null - fCamPos;
-    fPhi = look.phi() / ANG_STEP;
-    fTheta = look.theta() / ANG_STEP;
+    fDist = DEFAULT_CAM_DIST;
+    fRotation = Rotation::Unit;
     
     updateCam();
-}
-
-void GLWidget::normalizeAngles()
-{
-    // Normalize theta
-    if(fTheta < 0) fTheta = 0;
-    if(fTheta > ANG_STEPS_PER_PI) fTheta = ANG_STEPS_PER_PI;
-    
-    // Normalize phi
-    fPhi %= (2 * ANG_STEPS_PER_PI);
-    if(fPhi < 0) fPhi += (2 * ANG_STEPS_PER_PI);
 }
 
 void GLWidget::timestep()
@@ -110,9 +115,7 @@ void GLWidget::setTime(int t)
 
 void GLWidget::wheelEvent(QWheelEvent* ev)
 {
-    Vector3 d = Vector3::Spherical(1., fTheta*ANG_STEP, fPhi*ANG_STEP);
-    d *= (ev->delta() * WHEEL_STEP);
-    fCamPos += d;
+    fDist -= ev->delta() / DIST_WHEEL_CORRECTION;
     
     updateCam();
     emit camChanged();
@@ -120,28 +123,148 @@ void GLWidget::wheelEvent(QWheelEvent* ev)
     ev->accept();
 }
 
+Vector3 GLWidget::trackballVector(int px, int py)
+{
+    // see http://www.opengl.org/wiki/Trackball
+    const double r = 1.0;
+    int d = std::min(width(), height());
+    
+    double x = (double) (2*px - width()) / d;
+    double z = (double) (2*py - height()) / d;
+    double y;
+    
+    if((x*x + z*z) < ((r*r)/2.)) {
+        y = sqrt(r*r - x*x - z*z);
+    } else {
+        y = (r*r/2.) / sqrt(x*x + z*z);
+    }
+    
+    return Vector3(x, y, z).norm();
+}
+
+void GLWidget::trackballMotion(QMouseEvent* ev)
+{
+    // see http://www.opengl.org/wiki/Trackball
+    Vector3 v2 = trackballVector(ev->x(), ev->y());
+    double dot = Vector::dot(fLastVec, v2);
+    
+    // alpha = acos(dot);
+    // fRotation = Rotation(cos(alpha/2), naxis.norm() * sin(alpha/2));
+    // Note that naxis.norm() = naxis / sin(alpha).
+    
+    Vector3 naxis = Vector::cross(fLastVec, v2) * sqrt(1./(2.+2.*dot));
+    
+    fRotation *= Rotation(sqrt((1.+dot)/2.), naxis.x(), naxis.y(), naxis.z());
+    
+    fLastVec = v2;
+}
+
+double GLWidget::rollAngle(int x, int y)
+{
+    // Ensure that x and y can never be 0
+    x = 2*(x - fCenterX) + 1;
+    y = 2*(y - fCenterY) + 1;
+    
+    return atan2(y, x);
+}
+
+void GLWidget::rollMotion(QMouseEvent* ev)
+{
+    double roll2 = rollAngle(ev->x(), ev->y());
+    
+    fRotation *= Rotation(roll2 - fLastRoll, Vector3(0., 1., 0.));
+    
+    fLastRoll = roll2;
+}
+
+void GLWidget::panMotion(QMouseEvent* ev)
+{
+    GLdouble wx, wy, wz;
+    gluProject(0., 0., 0., fGLModelview, fGLProjection, fGLViewport, &wx, &wy, &wz);
+    
+    GLdouble x1, y1, z1, x2, y2, z2;
+    gluUnProject(fLastPos.x(), fLastPos.y(), wz,
+                 fGLModelview, fGLProjection, fGLViewport,
+                 &x1, &y1, &z1);
+    gluUnProject(ev->x(), ev->y(), wz,
+                 fGLModelview, fGLProjection, fGLViewport,
+                 &x2, &y2, &z2);
+    
+    fX += x1 - x2;
+    fZ += z2 - z1;
+    
+    fLastPos = ev->pos();
+}
+
+void GLWidget::zoomMotion(QMouseEvent* ev)
+{
+    fDist -= (ev->y() - fLastPos.y());
+    fLastPos = ev->pos();
+}
+
 void GLWidget::mousePressEvent(QMouseEvent* ev)
 {
-    fLastPos = ev->pos();
+    fMotionMode = MODE_NONE;
+    
+    switch(ev->modifiers() & (Qt::ShiftModifier | Qt::ControlModifier)) {
+        case Qt::NoModifier:
+            if(ev->button() == Qt::LeftButton)
+                fMotionMode = MODE_ROTATE;
+            else if(ev->button() == Qt::RightButton)
+                fMotionMode = MODE_ZOOM;
+        break;
+        case Qt::ShiftModifier:
+            if(ev->button() == Qt::LeftButton)
+                fMotionMode = MODE_ROLL;
+            else if(ev->button() == Qt::RightButton)
+                fMotionMode = MODE_PAN;
+        break;
+        case Qt::ControlModifier:
+            fMotionMode = MODE_ZOOM;
+    }
+    
+    switch(fMotionMode) {
+        case MODE_ROTATE:
+            fLastVec = trackballVector(ev->x(), ev->y());
+        break;
+        case MODE_ROLL:
+            fLastRoll = rollAngle(ev->x(), ev->y());
+        break;
+        case MODE_PAN:
+        case MODE_ZOOM:
+            fLastPos = ev->pos();
+        break;
+        default:
+        break;
+    }
+    
     ev->accept();
 }
 
 void GLWidget::mouseMoveEvent(QMouseEvent* ev)
 {
-    if(ev->buttons() & Qt::LeftButton) {
-        int dx = ev->x() - fLastPos.x();
-        int dy = ev->y() - fLastPos.y();
+    if(ev->buttons()) {
+        switch(fMotionMode) {
+            case MODE_ROTATE:
+                trackballMotion(ev);
+            break;
+            case MODE_ROLL:
+                rollMotion(ev);
+            break;
+            case MODE_PAN:
+                panMotion(ev);
+            break;
+            case MODE_ZOOM:
+                zoomMotion(ev);
+            break;
+            default:
+            break;
+        }
         
-        fPhi += dx;
-        fTheta -= dy;
-        
-        normalizeAngles();
         updateCam();
         emit camChanged();
-        
     }
-    fLastPos = ev->pos();
-
+    
     ev->accept();
 }
 
@@ -162,14 +285,20 @@ void GLWidget::pause()
 
 void GLWidget::_updateCam()
 {
-    Vector3 lookAt = fCamPos;
-    lookAt += Vector3::Spherical(1., fTheta*ANG_STEP, fPhi*ANG_STEP);
-    
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
-    gluLookAt(fCamPos.x(), fCamPos.y(), fCamPos.z(),
-              lookAt.x(), lookAt.y(), lookAt.z(),
+    gluLookAt(fX, getCamDist(), fZ,
+              fX, 0., fZ,
               0., 0., 1.);
+    glGetDoublev(GL_MODELVIEW_MATRIX, fGLModelview);
+    glTranslated(fCenter.x(), fCenter.y(), fCenter.z());
+    RotateGL(fRotation);
+    glTranslated(-fCenter.x(), -fCenter.y(), -fCenter.z());
+    
+    GLdouble x, y, z;
+    gluProject(fCenter.x(), fCenter.y(), fCenter.z(), fGLModelview, fGLProjection, fGLViewport, &x, &y, &z);
+    fCenterX = (int) ceil(x - 0.5);
+    fCenterY = height() - (int) ceil(y - 0.5);
 }
 
 void GLWidget::updateCam()
@@ -187,11 +316,11 @@ void GLWidget::initializeGL()
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
-    const float Light0Position[] = {1., 1., 0., 0.};
+    const float Light0Position[] = {0., -5., 0., 0.};
     glLightfv(GL_LIGHT0, GL_POSITION, Light0Position);
     const float Light0Ambient[] = {0., 0., 0., 1. };
     glLightfv(GL_LIGHT0, GL_AMBIENT, Light0Ambient);
-    const float Light0Diffuse[] = {1., 1., 1., 1.};
+    const float Light0Diffuse[] = {10., 10., 10., 1.};
     glLightfv(GL_LIGHT0, GL_DIFFUSE, Light0Diffuse);
     const float GlobalAmbient[] = {.2, .2, .2, 1.};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, GlobalAmbient);
@@ -201,8 +330,39 @@ void GLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
+    glPushMatrix();
+    
+    fCenter = fSimulation->GetState(fT)->GetCenter();
+    glTranslatef(-fCenter.x(), -fCenter.y(), -fCenter.z());
+    fCenter += fCenterOffset;
     fSimulation->GetState(fT)->Draw();
+    
+    drawCenter();
+    
+    glPopMatrix();
+    
     drawStatusText();
+}
+
+void GLWidget::drawCenter()
+{
+    glDisable(GL_LIGHTING);
+    
+    glBegin(GL_LINES);
+    glColor3fv(X_AXIS_COLOR);
+    glVertex3dv(fCenter - AXIS_LENGTH * Vector::eX);
+    glVertex3dv(fCenter + AXIS_LENGTH * Vector::eX);
+
+    glColor3fv(Y_AXIS_COLOR);
+    glVertex3dv(fCenter - AXIS_LENGTH * Vector::eY);
+    glVertex3dv(fCenter + AXIS_LENGTH * Vector::eY);
+
+    glColor3fv(Z_AXIS_COLOR);
+    glVertex3dv(fCenter - AXIS_LENGTH * Vector::eZ);
+    glVertex3dv(fCenter + AXIS_LENGTH * Vector::eZ);
+    glEnd();
+    
+    glEnable(GL_LIGHTING);
 }
 
 void GLWidget::drawStatusText()
@@ -418,8 +578,10 @@ void GLWidget::resizeGL(int w, int h)
     glLoadIdentity();
     
     glViewport(0, 0, w, h);
+    glGetIntegerv(GL_VIEWPORT, fGLViewport);
     
     gluPerspective(45, ratio, 1, 1000);
+    glGetDoublev(GL_PROJECTION_MATRIX, fGLProjection);
     
     updateCam();
 }

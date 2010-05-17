@@ -9,7 +9,8 @@ const int McGeer::INT_PER_STEP = 16;   // Integration intervals per timestep
 const char McGeer::TITLE[] = "McGeer Passive Walker";
 
 // ** System parameters **
-const double McGeer::GAMMA   = 0.0456;
+const double McGeer::GAMMA   = 0.5;  //0.0456;   // Floor slope
+const double McGeer::FLOOR_DIST = 1.0;   // shortest distance floor to origin
 const double McGeer::M_T     = 0.1;
 const double McGeer::R_GYR_T = 0.135;
 const double McGeer::L_T     = 0.46;
@@ -37,6 +38,10 @@ const double McGeer::INI_PHI_RS =  1.0; //-0.2;
 const double MGState::DISP_LEGDIST = .2;
 // Width of the boxes representing the legs
 const double MGState::DISP_LEGWIDTH = .05;
+// Width of slide
+const double MGState::DISP_SLIDEWIDTH = 1.0;
+// Half-length of slide
+const int MGState::DISP_SLIDELEN2 = 3;
 
 
 /* void near_callback(void* data, dGeomID g1, dGeomID g2)
@@ -70,6 +75,9 @@ void MGState::Draw() const
     
     glMatrixMode(GL_MODELVIEW);
     
+    DrawSlide();
+    GLWidget::drawSphere(.1, Vector3(0,0,0));
+    
     glColor3f(1., 1., 0.);
     glPushMatrix();
     glTranslatef(0., DISP_LEGDIST/2., 0.);
@@ -83,12 +91,39 @@ void MGState::Draw() const
     glPopMatrix();
 }
 
-/* void MGState::DrawSlide() const
+void MGState::DrawSlide() const
 {
+    float x1, z1, x2, z2;
+    const float xn = sin(McGeer::GAMMA);
+    const float zn = cos(McGeer::GAMMA);
+
     glBegin(GL_QUADS);
-    
-    glEnd(GL_QUADS);
-} */
+    for(int k=-DISP_SLIDELEN2; k<DISP_SLIDELEN2; k++) {
+        x1 = -McGeer::FLOOR_DIST * xn + k * zn;
+        z1 = -McGeer::FLOOR_DIST * zn + k * xn;
+        x2 = x1 + zn;
+        z2 = z1 + xn;
+        
+        if(k % 2)
+            glColor3f(1., 0., 0.);
+        else
+            glColor3f(0., 0., 1.);
+        glVertex3f(x1, DISP_SLIDEWIDTH/2., z1);
+        glVertex3f(x1, 0, z1);
+        glVertex3f(x2, 0, z2);
+        glVertex3f(x2, DISP_SLIDEWIDTH/2., z2);
+        
+        if(k % 2)
+            glColor3f(0., 0., 1.);
+        else
+            glColor3f(1., 0., 0.);
+        glVertex3f(x1, 0, z1);
+        glVertex3f(x1, -DISP_SLIDEWIDTH/2., z1);
+        glVertex3f(x2, -DISP_SLIDEWIDTH/2., z2);
+        glVertex3f(x2, 0, z2);
+    }
+    glEnd();
+}
 
 void MGState::DrawLeg(double t, double s) const
 {
@@ -131,7 +166,7 @@ McGeer::McGeer()
     fWorld = dWorldCreate();
     dWorldSetGravity(fWorld, 0., 0., -9.81);
     
-    // fFloorG = dCreatePlane(fSpace, sin(GAMMA), 0., cos(GAMMA), 0.);
+    // fFloorG = dCreatePlane(fSpace, sin(GAMMA), 0., cos(GAMMA), FLOOR_DIST);
     
     InitLeg(fLeftThigh, fLeftShank, 1., INI_PHI_LT, INI_PHI_LS);
     InitLeg(fRightThigh, fRightShank, -1., INI_PHI_RT, INI_PHI_RS);

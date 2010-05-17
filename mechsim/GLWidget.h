@@ -5,6 +5,7 @@
 #include <QGLWidget>
 #include "Simulation.h"
 #include "Vector.h"
+#include "Rotation.h"
 
 class GLWidget : public QGLWidget
 {
@@ -17,13 +18,16 @@ class GLWidget : public QGLWidget
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
     
-    inline Vector3 getCamPos() { return fCamPos; }
-    inline double getCamPhi() { return fPhi * (ANG_STEP * RAD_TO_DEG); }
-    inline double getCamTheta() { return fTheta * (ANG_STEP * RAD_TO_DEG); }
+    inline double getCamX()     { return fX; }
+    inline double getCamY()     { return fZ; }
+    inline double getCamDist()  { return exp(fDist * DIST_STEP); }
+    inline Vector3 getCenter()  { return fCenterOffset; }
     
-    void setCamPos(double x, double y, double z);
-    void setCamPhi(double phi);
-    void setCamTheta(double theta);
+    void setCamX(double x);
+    void setCamY(double y);
+    void setCamDist(double dist);
+    void setCamRotation(const Rotation& r);
+    void rotateCam(const Rotation& r);
     
     bool isPaused() { return fPaused; }
     void start();
@@ -36,10 +40,11 @@ class GLWidget : public QGLWidget
     static void drawODEBox(dGeomID id, double lx, double ly, double lz);
     static void drawBox(Vector3 p1, Vector3 p2);
     static void drawUnitCube();
+    void drawCenter();
     
     static const double RAD_TO_DEG;
     static const double DEG_TO_RAD;
-    static const Vector3 DEFAULT_CAM_POS;
+    static const int DEFAULT_CAM_DIST;
     
   public slots:
     void timestep();
@@ -54,7 +59,13 @@ class GLWidget : public QGLWidget
     void initializeGL();
     void paintGL();
     void resizeGL(int w, int h);
-    void normalizeAngles();
+    
+    Vector3 trackballVector(int px, int py);
+    void trackballMotion(QMouseEvent* ev);
+    double rollAngle(int x, int y);
+    void rollMotion(QMouseEvent* ev);
+    void panMotion(QMouseEvent* ev);
+    void zoomMotion(QMouseEvent* ev);
     
     void mousePressEvent(QMouseEvent* ev);
     void mouseMoveEvent(QMouseEvent* ev);
@@ -64,17 +75,37 @@ class GLWidget : public QGLWidget
     void updateCam();
     
     void drawStatusText();
-        
+    
+    enum MotionMode { MODE_NONE, MODE_ROTATE, MODE_ZOOM, MODE_ROLL, MODE_PAN };
+    
+    MotionMode fMotionMode;
+    Vector3 fLastVec;
+    double fLastRoll;
     QPoint fLastPos;
     QTimer* fTimer;
-    Vector3 fCamPos;
-    int fPhi, fTheta;  // in units of ANG_STEPs
+    double fX, fZ;
+    double fDist;
+    Rotation fRotation;
+    Vector3 fCenter, fCenterOffset;
+    int fCenterX, fCenterY;
     int fT;  // in units of Simulation::TIMESTEPs
     bool fPaused;
+    bool fTrackObject;
+    
+    GLdouble fGLModelview[16];
+    GLdouble fGLProjection[16];
+    GLint fGLViewport[4];
     
     static const int ANG_STEPS_PER_PI;
     static const double ANG_STEP;
-    static const double WHEEL_STEP;
+    static const double DIST_STEP;
+    static const double SHIFT_STEP;
+    static const int DIST_WHEEL_CORRECTION;
+    
+    static const double AXIS_LENGTH;
+    static const float X_AXIS_COLOR[];
+    static const float Y_AXIS_COLOR[];
+    static const float Z_AXIS_COLOR[];
     
     Simulation* fSimulation;
 };

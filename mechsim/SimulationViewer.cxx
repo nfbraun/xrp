@@ -26,6 +26,7 @@ SimulationViewer::SimulationViewer(Simulation* sim)
     
     QVBoxLayout *l1 = new QVBoxLayout;
     l0->addLayout(l1);
+    l0->setStretch(0, 1);
     l1->addWidget(fGLWidget);
     
     QHBoxLayout *l2 = new QHBoxLayout;
@@ -41,35 +42,40 @@ SimulationViewer::SimulationViewer(Simulation* sim)
     QGridLayout* l3 = new QGridLayout;
     l0->addLayout(l3);
     
+    QFrame* f;
     l3->addWidget(new QLabel(tr("Camera")), 0, 0, 1, 2);
-    QFrame* f = new QFrame;
+    f = new QFrame;
     f->setFrameStyle(QFrame::HLine | QFrame::Sunken);
     l3->addWidget(f, 1, 0, 1, 2);
     
-    feX = makeInput(l3, tr("X"), 2);
-    connect(feX, SIGNAL(editingFinished()), this, SLOT(setCamPos()));
-    feY = makeInput(l3, tr("Y"), 3);
-    connect(feY, SIGNAL(editingFinished()), this, SLOT(setCamPos()));
-    feZ = makeInput(l3, tr("Z"), 4);
-    connect(feZ, SIGNAL(editingFinished()), this, SLOT(setCamPos()));
-    feP = makeInput(l3, tr("φ"), 5);
-    connect(feP, SIGNAL(editingFinished()), this, SLOT(setCamPhi()));
-    feT = makeInput(l3, tr("θ"), 6);
-    connect(feT, SIGNAL(editingFinished()), this, SLOT(setCamTheta()));
+    feZ = makeInput(l3, tr("Distance"), 2);
+    connect(feZ, SIGNAL(editingFinished()), this, SLOT(setCamDist()));
     
-    // l3->addWidget(new QCheckBox(tr("Lock to object")), 7, 1);
+    l3->addWidget(new QCheckBox(tr("Lock to object")), 3, 0, 1, 2);
+    l3->addWidget(new QCheckBox(tr("Lock Z axis")), 4, 0, 1, 2);
     
     fHomeButton = new QPushButton(tr("Home"));
-    l3->addWidget(fHomeButton, 7, 1);
+    l3->addWidget(fHomeButton, 5, 0, 1, 2);
     connect(fHomeButton, SIGNAL(clicked()), fGLWidget, SLOT(resetCamPos()));
     
-    l3->setRowStretch(8, 1);
+    l3->addWidget(new QLabel(tr("Rotation center")), 6, 0, 1, 2);
+    f = new QFrame;
+    f->setFrameStyle(QFrame::HLine | QFrame::Sunken);
+    l3->addWidget(f, 7, 0, 1, 2);
+    
+    fecx = makeInput(l3, tr("X"), 8);
+    fecy = makeInput(l3, tr("Y"), 9);
+    fecz = makeInput(l3, tr("Z"), 10);
+    
+    l3->setRowStretch(11, 1);
     
     setLayout(l0);
     
     setWindowTitle(sim->GetTitle());
     
     updateCamInfo();
+    
+    fGLWidget->pause();
 }
 
 QLineEdit* SimulationViewer::makeInput(QGridLayout* l, const QString& text, int row)
@@ -84,32 +90,15 @@ QLineEdit* SimulationViewer::makeInput(QGridLayout* l, const QString& text, int 
 
 void SimulationViewer::updateCamInfo()
 {
-    feX->setText(QString::number(fGLWidget->getCamPos().x(), 'f', 1));
-    feY->setText(QString::number(fGLWidget->getCamPos().y(), 'f', 1));
-    feZ->setText(QString::number(fGLWidget->getCamPos().z(), 'f', 1));
-    feP->setText(QString::number(fGLWidget->getCamPhi(), 'f', 1));
-    feT->setText(QString::number(fGLWidget->getCamTheta(), 'f', 1));
+    feZ->setText(QString::number(fGLWidget->getCamDist(), 'f', 1));
+    fecx->setText(QString::number(fGLWidget->getCenter().x(), 'f', 1));
+    fecy->setText(QString::number(fGLWidget->getCenter().y(), 'f', 1));
+    fecz->setText(QString::number(fGLWidget->getCenter().z(), 'f', 1));
 }
 
-void SimulationViewer::setCamPos()
+void SimulationViewer::setCamDist()
 {
-    fGLWidget->setCamPos(feX->text().toDouble(),
-                         feY->text().toDouble(),
-                         feZ->text().toDouble());
-}
-
-void SimulationViewer::setCamPhi()
-{
-    fGLWidget->setCamPhi(feP->text().toDouble());
-    // Update with possibly normalized angle
-    feP->setText(QString::number(fGLWidget->getCamPhi(), 'f', 1));
-}
-
-void SimulationViewer::setCamTheta()
-{
-    fGLWidget->setCamTheta(feT->text().toDouble());
-    // Update with possibly normalized angle
-    feT->setText(QString::number(fGLWidget->getCamTheta(), 'f', 1));
+    fGLWidget->setCamDist(feZ->text().toDouble());
 }
 
 void SimulationViewer::keyPressEvent(QKeyEvent* ev)

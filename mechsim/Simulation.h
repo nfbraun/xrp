@@ -6,7 +6,7 @@
 class SimulationState {
   public:
     virtual void Draw() const = 0;
-    virtual Vector3 GetObjectPos() const { return Vector::Null; }
+    virtual Vector3 GetCenter() const { return Vector::Null; }
 };
 
 class Simulation {
