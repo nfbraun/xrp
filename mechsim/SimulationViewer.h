@@ -22,18 +22,27 @@ class SimulationViewer : public QWidget
     public slots:
         void toggleSimulationRunning();
         void updateCamInfo();
+        void setCamPos();
         void setCamDist();
+        void setCamTheta();
+        void setCamPhi();
+        void setCamRoll();
+        void setCenterOffset();
+        void setTrackObject(int state);
+        void setEnableRoll(int state);
 
     protected:
         void keyPressEvent(QKeyEvent* ev);
         
     private:
-        QLineEdit* makeInput(QGridLayout* l, const QString& text, int row);
+        QLineEdit* makeInput(QGridLayout* l, const QString& text, int row, const char* slot = NULL);
     
         GLWidget *fGLWidget;
         QSlider *fTimeSlide;
         QPushButton *fStartPauseButton, *fHomeButton;
-        QLineEdit *feZ, *fecx, *fecy, *fecz;
+        QLineEdit *feX, *feY, *feZ;
+        QLineEdit *fePhi, *feTheta, *feRoll, *feDist;
+        QLineEdit *fecx, *fecy, *fecz;
         
         static const char START[];
         static const char PAUSE[];

@@ -5,6 +5,7 @@
 
 class Rotation;
 Rotation operator*(const Rotation& r1, const Rotation& r2);
+Vector3 operator*(const Rotation& r, const Vector3& v);
 
 // Rotation, represented by a unit quarternion
 class Rotation

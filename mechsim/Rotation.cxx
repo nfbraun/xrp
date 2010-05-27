@@ -27,6 +27,17 @@ Rotation operator*(const Rotation& r1, const Rotation& r2)
     return Rotation(a/norm, b/norm, c/norm, d/norm);
 }
 
+Vector3 operator*(const Rotation& r, const Vector3& v)
+{
+    double a = r.a(), b = r.b(), c = r.c(), d = r.d();
+    
+    double x = 2.*( (0.5-c*c-d*d)*v.x() + (    b*c-a*d)*v.y() + (    a*c+b*d)*v.z() );
+    double y = 2.*( (    a*d+b*c)*v.x() + (0.5-b*b-d*d)*v.y() + (    c*d-a*b)*v.z() );
+    double z = 2.*( (    b*d-a*c)*v.x() + (    a*b+c*d)*v.y() + (0.5-b*b-c*c)*v.z() );
+    
+    return Vector3(x,y,z);
+}
+
 void RotateGL(const Rotation& r)
 {
     double mat[4][4];

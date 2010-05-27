@@ -12,22 +12,72 @@ class GLWidget : public QGLWidget
     Q_OBJECT
     
   public:
-    GLWidget(Simulation* sim, QWidget *parent = 0);
+    GLWidget(Simulation* sim, QWidget *parent = 0, bool paused = false);
     ~GLWidget();
     
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
     
     inline double getCamX()     { return fX; }
-    inline double getCamY()     { return fZ; }
-    inline double getCamDist()  { return exp(fDist * DIST_STEP); }
-    inline Vector3 getCenter()  { return fCenterOffset; }
+    inline double getCamY()     { return fY; }
+    inline Vector3 getCamPos() {
+        if(fTrackObject)
+            return fCenter + Vector3::Spherical(fDist, getCamTheta(),
+                                                getCamPhi());
+        else
+            return fCamPos;
+    }
     
-    void setCamX(double x);
-    void setCamY(double y);
+    inline double getCamDist()  {
+        if(fTrackObject)
+            return fDist;
+        else
+            return (fCamPos-getCenter()).r();
+    }
+    
+    inline double getCamTheta()     { return fTheta*ANG_UNIT; }
+    inline double getCamPhi()       { return fPhi*ANG_UNIT; }
+    inline double getCamRoll()      { return fRoll; }
+    
+    inline double getCamThetaDeg()  { return getCamTheta()*RAD_TO_DEG; }
+    inline double getCamPhiDeg()    { return getCamPhi()*RAD_TO_DEG; }
+    inline double getCamRollDeg()   { return getCamRoll()*RAD_TO_DEG; }
+    
+    inline Vector3 getCenterOffset()  { return fCenterOffset; }
+    inline Vector3 getCenter()        { return fCenter; }
+    
+    inline Vector3 getCamDir()
+        { return Vector3::Spherical(1., ANG_UNIT*fTheta, ANG_UNIT*fPhi); }
+    inline Vector3 getHorizDir()
+        { return Vector3::Spherical(1., M_PI/2., ANG_UNIT*(fPhi + PI_UNITS/2)); }
+    inline Vector3 getVertDir() {
+        if(fTheta < PI_UNITS/2) {
+            return Vector3::Spherical(1.,
+                                      ANG_UNIT*(fTheta + PI_UNITS/2),
+                                      ANG_UNIT*fPhi);
+        } else {
+            return Vector3::Spherical(1.,
+                                      ANG_UNIT*(3*PI_UNITS/2 - fTheta),
+                                      ANG_UNIT*(fPhi+PI_UNITS));
+        }
+    }
+    
+    inline Vector3 getUpDir() {
+        if(fEnableRoll) {
+            return getVertDir()*cos(fRoll) + getHorizDir()*sin(fRoll);
+        } else {
+            return getVertDir();
+        }
+    }
+    
+    void setCamPos(Vector3 pos);
     void setCamDist(double dist);
-    void setCamRotation(const Rotation& r);
-    void rotateCam(const Rotation& r);
+    void setCamThetaDeg(double theta);
+    void setCamPhiDeg(double phi);
+    void setCamRollDeg(double roll);
+    void setCenterOffset(Vector3 offset);
+    void setTrackObject(bool track);
+    void setEnableRoll(bool enable);
     
     bool isPaused() { return fPaused; }
     void start();
@@ -60,8 +110,7 @@ class GLWidget : public QGLWidget
     void paintGL();
     void resizeGL(int w, int h);
     
-    Vector3 trackballVector(int px, int py);
-    void trackballMotion(QMouseEvent* ev);
+    void rotateMotion(QMouseEvent* ev);
     double rollAngle(int x, int y);
     void rollMotion(QMouseEvent* ev);
     void panMotion(QMouseEvent* ev);
@@ -73,6 +122,7 @@ class GLWidget : public QGLWidget
     
     void _updateCam();
     void updateCam();
+    void normalizeAngles();
     
     void drawStatusText();
     
@@ -83,23 +133,26 @@ class GLWidget : public QGLWidget
     double fLastRoll;
     QPoint fLastPos;
     QTimer* fTimer;
-    double fX, fZ;
-    double fDist;
-    Rotation fRotation;
+    Vector3 fCamPos;
+    int fTheta, fPhi;
+    double fRoll;
+    double fX, fY, fDist;
     Vector3 fCenter, fCenterOffset;
     int fCenterX, fCenterY;
     int fT;  // in units of Simulation::TIMESTEPs
     bool fPaused;
-    bool fTrackObject;
+    bool fTrackObject, fEnableRoll;
     
     GLdouble fGLModelview[16];
     GLdouble fGLProjection[16];
     GLint fGLViewport[4];
     
-    static const int ANG_STEPS_PER_PI;
-    static const double ANG_STEP;
+    static const int PI_UNITS;
+    static const double ANG_UNIT;
+    static const int ANG_STEP_TRACKMODE, ANG_STEP_WALKMODE;
     static const double DIST_STEP;
     static const double SHIFT_STEP;
+    static const double WALK_STEP;
     static const int DIST_WHEEL_CORRECTION;
     
     static const double AXIS_LENGTH;
