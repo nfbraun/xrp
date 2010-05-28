@@ -181,11 +181,11 @@ void GLWidget::rotateMotion(QMouseEvent* ev)
     int dy = ev->y() - fLastPos.y();
     
     if(fTrackObject) {
-        fPhi += dx*ANG_STEP_TRACKMODE;
-        fTheta += dy*ANG_STEP_TRACKMODE;
+        fPhi -= dx*ANG_STEP_TRACKMODE;
+        fTheta -= dy*ANG_STEP_TRACKMODE;
     } else {
-        fPhi -= dx*ANG_STEP_WALKMODE;
-        fTheta -= dy*ANG_STEP_WALKMODE;
+        fPhi += dx*ANG_STEP_WALKMODE;
+        fTheta += dy*ANG_STEP_WALKMODE;
     }
     normalizeAngles();
     
@@ -532,7 +532,7 @@ void GLWidget::drawDiscSegment(const double r, double h, const double alpha)
 void GLWidget::drawCheckerboardFloor()
 {
     glBegin(GL_QUADS);
-        glNormal3f(0., 0., 1.);
+        glNormal3f(0., 0., -1.);
         
         for(int x=-5; x <= 5; ++x) {
             for(int y=-5; y <= 5; ++y) {

@@ -13,7 +13,7 @@ class BunnyState: public SimulationState {
     
     // calculated with vtk
     Vector3 GetCenter() const
-     { return 10.*Vector3(.2 * sin(fT / 8.), 0., -0.154/2.); }
+     { return 10.*Vector3(.2 * sin(fT / 8.), 0., 0.154/2.); }
     
     Bunny* fParent;
 };

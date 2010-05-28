@@ -49,16 +49,16 @@ class GLWidget : public QGLWidget
     inline Vector3 getCamDir()
         { return Vector3::Spherical(1., ANG_UNIT*fTheta, ANG_UNIT*fPhi); }
     inline Vector3 getHorizDir()
-        { return Vector3::Spherical(1., M_PI/2., ANG_UNIT*(fPhi + PI_UNITS/2)); }
+        { return Vector3::Spherical(1., M_PI/2., ANG_UNIT*(fPhi - PI_UNITS/2)); }
     inline Vector3 getVertDir() {
         if(fTheta < PI_UNITS/2) {
             return Vector3::Spherical(1.,
-                                      ANG_UNIT*(fTheta + PI_UNITS/2),
-                                      ANG_UNIT*fPhi);
+                                      ANG_UNIT*(PI_UNITS/2 - fTheta),
+                                      ANG_UNIT*(fPhi+PI_UNITS));
         } else {
             return Vector3::Spherical(1.,
-                                      ANG_UNIT*(3*PI_UNITS/2 - fTheta),
-                                      ANG_UNIT*(fPhi+PI_UNITS));
+                                      ANG_UNIT*(fTheta - PI_UNITS/2),
+                                      ANG_UNIT*fPhi);
         }
     }
     

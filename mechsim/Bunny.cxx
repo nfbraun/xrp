@@ -44,8 +44,8 @@ GLuint Bunny::GetBunnyList()
     glNewList(fGLList, GL_COMPILE);
     Vector3f c(-0.095+0.156/2., 0.033, -0.062+0.121/2.);
     
-    glRotatef(-90., 1., 0., 0.);
-    glRotatef(180., 0., 1., 0.);
+    glRotatef(90., 1., 0., 0.);
+    //glRotatef(180., 0., 1., 0.);
     
     glBegin(GL_TRIANGLES);
     for(int i=0; i < reader.getNTri(); ++i) {
