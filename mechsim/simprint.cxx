@@ -1,16 +1,17 @@
 #include <iostream>
 #include <cmath>
-#include "McGeer.h"
+#include "Test.h"
 
 int main()
 {
-    McGeer sim;
+    TestSim sim;
     
     for(int t=0; t<sim.GetDefaultEndTime(); t++) {
-        const MGState* state = sim.GetState(t);
+        const TestState* state = sim.GetState(t);
+        // for definition compatible with lagrange.c
+        const double phi = -(state->fPos.x() + .4)/TestSim::R + M_PI/2.;
         std::cout << t*sim.GetTimestep() << " ";
-        std::cout << state->fLLeg.thighAng() << " " << state->fLLeg.shankAng() << " ";
-        std::cout << state->fRLeg.thighAng() << " " << state->fRLeg.shankAng();
+        std::cout << phi;
         std::cout << std::endl;
     }
     
