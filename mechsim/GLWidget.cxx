@@ -32,7 +32,7 @@ const int GLWidget::DEFAULT_CAM_DIST = 5.;
 GLWidget::GLWidget(Simulation* sim, QWidget* parent, bool paused)
     : QGLWidget(parent),
       fCamPos(0., 0., 0.),
-      fTheta(PI_UNITS/2), fPhi(0), fRoll(0.),
+      fTheta(PI_UNITS/2), fPhi(3*PI_UNITS/2), fRoll(0.),
       fX(0.), fY(0.), fDist(DEFAULT_CAM_DIST),
       fCenterOffset(Vector::Null),
       fT(0),
@@ -393,7 +393,7 @@ void GLWidget::initializeGL()
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
-    const float Light0Position[] = {0., -5., 0., 0.};
+    const float Light0Position[] = {0., 5., 1., 0.};
     glLightfv(GL_LIGHT0, GL_POSITION, Light0Position);
     const float Light0Ambient[] = {0., 0., 0., 1. };
     glLightfv(GL_LIGHT0, GL_AMBIENT, Light0Ambient);

@@ -11,14 +11,22 @@ Vector3 operator*(const Rotation& r, const Vector3& v);
 class Rotation
 {
   public:
+    Rotation() {}
     Rotation(double angle, Vector3 axis);
     Rotation(double a, double b, double c, double d)
-        : fA(a), fB(b), fC(c), fD(d) { }
+        { fQ[0] = a; fQ[1] = b; fQ[2] = c; fQ[3] = d; }
+    static Rotation FromQuatArray(const double* ptr)
+        { return Rotation(ptr[0], ptr[1], ptr[2], ptr[3]); }
     
-    inline double a() const  { return fA; }
-    inline double b() const  { return fB; }
-    inline double c() const  { return fC; }
-    inline double d() const  { return fD; }
+    inline double a() const  { return fQ[0]; }
+    inline double b() const  { return fQ[1]; }
+    inline double c() const  { return fQ[2]; }
+    inline double d() const  { return fQ[3]; }
+    
+    inline const double* quatarray() const { return fQ; }
+    
+    Rotation conj() const
+      { return Rotation(a(), -b(), -c(), -d()); }
     
     Rotation& operator*=(const Rotation& r)
       { *this = *this * r;  return *this; }
@@ -26,9 +34,11 @@ class Rotation
     static const Rotation Unit;
 
   private:
-    double fA, fB, fC, fD;
+    double fQ[4];
 };
 
-void RotateGL(const Rotation& r);
+namespace GL {
+    void Rotate(const Rotation& r);
+} // end namespace GL
 
 #endif

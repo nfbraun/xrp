@@ -1,16 +1,16 @@
 #include "Rotation.h"
 #include <GL/gl.h>
 
-const Rotation Rotation::Unit = Rotation(0., 1., 0., 0.);
+const Rotation Rotation::Unit = Rotation(1., 0., 0., 0.);
 
 Rotation::Rotation(double angle, Vector3 axis)
 {
     Vector3 naxis = axis.norm() * sin(angle/2.);
 
-    fA = cos(angle/2.);
-    fB = naxis.x();
-    fC = naxis.y();
-    fD = naxis.z();
+    fQ[0] = cos(angle/2.);
+    fQ[1] = naxis.x();
+    fQ[2] = naxis.y();
+    fQ[3] = naxis.z();
 }
 
 Rotation operator*(const Rotation& r1, const Rotation& r2)
@@ -38,7 +38,9 @@ Vector3 operator*(const Rotation& r, const Vector3& v)
     return Vector3(x,y,z);
 }
 
-void RotateGL(const Rotation& r)
+namespace GL {
+
+void Rotate(const Rotation& r)
 {
     double mat[4][4];
     double a = r.a(), b = r.b(), c = r.c(), d = r.d();
@@ -66,3 +68,6 @@ void RotateGL(const Rotation& r)
     
     glMultMatrixd(&mat[0][0]);
 }
+
+} // end namespace GL
+

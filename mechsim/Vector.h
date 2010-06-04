@@ -2,6 +2,7 @@
 #define __VECTOR_H__
 #include <cmath>
 #include <iostream>
+#include <GL/gl.h>
 #include <ode/ode.h>
 
 template<typename _Scalar_T>
@@ -45,6 +46,11 @@ class _Vector3
         return *this;
     }
     
+    _Vector3<_Scalar_T> operator-() const
+    {
+        return _Vector3<_Scalar_T>(-x(), -y(), -z());
+    }
+    
     _Vector3<_Scalar_T>& operator-=(const _Vector3<_Scalar_T>& w)
     {
         fC[0] -= w.x();
@@ -77,7 +83,7 @@ class _Vector3
         return ((x() == w.x()) && (y() == w.y()) && (z() == w.z()));
     }
     
-    _Vector3<_Scalar_T> norm()
+    _Vector3<_Scalar_T> norm() const
     {
         return ((*this) / mag());
     }
@@ -155,6 +161,13 @@ namespace Vector {
     const Vector3 eY = Vector3(0., 1., 0.);
     const Vector3 eZ = Vector3(0., 0., 1.);
 } // end namespace Vector
+
+namespace GL {
+    inline void Translate(const Vector3& v)
+        { glTranslated(v.x(), v.y(), v.z()); }
+    inline void Translate(const Vector3f& v)
+        { glTranslatef(v.x(), v.y(), v.z()); }
+} // end namespace GL
 
 const double DEG2RAD = M_PI / 180;
 const double RAD2DEG = 180. / M_PI;

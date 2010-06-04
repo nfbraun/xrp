@@ -2,19 +2,41 @@
 #define __MCGEER_H__
 
 #include "Vector.h"
+#include "Rotation.h"
 #include "CachedSimulation.h"
 #include <ode/ode.h>
 
+class McGeer;
+
+class LegState {
+  public:
+    Vector3  fHPos;
+    Vector3  fTPos, fSPos;
+    Rotation fTRot, fSRot;
+    
+    inline Vector3  thighCoG() const   { return fTPos; }
+    inline Rotation thighRot() const   { return fTRot; }
+    inline Vector3  shankCoG() const   { return fSPos; }
+    inline Rotation shankRot() const   { return fSRot; }
+    
+    double thighAng()      const;
+    Vector3 kneePos()      const;
+    double shankAng()      const;
+    Vector3 footCtr()      const;
+    double footClearance() const;
+};
+
 class MGState: public SimulationState {
   public:
+    McGeer* fParent;
     double fT;
     void Draw() const;
 //    Vector3 GetObjectPos() const { return fBPos; }
 
-    double fPhiLT, fPhiLS, fPhiRT, fPhiRS;
+    LegState fLLeg, fRLeg;
 
   private:
-    void DrawLeg(double t, double s) const;
+    void DrawLeg(Vector3 thighPos, Rotation thighRot, Vector3 shankPos, Rotation shankRot) const;
     void DrawSlide() const;
     
     static const double DISP_LEGDIST;
@@ -33,23 +55,24 @@ class McGeer: public CachedSimulation<MGState> {
     ~McGeer();
     
     double GetTimestep() { return 1./STEP_PER_SEC; }
-    int GetDefaultEndTime() { return 60 * STEP_PER_SEC; }
+    int GetDefaultEndTime() { return 10 * STEP_PER_SEC; }
     
     const char* GetTitle() { return TITLE; }
     
     void Advance();
     MGState GetCurrentState();
     
-    void InitLeg(dBodyID& thigh, dBodyID& shank, double y, double iniPhiT, double iniPhiS);
+    void InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, double y, double iniPhiT, double iniPhiS);
+    void Collide(dGeomID g1, dGeomID g2);
     
     dWorldID fWorld;
-    dSpaceID fSpace;
     dJointGroupID fContactGroup;
     
+    dBodyID fHip;
     dBodyID fLeftThigh, fLeftShank;
     dBodyID fRightThigh, fRightShank;
 
-    dGeomID fFloorG;
+    dGeomID fFloorG, fLeftFootG, fRightFootG;
     
     static const int STEP_PER_SEC;
     static const int INT_PER_STEP;
