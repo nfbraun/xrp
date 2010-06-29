@@ -34,7 +34,7 @@ GLWidget::GLWidget(Simulation* sim, QWidget* parent, bool paused)
       fCamPos(0., 0., 0.),
       fTheta(PI_UNITS/2), fPhi(3*PI_UNITS/2), fRoll(0.),
       fX(0.), fY(0.), fDist(DEFAULT_CAM_DIST),
-      fCenterOffset(Vector::Null),
+      fCenterOffset(Vector3::Null),
       fT(0),
       fPaused(paused),
       fTrackObject(true), fEnableRoll(false),
@@ -440,16 +440,16 @@ void GLWidget::drawCenter()
     
     glBegin(GL_LINES);
     glColor3fv(X_AXIS_COLOR);
-    glVertex3dv(fCenter - AXIS_LENGTH * Vector::eX);
-    glVertex3dv(fCenter + AXIS_LENGTH * Vector::eX);
+    glVertex3dv(fCenter - AXIS_LENGTH * Vector3::eX);
+    glVertex3dv(fCenter + AXIS_LENGTH * Vector3::eX);
 
     glColor3fv(Y_AXIS_COLOR);
-    glVertex3dv(fCenter - AXIS_LENGTH * Vector::eY);
-    glVertex3dv(fCenter + AXIS_LENGTH * Vector::eY);
+    glVertex3dv(fCenter - AXIS_LENGTH * Vector3::eY);
+    glVertex3dv(fCenter + AXIS_LENGTH * Vector3::eY);
 
     glColor3fv(Z_AXIS_COLOR);
-    glVertex3dv(fCenter - AXIS_LENGTH * Vector::eZ);
-    glVertex3dv(fCenter + AXIS_LENGTH * Vector::eZ);
+    glVertex3dv(fCenter - AXIS_LENGTH * Vector3::eZ);
+    glVertex3dv(fCenter + AXIS_LENGTH * Vector3::eZ);
     glEnd();
     
     glEnable(GL_LIGHTING);

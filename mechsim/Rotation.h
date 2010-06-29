@@ -2,6 +2,7 @@
 #define __ROTATION_H__
 
 #include "Vector.h"
+#include "Matrix.h"
 
 class Rotation;
 Rotation operator*(const Rotation& r1, const Rotation& r2);
@@ -30,6 +31,8 @@ class Rotation
     
     Rotation& operator*=(const Rotation& r)
       { *this = *this * r;  return *this; }
+    
+    Matrix33 mat() const;
     
     static const Rotation Unit;
 

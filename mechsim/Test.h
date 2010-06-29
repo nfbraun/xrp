@@ -12,8 +12,10 @@ class TestState: public SimulationState {
     void Draw() const;
 //    Vector3 GetObjectPos() const { return fBPos; }
 
-    Vector3  fPos;
+    Vector3  fCoG, fPos;
+    Vector3  fVel, fOmega;
     Rotation fRot;
+    double fPhi, fHeight;
 
   private:
     void DrawSlide() const;

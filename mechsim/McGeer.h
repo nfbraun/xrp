@@ -13,11 +13,17 @@ class LegState {
     Vector3  fHPos;
     Vector3  fTPos, fSPos;
     Rotation fTRot, fSRot;
+    Vector3  fTVel, fSVel;
+    Vector3  fTOme, fSOme;
     
+    inline Vector3  hipCoG()   const   { return fHPos; }
     inline Vector3  thighCoG() const   { return fTPos; }
     inline Rotation thighRot() const   { return fTRot; }
     inline Vector3  shankCoG() const   { return fSPos; }
     inline Rotation shankRot() const   { return fSRot; }
+    
+    inline double omegaT()     const   { return fTOme.y(); }
+    inline double omegaS()     const   { return fSOme.y(); }
     
     double thighAng()      const;
     Vector3 kneePos()      const;
@@ -62,7 +68,7 @@ class McGeer: public CachedSimulation<MGState> {
     void Advance();
     MGState GetCurrentState();
     
-    void InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, double y, double iniPhiT, double iniPhiS);
+    void InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, Vector3 hipPos, double iniPhiT, double iniPhiS);
     void Collide(dGeomID g1, dGeomID g2);
     
     dWorldID fWorld;
@@ -94,11 +100,15 @@ class McGeer: public CachedSimulation<MGState> {
     static const double ALPHA_S;
     static const double R;
     static const double EPS_K;
+    static const double KNEE_TO_FOOTCTR;
+    static const double HIP_TO_FOOTCTR;
+    static const double EPS_T;
     
-    static const double INI_PHI_LT;
-    static const double INI_PHI_LS;
-    static const double INI_PHI_RT;
-    static const double INI_PHI_RS;
+    static const double M_H;
+    static const double THETA_C;
+    static const double OMEGA_C;
+    static const double OMEGA_FT;
+    static const double OMEGA_FS;
 };
 
 #endif

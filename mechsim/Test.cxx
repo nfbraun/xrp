@@ -8,7 +8,7 @@ const int TestSim::INT_PER_STEP = 16;   // Integration intervals per timestep
 const char TestSim::TITLE[] = "Moment of inertia test";
 
 // ** System parameters **
-const double TestSim::GAMMA   = 0;   // Floor slope
+const double TestSim::GAMMA   = 0.1;   // Floor slope
 const double TestSim::R = .5;
 const double TestSim::FLOOR_DIST = R;
 
@@ -68,6 +68,9 @@ void TestState::DrawSlide() const
 
 TestSim::TestSim()
 {
+    const double d = 0.4;
+    const double phi0 = 0.;
+    
     dMass mass;
     
     dInitODE();
@@ -78,13 +81,13 @@ TestSim::TestSim()
     fFloorG = dCreatePlane(0, sin(GAMMA), 0., cos(GAMMA), -FLOOR_DIST);
     
     fBody = dBodyCreate(fWorld);
-    dBodySetPosition(fBody, 0., 0., 0.);
+    dBodySetPosition(fBody, d*sin(phi0), 0., d*cos(phi0));
     dMassSetSphereTotal(&mass, 1., 1.);
     dBodySetMass(fBody, &mass);
     
     fBodyG = dCreateSphere(0, R);
     dGeomSetBody(fBodyG, fBody);
-    dGeomSetOffsetPosition(fBodyG, -.4, 0., 0.);
+    dGeomSetOffsetPosition(fBodyG, -d*sin(phi0), 0., -d*cos(phi0));
     
     // dBodySetLinearVel(fBody, 0.1, 0.0, 0.0);
     
@@ -125,10 +128,18 @@ void TestSim::Advance()
 TestState TestSim::GetCurrentState()
 {
     TestState state;
+    const Vector3 par(cos(TestSim::GAMMA), 0., -sin(TestSim::GAMMA));
+    const Vector3 nor(sin(TestSim::GAMMA), 0.,  cos(TestSim::GAMMA));
     
     state.fRot = Rotation::FromQuatArray(dBodyGetQuaternion(fBody));
+    state.fCoG = Vector3(dBodyGetPosition(fBody));
+    state.fVel = Vector3(dBodyGetLinearVel(fBody));
+    state.fOmega = Vector3(dBodyGetAngularVel(fBody));
+    
     state.fPos = Vector3(dBodyGetPosition(fBody))
-            + state.fRot*Vector3(-.4, 0., 0.);
+            + state.fRot * dGeomGetOffsetPosition(fBodyG);
+    state.fPhi = Vector::dot(state.fPos, par) / TestSim::R;
+    state.fHeight = Vector::dot(state.fPos, nor);
     
     return state;
 }

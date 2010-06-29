@@ -1,19 +1,29 @@
 #include <iostream>
 #include <cmath>
-#include "Test.h"
+#include "McGeer.h"
 
 int main()
 {
-    TestSim sim;
+    McGeer sim;
     
-    for(int t=0; t<sim.GetDefaultEndTime(); t++) {
-        const TestState* state = sim.GetState(t);
-        // for definition compatible with lagrange.c
-        const double phi = -(state->fPos.x() + .4)/TestSim::R + M_PI/2.;
+    for(int t=0; t<4*sim.GetDefaultEndTime(); t++) {
+        const MGState* state = sim.GetState(t);
+        
         std::cout << t*sim.GetTimestep() << " ";
-        std::cout << phi;
+        std::cout << state->fLLeg.thighAng() - McGeer::EPS_T << " ";
+        std::cout << state->fLLeg.shankAng() - McGeer::EPS_T << " ";
+        std::cout << state->fRLeg.thighAng() - McGeer::EPS_T << " ";
+        std::cout << state->fRLeg.shankAng() - McGeer::EPS_T << " ";
+        /* std::cout << state->fLLeg.omegaT() << " ";
+        std::cout << state->fLLeg.omegaS() << " ";
+        std::cout << state->fRLeg.omegaT() << " ";
+        std::cout << state->fRLeg.omegaS() << " "; */
+        std::cout << state->fLLeg.footClearance() << " ";
+        //std::cout << state->fRLeg.footClearance() << " ";
+        
         std::cout << std::endl;
     }
     
     return 0;
 }
+

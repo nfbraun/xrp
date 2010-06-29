@@ -38,6 +38,25 @@ Vector3 operator*(const Rotation& r, const Vector3& v)
     return Vector3(x,y,z);
 }
 
+Matrix33 Rotation::mat() const
+{
+    Matrix33 m;
+    
+    m(0,0) = 1. - 2.*c()*c() - 2.*d()*d();
+    m(0,1) = 2.*b()*c() - 2.*a()*d();
+    m(0,2) = 2.*b()*d() + 2.*a()*c();
+    
+    m(1,0) = 2.*b()*c() + 2.*a()*d();
+    m(1,1) = 1. - 2.*b()*b() - 2.*d()*d();
+    m(1,2) = 2.*c()*d() - 2.*a()*b();
+    
+    m(2,0) = 2.*b()*d() - 2.*a()*c();
+    m(2,1) = 2.*c()*d() + 2.*a()*b();
+    m(2,2) = 1. - 2.*b()*b() - 2.*c()*c();
+    
+    return m;
+}
+
 namespace GL {
 
 void Rotate(const Rotation& r)
@@ -46,19 +65,19 @@ void Rotate(const Rotation& r)
     double a = r.a(), b = r.b(), c = r.c(), d = r.d();
     
     // see http://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
-    mat[0][0] = a*a + b*b - c*c - d*d;
+    mat[0][0] = 1. - 2.*c*c - 2.*d*d;
     mat[0][1] = 2.*b*c - 2.*a*d;
     mat[0][2] = 2.*b*d + 2.*a*c;
     mat[0][3] = 0.;
     
     mat[1][0] = 2.*b*c + 2.*a*d;
-    mat[1][1] = a*a - b*b + c*c - d*d;
+    mat[1][1] = 1. - 2.*b*b - 2.*d*d;
     mat[1][2] = 2.*c*d - 2.*a*b;
     mat[1][3] = 0.;
     
     mat[2][0] = 2.*b*d - 2.*a*c;
     mat[2][1] = 2.*c*d + 2.*a*b;
-    mat[2][2] = a*a - b*b - c*c + d*d;
+    mat[2][2] = 1. - 2.*b*b - 2.*c*c;
     mat[2][3] = 0.;
     
     mat[3][0] = 0.;

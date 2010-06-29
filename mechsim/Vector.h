@@ -1,5 +1,6 @@
 #ifndef __VECTOR_H__
 #define __VECTOR_H__
+#include <limits>
 #include <cmath>
 #include <iostream>
 #include <GL/gl.h>
@@ -18,6 +19,24 @@ class _Vector3
        { fC[0] = c[0]; fC[1] = c[1]; fC[2] = c[2]; }
     _Vector3(const long double* c)
        { fC[0] = c[0]; fC[1] = c[1]; fC[2] = c[2]; }
+    
+    static const unsigned int SIZE = 3;
+    static unsigned int size() { return SIZE; }
+    
+    _Scalar_T  operator()(unsigned int i) const { return fC[i]; }
+    _Scalar_T& operator()(unsigned int i)       { return fC[i]; }
+    
+    _Scalar_T  at(unsigned int i) const {
+        if(i >= size())
+            std::numeric_limits<_Scalar_T>::quiet_NaN();
+        return (*this)(i);
+    }
+    
+    _Scalar_T& at(unsigned int i) {
+        if(i >= size())
+            std::numeric_limits<_Scalar_T>::quiet_NaN();
+        return (*this)(i);
+    }
     
     operator const _Scalar_T*() const { return fC; }
     
@@ -88,9 +107,26 @@ class _Vector3
         return ((*this) / mag());
     }
     
+    static const _Vector3<_Scalar_T> Null;
+    static const _Vector3<_Scalar_T> eX;
+    static const _Vector3<_Scalar_T> eY;
+    static const _Vector3<_Scalar_T> eZ;
+    
   private:    
-    _Scalar_T fC[3];
+    _Scalar_T fC[SIZE];
 };
+
+template<typename _Scalar_T>
+const _Vector3<_Scalar_T> _Vector3<_Scalar_T>::Null = _Vector3<_Scalar_T>(0., 0., 0.);
+
+template<typename _Scalar_T>
+const _Vector3<_Scalar_T> _Vector3<_Scalar_T>::eX = _Vector3<_Scalar_T>(1., 0., 0.);
+
+template<typename _Scalar_T>
+const _Vector3<_Scalar_T> _Vector3<_Scalar_T>::eY = _Vector3<_Scalar_T>(0., 1., 0.);
+
+template<typename _Scalar_T>
+const _Vector3<_Scalar_T> _Vector3<_Scalar_T>::eZ = _Vector3<_Scalar_T>(0., 0., 1.);
 
 template<typename _Scalar_T>
 _Vector3<_Scalar_T> operator+(const _Vector3<_Scalar_T>& v, const _Vector3<_Scalar_T>& w)
@@ -155,11 +191,6 @@ namespace Vector {
                               v.x()*w.y() - v.y()*w.x());
         return u;
     }
-    
-    const Vector3 Null = Vector3(0., 0., 0.);
-    const Vector3 eX = Vector3(1., 0., 0.);
-    const Vector3 eY = Vector3(0., 1., 0.);
-    const Vector3 eZ = Vector3(0., 0., 1.);
 } // end namespace Vector
 
 namespace GL {
@@ -168,6 +199,13 @@ namespace GL {
     inline void Translate(const Vector3f& v)
         { glTranslatef(v.x(), v.y(), v.z()); }
 } // end namespace GL
+
+namespace ODE {
+    inline void BodySetLinearVel(dBodyID id, const Vector3& v)
+        { dBodySetLinearVel(id, v.x(), v.y(), v.z()); }
+    inline void BodySetAngularVel(dBodyID id, const Vector3& o)
+        { dBodySetAngularVel(id, o.x(), o.y(), o.z()); }
+} // end namespace ODE
 
 const double DEG2RAD = M_PI / 180;
 const double RAD2DEG = 180. / M_PI;

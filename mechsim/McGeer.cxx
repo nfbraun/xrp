@@ -1,4 +1,5 @@
 #include "McGeer.h"
+#include "RotMotion.h"
 #include "GLWidget.h"
 #include <GL/gl.h>
 #include <cmath>
@@ -28,12 +29,20 @@ const double McGeer::ALPHA_S = atan2(McGeer::W_S, McGeer::C_S);
 const double McGeer::R       = 0.2;
 const double McGeer::EPS_K   = 0.2;
 
-// ** INITIAL PARAMETERS **
-const double McGeer::INI_PHI_LT = -0.35;
-const double McGeer::INI_PHI_LS = -0.35;
-const double McGeer::INI_PHI_RT =  0.35;
-const double McGeer::INI_PHI_RS =  0.35;
+const double McGeer::M_H     = 1. - 2.*McGeer::M_T - 2.*McGeer::M_S;
+const double McGeer::KNEE_TO_FOOTCTR = McGeer::L_S - McGeer::R;
+const double McGeer::HIP_TO_FOOTCTR = \
+   sqrt(McGeer::L_T*McGeer::L_T + (McGeer::KNEE_TO_FOOTCTR)*(McGeer::KNEE_TO_FOOTCTR)
+        + 2 * McGeer::L_T * McGeer::KNEE_TO_FOOTCTR * cos(McGeer::EPS_K));
+// with leg fully streched!
+const double McGeer::EPS_T = \
+   asin(McGeer::KNEE_TO_FOOTCTR/McGeer::HIP_TO_FOOTCTR*sin(EPS_K));
 
+// ** INITIAL PARAMETERS ** (manually tuned for limit cycle)
+const double McGeer::THETA_C  =  0.35;
+const double McGeer::OMEGA_C  =  0.362;
+const double McGeer::OMEGA_FT = -0.085;
+const double McGeer::OMEGA_FS =  0.74;
 
 // ** Display parameters (these do not enter into the simulation) **
 // Distance between the two legs
@@ -55,7 +64,7 @@ double LegState::thighAng() const
 Vector3 LegState::kneePos() const
 {
     return Vector3(-McGeer::L_T * sin(thighAng() + McGeer::GAMMA),
-                    fTPos.y(),
+                    0.,
                    -McGeer::L_T * cos(thighAng() + McGeer::GAMMA)) + fHPos;
 }
 
@@ -68,12 +77,14 @@ double LegState::shankAng() const
 
 Vector3 LegState::footCtr() const
 {
-    return Vector::Null;
+    double alpha = shankAng() + McGeer::GAMMA - McGeer::EPS_K;
+    return kneePos() + McGeer::KNEE_TO_FOOTCTR * Vector3(-sin(alpha), 0., -cos(alpha));
 }
 
 double LegState::footClearance() const
 {
-    return 0.0;
+    const Vector3 normal = Vector3(sin(McGeer::GAMMA), 0., cos(McGeer::GAMMA));
+    return Vector::dot(footCtr(), normal) + McGeer::FLOOR_DIST - McGeer::R;
 }
 
 
@@ -87,6 +98,8 @@ void MGState::Draw() const
     
     // GLWidget::drawCheckerboardFloor();
     // GLWidget::drawDiscSegment(1., 1., 1.);
+    
+    // GLWidget::drawSphere(.05, fRLeg.footCtr());
     
     glMatrixMode(GL_MODELVIEW);
     
@@ -194,36 +207,68 @@ McGeer::McGeer()
     dWorldSetGravity(fWorld, 0., 0., -1.); //-9.81);
     
     fFloorG = dCreatePlane(0, sin(GAMMA), 0., cos(GAMMA), -FLOOR_DIST);
-    // fFloorG = dCreatePlane(0, 0., 0., 1., -FLOOR_DIST);
+    
+    const double h = HIP_TO_FOOTCTR * cos(THETA_C);
+    const Vector3 hipPos = (h-FLOOR_DIST+R) * Vector3(sin(GAMMA), 0., cos(GAMMA));
     
     fHip = dBodyCreate(fWorld);
-    dBodySetPosition(fHip, 0., 0., 0.);
-    dMassSetSphereTotal(&mass, 1.-2*M_T*2.*M_S, .01);
+    dBodySetPosition(fHip, hipPos.x(), hipPos.y(), hipPos.z());
+    dMassSetSphereTotal(&mass, M_H, .01);
     dBodySetMass(fHip, &mass);
     
-    InitLeg(fLeftThigh, fLeftShank, fLeftFootG, .1, INI_PHI_LT, INI_PHI_LS);
-    InitLeg(fRightThigh, fRightShank, fRightFootG, -.1, INI_PHI_RT, INI_PHI_RS);
+    const double iniPhiLT = THETA_C + EPS_T + GAMMA + ALPHA_T;
+    const double iniPhiLS = iniPhiLT - ALPHA_T - EPS_K + ALPHA_S;
+    const double iniPhiRT = -THETA_C + EPS_T + GAMMA + ALPHA_T;
+    const double iniPhiRS = iniPhiRT - ALPHA_T - EPS_K + ALPHA_S;
     
-    const double v = 0.44;
-    dBodySetLinearVel(fHip, v, 0., 0.);
-    
-    /* dBodySetLinearVel(fLeftThigh,  v*cos(GAMMA), 0., -v*sin(GAMMA));
-    dBodySetLinearVel(fLeftShank,  v*cos(GAMMA), 0., -v*sin(GAMMA));
-    dBodySetLinearVel(fRightThigh, v*cos(GAMMA), 0., -v*sin(GAMMA));
-    dBodySetLinearVel(fRightShank, v*cos(GAMMA), 0., -v*sin(GAMMA)); */
-    
+    InitLeg(fLeftThigh, fLeftShank, fLeftFootG, hipPos,
+             iniPhiLT, iniPhiLS);
+    InitLeg(fRightThigh, fRightShank, fRightFootG, hipPos,
+             iniPhiRT, iniPhiRS);
     
     dJointID j1 = dJointCreateHinge(fWorld, 0);
     dJointAttach(j1, fLeftThigh, fHip);
-    dJointSetHingeAnchor(j1, 0., 0., 0.);
+    dJointSetHingeAnchor(j1, hipPos.x(), hipPos.y(), hipPos.z());
     dJointSetHingeAxis(j1, 0., 1., 0.);
     
     dJointID j2 = dJointCreateHinge(fWorld, 0);
     dJointAttach(j2, fRightThigh, fHip);
-    dJointSetHingeAnchor(j2, 0., 0., 0.);
+    dJointSetHingeAnchor(j2, hipPos.x(), hipPos.y(), hipPos.z());
     dJointSetHingeAxis(j2, 0., 1., 0.);
     
     fContactGroup = dJointGroupCreate(0);
+    
+    const MGState state = GetCurrentState();
+    
+    const Vector3 omega_c =  OMEGA_C  * Vector3::eY;
+    const Vector3 omega_ft = OMEGA_FT * Vector3::eY;
+    const Vector3 omega_fs = OMEGA_FS * Vector3::eY;
+    
+    // Motion along the slide
+    RotMotion mot = 
+       RotMotion::Shift(omega_c.y() * R * Vector3(cos(GAMMA), 0., -sin(GAMMA)));
+    // Rotation around foot center
+    mot = combine(mot, RotMotion::Rotation(state.fRLeg.footCtr(), omega_c));
+    
+    ODE::BodySetLinearVel(fHip, mot.v(state.fRLeg.fHPos));
+    ODE::BodySetAngularVel(fHip, mot.omega());
+    
+    // Right leg is initial stance leg
+    ODE::BodySetLinearVel(fRightThigh, mot.v(state.fRLeg.thighCoG()));
+    ODE::BodySetAngularVel(fRightThigh, mot.omega());
+    ODE::BodySetLinearVel(fRightShank, mot.v(state.fRLeg.shankCoG()));
+    ODE::BodySetAngularVel(fRightShank, mot.omega());
+    
+    // Left leg is initial swing leg
+    mot = combine(mot, RotMotion::Rotation(state.fRLeg.fHPos,
+                                           omega_ft - omega_c));
+    ODE::BodySetLinearVel(fLeftThigh, mot.v(state.fLLeg.thighCoG()));
+    ODE::BodySetAngularVel(fLeftThigh, mot.omega());
+    
+    mot = combine(mot, RotMotion::Rotation(state.fLLeg.kneePos(),
+                                           omega_fs - omega_ft));
+    ODE::BodySetLinearVel(fLeftShank, mot.v(state.fLLeg.shankCoG()));
+    ODE::BodySetAngularVel(fLeftShank, mot.omega());
 }
 
 McGeer::~McGeer()
@@ -232,7 +277,8 @@ McGeer::~McGeer()
     dJointGroupDestroy(fContactGroup);
 }
 
-void McGeer::InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, double y, double iniPhiT, double iniPhiS)
+// iniPhiT and iniPhiS are to the centers of gravity, relative to the z axis
+void McGeer::InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, Vector3 hipPos, double iniPhiT, double iniPhiS)
 {
     dMass mass;
 
@@ -240,27 +286,27 @@ void McGeer::InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, double y, d
     // the inertia tensor effectively reduces to a single number.
     thigh = dBodyCreate(fWorld);
     const double R_T = sqrt(C_T*C_T + W_T*W_T);
-    dBodySetPosition(thigh, -R_T * sin(iniPhiT),
-                             y,
-                            -R_T * cos(iniPhiT));
-    dBodySetQuaternion(thigh, Rotation(iniPhiT, Vector::eY).quatarray());
-    dMassSetParameters(&mass, M_T, 0., 0., 0., 1., M_T * R_GYR_T, 1., 0., 0., 0.);
+    dBodySetPosition(thigh, -R_T * sin(iniPhiT) + hipPos.x(),
+                             hipPos.y(),
+                            -R_T * cos(iniPhiT) + hipPos.z());
+    dBodySetQuaternion(thigh, Rotation(iniPhiT, Vector3::eY).quatarray());
+    dMassSetParameters(&mass, M_T, 0., 0., 0., 1., M_T * R_GYR_T * R_GYR_T, 1., 0., 0., 0.);
     dBodySetMass(thigh, &mass);
     
     shank = dBodyCreate(fWorld);
     const double R_S = sqrt(C_S*C_S + W_S*W_S);
-    Vector3 kneePos = Vector3(-L_T * sin(iniPhiT),
-                               y,
-                              -L_T * cos(iniPhiT));
+    Vector3 kneePos = Vector3(-L_T * sin(iniPhiT-ALPHA_T) + hipPos.x(),
+                               hipPos.y(),
+                              -L_T * cos(iniPhiT-ALPHA_T) + hipPos.z());
     Vector3 shankCoGOffset = Vector3(-R_S * sin(iniPhiS),
                                       0,
                                      -R_S * cos(iniPhiS));
     Vector3 shankCoG = kneePos + shankCoGOffset;
 
     dBodySetPosition(shank, shankCoG.x(), shankCoG.y(), shankCoG.z());
-    Rotation shankRot(iniPhiS, Vector::eY);
+    Rotation shankRot(iniPhiS, Vector3::eY);
     dBodySetQuaternion(shank, shankRot.quatarray());
-    dMassSetParameters(&mass, M_S, 0., 0., 0., 1., M_S * R_GYR_S, 1., 0., 0., 0.);
+    dMassSetParameters(&mass, M_S, 0., 0., 0., 1., M_S * R_GYR_S * R_GYR_S, 1., 0., 0., 0.);
     dBodySetMass(shank, &mass);
     
     dJointID j2 = dJointCreateHinge(fWorld, 0);
@@ -272,12 +318,14 @@ void McGeer::InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, double y, d
     Vector3 footCtrOffset = Vector3(-(L_S-R) * sin(iniPhiS-ALPHA_S),
                                      0,
                                     -(L_S-R) * cos(iniPhiS-ALPHA_S));
+    
     Vector3 footCtr = shankRot.conj() * (footCtrOffset - shankCoGOffset);
     
     footG = dCreateCapsule(0, R, 10.);
     dGeomSetBody(footG, shank);
     dGeomSetOffsetPosition(footG, footCtr.x(), footCtr.y(), footCtr.z());
-    dGeomSetOffsetQuaternion(footG, Rotation(M_PI/2., Vector::eX).quatarray());
+    
+    dGeomSetOffsetQuaternion(footG, Rotation(M_PI/2., Vector3::eX).quatarray());
 }
 
 void McGeer::Collide(dGeomID g1, dGeomID g2)
@@ -320,34 +368,19 @@ MGState McGeer::GetCurrentState()
     state.fLLeg.fTRot = Rotation::FromQuatArray(dBodyGetQuaternion(fLeftThigh));
     state.fLLeg.fSPos = Vector3(dBodyGetPosition(fLeftShank));
     state.fLLeg.fSRot = Rotation::FromQuatArray(dBodyGetQuaternion(fLeftShank));
+    state.fLLeg.fTVel = Vector3(dBodyGetLinearVel(fLeftThigh));
+    state.fLLeg.fTOme = Vector3(dBodyGetAngularVel(fLeftThigh));
+    state.fLLeg.fSVel = Vector3(dBodyGetLinearVel(fLeftShank));
+    state.fLLeg.fSOme = Vector3(dBodyGetAngularVel(fLeftShank));
     
     state.fRLeg.fTPos = Vector3(dBodyGetPosition(fRightThigh));
     state.fRLeg.fTRot = Rotation::FromQuatArray(dBodyGetQuaternion(fRightThigh));
     state.fRLeg.fSPos = Vector3(dBodyGetPosition(fRightShank));
     state.fRLeg.fSRot = Rotation::FromQuatArray(dBodyGetQuaternion(fRightShank));
+    state.fRLeg.fTVel = Vector3(dBodyGetLinearVel(fRightThigh));
+    state.fRLeg.fTOme = Vector3(dBodyGetAngularVel(fRightThigh));
+    state.fRLeg.fSVel = Vector3(dBodyGetLinearVel(fRightShank));
+    state.fRLeg.fSOme = Vector3(dBodyGetAngularVel(fRightShank));
     
-    /* const dReal *pt, *ps;
-    
-    state.fPhiRT = 0.;
-    state.fPhiRS = 0.;
-    
-    // left leg
-    pt = dBodyGetPosition(fLeftThigh);
-    state.fPhiLT = atan2(-pt[0], -pt[2]) - ALPHA_T;
-    
-    ps = dBodyGetPosition(fLeftShank);
-    state.fPhiLS = atan2(-ps[0] - L_T * sin(state.fPhiLT),
-                         -ps[2] - L_T * cos(state.fPhiLT)) + EPS_K - ALPHA_S;
-    
-    state.pos = Vector3(ps[0], ps[1], ps[2]);
-    
-    // right leg
-    pt = dBodyGetPosition(fRightThigh);
-    state.fPhiRT = atan2(-pt[0], -pt[2]) - ALPHA_T;
-    
-    ps = dBodyGetPosition(fRightShank);
-    state.fPhiRS = atan2(-ps[0] - L_T * sin(state.fPhiRT),
-                         -ps[2] - L_T * cos(state.fPhiRT)) + EPS_K - ALPHA_S;
-    */
     return state;
 }

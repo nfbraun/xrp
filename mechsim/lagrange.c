@@ -13,6 +13,7 @@ typedef struct {
     double R;
     double d;
     double I;
+    double gamma;
     double g;
 } sysparam_t;
 
@@ -23,15 +24,16 @@ int func(double t, const double y[], double f[], void *_p)
     const double R = p->R;
     const double d = p->d;
     const double I = p->I;
+    const double gamma = p->gamma;
     const double g = p->g;
     
     const double phidot = y[0];
     const double phi    = y[1];
     
-    const double M = m*(R*R+d*d) + I - 2*m*d*R*cos(phi);
+    const double M = m*(R*R+d*d) + I + 2*m*d*R*cos(phi-gamma);
     
-    double u = m*d*R*sin(phi)*phidot*phidot + m*g*d*sin(phi);
-    f[0] = -u / M;   // phidotdot
+    double u = m*d*R*sin(phi-gamma)*phidot*phidot + m*g*d*sin(phi) + m*g*R*sin(gamma);
+    f[0] = u / M;   // phidotdot
     f[1] = phidot;
     
     return GSL_SUCCESS;
@@ -53,8 +55,13 @@ int func(double t, const double y[], double f[], void *_p)
 
 int main()
 {
-    sysparam_t par = { .m = 1., .R = .5, .d = .4, .I = .4, .g = 9.81 };
-
+    sysparam_t par = { .m = 0.838, .R = 0.2,
+                       .d = 0.720687,
+                       .I = 0.0545087,
+                       .gamma = 0.0456, .g = 1. };
+    const double phi0 = -0.309408;
+    const double omega0 = 0.30;
+    
     const gsl_odeiv_step_type *T = gsl_odeiv_step_rkf45;
     
     gsl_odeiv_step *s = gsl_odeiv_step_alloc(T, 2);
@@ -67,7 +74,7 @@ int main()
     const double tstep = 1./16.;
     double h = 1e-6;
     //            phidot, phi
-    double y[2] = {0.0, M_PI/2.};
+    double y[2] = {omega0, phi0};
     int i;
     
     for(i=0; i<(16*10); ++i) {
