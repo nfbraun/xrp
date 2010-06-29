@@ -6,8 +6,8 @@
 // Alternate computation of right foot center; does not require leg to be intact
 Vector3 GetFootCtr(const MGState* state)
 {
-    return state->fRLeg.fSPos + state->fRLeg.fSRot *
-                Vector3(dGeomGetOffsetPosition(state->fParent->fRightFootG));
+    return state->fOLeg.fSPos + state->fOLeg.fSRot *
+                Vector3(dGeomGetOffsetPosition(state->fParent->fOuterFootG));
 }
 
 // Function for comparing single leg rolloff to Lagrangian solution
@@ -21,10 +21,10 @@ int main(int argc, char**)
     const MGState* state0 = sim.GetState(0);
     
     SolidBody hip = SolidBody::SphereTotal(McGeer::M_H, .01, 
-        state0->fRLeg.hipCoG());
-    SolidBody thigh(McGeer::M_T, state0->fRLeg.thighCoG(),
+        state0->fOLeg.hipCoG());
+    SolidBody thigh(McGeer::M_T, state0->fOLeg.thighCoG(),
         Matrix33::Diag(1., McGeer::M_T*McGeer::R_GYR_T, 1.));
-    SolidBody shank(McGeer::M_S, state0->fRLeg.shankCoG(),
+    SolidBody shank(McGeer::M_S, state0->fOLeg.shankCoG(),
         Matrix33::Diag(1., McGeer::M_S*McGeer::R_GYR_S, 1.));
     
     SolidBody leg = combine(combine(hip, thigh), shank);
@@ -71,7 +71,7 @@ int main(int argc, char**)
             // std::cout << T << " " << Tp;
             // std::cout << T + V << " ";
             std::cout << (dist-d0)/McGeer::R + phi0 << " " << height << " ";
-            std::cout << state->fRLeg.thighAng() - state->fRLeg.shankAng();
+            std::cout << state->fOLeg.thighAng() - state->fOLeg.shankAng();
             std::cout << std::endl;
         }
     }

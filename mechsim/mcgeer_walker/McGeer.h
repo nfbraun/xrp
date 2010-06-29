@@ -37,48 +37,43 @@ class MGState: public SimulationState {
     McGeer* fParent;
     double fT;
     void Draw() const;
-//    Vector3 GetObjectPos() const { return fBPos; }
+    Vector3 GetCenter() const { return fILeg.fHPos; }
 
-    LegState fLLeg, fRLeg;
+    LegState fILeg, fOLeg;
 
   private:
     void DrawLeg(Vector3 thighPos, Rotation thighRot, Vector3 shankPos, Rotation shankRot) const;
     void DrawSlide() const;
     
-    static const double DISP_LEGDIST;
     static const double DISP_LEGWIDTH;
     static const double DISP_SLIDEWIDTH;
     static const int DISP_SLIDELEN2;
 };
 
-// void near_callback(void* data, dGeomID g1, dGeomID g2);
-
 class McGeer: public CachedSimulation<MGState> {
-//  friend void near_callback(void* data, dGeomID g1, dGeomID g2);
-
   public:
     McGeer();
     ~McGeer();
     
     double GetTimestep() { return 1./STEP_PER_SEC; }
-    int GetDefaultEndTime() { return 10 * STEP_PER_SEC; }
+    int GetDefaultEndTime() { return 60 * STEP_PER_SEC; }
     
     const char* GetTitle() { return TITLE; }
     
     void Advance();
     MGState GetCurrentState();
     
-    void InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, Vector3 hipPos, double iniPhiT, double iniPhiS);
+    void InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, Vector3 hipPos, double iniPhiT, double iniPhiS, double legDist);
     void Collide(dGeomID g1, dGeomID g2);
     
     dWorldID fWorld;
     dJointGroupID fContactGroup;
     
     dBodyID fHip;
-    dBodyID fLeftThigh, fLeftShank;
-    dBodyID fRightThigh, fRightShank;
+    dBodyID fInnerThigh, fInnerShank;
+    dBodyID fOuterThigh, fOuterShank;
 
-    dGeomID fFloorG, fLeftFootG, fRightFootG;
+    dGeomID fFloorG, fInnerFootG, fOuterFootG;
     
     static const int STEP_PER_SEC;
     static const int INT_PER_STEP;
@@ -109,6 +104,9 @@ class McGeer: public CachedSimulation<MGState> {
     static const double OMEGA_C;
     static const double OMEGA_FT;
     static const double OMEGA_FS;
+    
+    static const double INNER_LEG_DIST;
+    static const double OUTER_LEG_DIST;
 };
 
 #endif
