@@ -1,4 +1,4 @@
-#include "SimulationViewer.h"
+#include "SimulationWidget.h"
 #include <QSlider>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
@@ -7,10 +7,10 @@
 #include <QCheckBox>
 #include <QDoubleValidator>
 
-const char SimulationViewer::START[] = "▶";
-const char SimulationViewer::PAUSE[] = "❚❚";
+const char SimulationWidget::START[] = "▶";
+const char SimulationWidget::PAUSE[] = "❚❚";
 
-SimulationViewer::SimulationViewer(Simulation* sim)
+SimulationWidget::SimulationWidget(Simulation* sim)
 {
     QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
 
@@ -93,7 +93,7 @@ SimulationViewer::SimulationViewer(Simulation* sim)
     updateCamInfo();
 }
 
-QLineEdit* SimulationViewer::makeInput(QGridLayout* l, const QString& text, int row, const char* slot)
+QLineEdit* SimulationWidget::makeInput(QGridLayout* l, const QString& text, int row, const char* slot)
 {
     l->addWidget(new QLabel(text), row, 0);
     QLineEdit* e = new QLineEdit;
@@ -105,7 +105,7 @@ QLineEdit* SimulationViewer::makeInput(QGridLayout* l, const QString& text, int 
     return e;
 }
 
-void SimulationViewer::updateCamInfo()
+void SimulationWidget::updateCamInfo()
 {
     feX->setText(QString::number(fGLWidget->getCamPos().x(), 'f', 1));
     feY->setText(QString::number(fGLWidget->getCamPos().y(), 'f', 1));
@@ -119,7 +119,7 @@ void SimulationViewer::updateCamInfo()
     fecz->setText(QString::number(fGLWidget->getCenterOffset().z(), 'f', 1));
 }
 
-void SimulationViewer::setCamPos()
+void SimulationWidget::setCamPos()
 {
     fGLWidget->setCamPos(Vector3(feX->text().toDouble(),
                                  feY->text().toDouble(),
@@ -127,42 +127,42 @@ void SimulationViewer::setCamPos()
     updateCamInfo();
 }
 
-void SimulationViewer::setCamDist()
+void SimulationWidget::setCamDist()
 {
     fGLWidget->setCamDist(feDist->text().toDouble());
 }
 
-void SimulationViewer::setCamTheta()
+void SimulationWidget::setCamTheta()
 {
     fGLWidget->setCamThetaDeg(feTheta->text().toDouble());
     updateCamInfo();
 }
 
-void SimulationViewer::setCamPhi()
+void SimulationWidget::setCamPhi()
 {
     fGLWidget->setCamPhiDeg(fePhi->text().toDouble());
     updateCamInfo();
 }
 
-void SimulationViewer::setCamRoll()
+void SimulationWidget::setCamRoll()
 {
     fGLWidget->setCamRollDeg(feRoll->text().toDouble());
     updateCamInfo();
 }
 
-void SimulationViewer::setCenterOffset()
+void SimulationWidget::setCenterOffset()
 {
     fGLWidget->setCenterOffset(Vector3(fecx->text().toDouble(),
                                        fecy->text().toDouble(),
                                        fecz->text().toDouble()));
 }
 
-void SimulationViewer::setTrackObject(int state)
+void SimulationWidget::setTrackObject(int state)
 {
     fGLWidget->setTrackObject(state == Qt::Checked);
 }
 
-void SimulationViewer::setEnableRoll(int state)
+void SimulationWidget::setEnableRoll(int state)
 {
     if(state == Qt::Checked) {
         fGLWidget->setEnableRoll(true);
@@ -173,7 +173,7 @@ void SimulationViewer::setEnableRoll(int state)
     }
 }
 
-void SimulationViewer::keyPressEvent(QKeyEvent* ev)
+void SimulationWidget::keyPressEvent(QKeyEvent* ev)
 {
     if(ev->key() == Qt::Key_Space) {
         toggleSimulationRunning();
@@ -182,7 +182,7 @@ void SimulationViewer::keyPressEvent(QKeyEvent* ev)
     }
 }
 
-void SimulationViewer::toggleSimulationRunning()
+void SimulationWidget::toggleSimulationRunning()
 {
     if(fGLWidget->isPaused()) {
         fStartPauseButton->setText(tr(PAUSE));

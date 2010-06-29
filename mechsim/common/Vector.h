@@ -3,8 +3,6 @@
 #include <limits>
 #include <cmath>
 #include <iostream>
-#include <GL/gl.h>
-#include <ode/ode.h>
 
 template<typename _Scalar_T>
 class _Vector3
@@ -192,20 +190,6 @@ namespace Vector {
         return u;
     }
 } // end namespace Vector
-
-namespace GL {
-    inline void Translate(const Vector3& v)
-        { glTranslated(v.x(), v.y(), v.z()); }
-    inline void Translate(const Vector3f& v)
-        { glTranslatef(v.x(), v.y(), v.z()); }
-} // end namespace GL
-
-namespace ODE {
-    inline void BodySetLinearVel(dBodyID id, const Vector3& v)
-        { dBodySetLinearVel(id, v.x(), v.y(), v.z()); }
-    inline void BodySetAngularVel(dBodyID id, const Vector3& o)
-        { dBodySetAngularVel(id, o.x(), o.y(), o.z()); }
-} // end namespace ODE
 
 const double DEG2RAD = M_PI / 180;
 const double RAD2DEG = 180. / M_PI;

@@ -1,5 +1,5 @@
 #include "Bunny.h"
-#include "GLWidget.h"
+#include "GLHelper.h"
 #include "STLReader.h"
 #include "Vector.h"
 #include <iostream>
@@ -17,7 +17,7 @@ void BunnyState::Draw() const
     glScalef(10., 10., 10.);
     glCallList(fParent->GetBunnyList());
     glPopMatrix();
-    GLWidget::drawCheckerboardFloor();
+    GL::drawCheckerboardFloor();
 }
 
 Bunny::Bunny()

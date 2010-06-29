@@ -1,5 +1,5 @@
 #include "BallSlide.h"
-#include "GLWidget.h"
+#include "GLHelper.h"
 #include <GL/gl.h>
 
 const int BallSlide::STEP_PER_SEC = 16;
@@ -30,12 +30,12 @@ void near_callback(void* data, dGeomID g1, dGeomID g2)
 void BSState::Draw() const
 {
     glColor3f(1., 1., 0.);
-    GLWidget::drawSphere(.3, fBPos);
+    GL::drawSphere(.3, fBPos);
     
     glColor3f(0., 1., 0.);
-    GLWidget::drawODEBox(gSlideG, 3., 1., .2);
+    GL::drawODEBox(gSlideG, 3., 1., .2);
     
-    GLWidget::drawCheckerboardFloor();
+    GL::drawCheckerboardFloor();
 }
 
 BallSlide::BallSlide()

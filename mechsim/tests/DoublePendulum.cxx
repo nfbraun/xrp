@@ -1,5 +1,5 @@
 #include "DoublePendulum.h"
-#include "GLWidget.h"
+#include "GLHelper.h"
 #include <iostream>
 
 const int DoublePendulum::STEP_PER_SEC = 16;
@@ -9,11 +9,11 @@ const char DoublePendulum::TITLE[] = "Double pendulum";
 
 void DPState::Draw() const
 {
-    GLWidget::drawSphere(.2, fB1_pos);
-    GLWidget::drawSphere(.2, fB2_pos);
+    GL::drawSphere(.2, fB1_pos);
+    GL::drawSphere(.2, fB2_pos);
     
-    GLWidget::drawTube(.1, Vector::Null, fB1_pos);
-    GLWidget::drawTube(.1, fB1_pos, fB2_pos);
+    GL::drawTube(.1, Vector3::Null, fB1_pos);
+    GL::drawTube(.1, fB1_pos, fB2_pos);
 }
 
 DoublePendulum::DoublePendulum()

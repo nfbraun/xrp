@@ -1,7 +1,3 @@
-/*
-    compile with: gcc -o lagrange -lgsl -lblas lagrange.c
-*/
-
 #include <stdio.h>
 #include <math.h>
 #include <gsl/gsl_errno.h>

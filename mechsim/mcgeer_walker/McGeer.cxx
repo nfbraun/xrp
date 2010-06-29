@@ -1,6 +1,7 @@
 #include "McGeer.h"
 #include "RotMotion.h"
-#include "GLWidget.h"
+#include "GLHelper.h"
+#include "ODEHelper.h"
 #include <GL/gl.h>
 #include <cmath>
 
@@ -91,21 +92,21 @@ double LegState::footClearance() const
 void MGState::Draw() const
 {
     /* glColor3f(1., 1., 0.);
-    GLWidget::drawSphere(.3, fBPos);
+    GL::drawSphere(.3, fBPos);
     
     glColor3f(0., 1., 0.);
-    GLWidget::drawODEBox(gSlideG, 3., 1., .2); */
+    GL::drawODEBox(gSlideG, 3., 1., .2); */
     
-    // GLWidget::drawCheckerboardFloor();
-    // GLWidget::drawDiscSegment(1., 1., 1.);
+    // GL::drawCheckerboardFloor();
+    // GL::drawDiscSegment(1., 1., 1.);
     
-    // GLWidget::drawSphere(.05, fRLeg.footCtr());
+    // GL::drawSphere(.05, fRLeg.footCtr());
     
     glMatrixMode(GL_MODELVIEW);
     
     DrawSlide();
     /* Vector3 footCtr = fLSPos + fLSRot * Vector3(dGeomGetOffsetPosition(fParent->fLeftFootG));
-    GLWidget::drawSphere(McGeer::R, footCtr); */
+    GL::drawSphere(McGeer::R, footCtr); */
     
     glColor3f(1., 1., 0.);
     DrawLeg(fLLeg.fTPos, fLLeg.fTRot, fLLeg.fSPos, fLLeg.fSRot);
@@ -159,10 +160,10 @@ void MGState::DrawLeg(Vector3 thighPos, Rotation thighRot, Vector3 shankPos, Rot
     glTranslatef(0., 0.,
             sqrt(McGeer::W_T*McGeer::W_T + McGeer::C_T*McGeer::C_T));
     
-    glRotatef(McGeer::ALPHA_T*GLWidget::RAD_TO_DEG, 0., 1., 0.);
+    glRotatef(McGeer::ALPHA_T*GL::RAD_TO_DEG, 0., 1., 0.);
     glScalef(DISP_LEGWIDTH, DISP_LEGWIDTH, McGeer::L_T);
     glTranslatef(0., 0., -0.5);
-    GLWidget::drawUnitCube();
+    GL::drawUnitCube();
     glPopMatrix();
     
     // Draw shank
@@ -172,7 +173,7 @@ void MGState::DrawLeg(Vector3 thighPos, Rotation thighRot, Vector3 shankPos, Rot
     
     glTranslatef(0., 0.,
         sqrt(McGeer::W_S*McGeer::W_S + McGeer::C_S*McGeer::C_S));
-    glRotatef((McGeer::EPS_K - McGeer::ALPHA_S)*GLWidget::RAD_TO_DEG,
+    glRotatef((McGeer::EPS_K - McGeer::ALPHA_S)*GL::RAD_TO_DEG,
                 0., 1., 0.);
     
     // Foot segment opening angle
@@ -184,7 +185,7 @@ void MGState::DrawLeg(Vector3 thighPos, Rotation thighRot, Vector3 shankPos, Rot
     glPushMatrix();
     glScalef(DISP_LEGWIDTH, DISP_LEGWIDTH, h);
     glTranslatef(0., 0., -0.5);
-    GLWidget::drawUnitCube();
+    GL::drawUnitCube();
     glPopMatrix();
     
     // Draw foot
@@ -192,7 +193,7 @@ void MGState::DrawLeg(Vector3 thighPos, Rotation thighRot, Vector3 shankPos, Rot
                   0.,
                   -(McGeer::L_S-McGeer::R)*cos(McGeer::EPS_K));
     glRotatef(-90., 1., 0., 0.);
-    GLWidget::drawDiscSegment(McGeer::R, DISP_LEGWIDTH, alpha);
+    GL::drawDiscSegment(McGeer::R, DISP_LEGWIDTH, alpha);
     
     glPopMatrix();
 }

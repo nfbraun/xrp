@@ -40,8 +40,4 @@ class Rotation
     double fQ[4];
 };
 
-namespace GL {
-    void Rotate(const Rotation& r);
-} // end namespace GL
-
 #endif

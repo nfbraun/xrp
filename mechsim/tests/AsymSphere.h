@@ -6,7 +6,7 @@
 #include "CachedSimulation.h"
 #include <ode/ode.h>
 
-class TestState: public SimulationState {
+class ASState: public SimulationState {
   public:
     double fT;
     void Draw() const;
@@ -24,10 +24,10 @@ class TestState: public SimulationState {
     static const int DISP_SLIDELEN2;
 };
 
-class TestSim: public CachedSimulation<TestState> {
+class AsymSphere: public CachedSimulation<ASState> {
   public:
-    TestSim();
-    ~TestSim();
+    AsymSphere();
+    ~AsymSphere();
     
     double GetTimestep() { return 1./STEP_PER_SEC; }
     int GetDefaultEndTime() { return 10 * STEP_PER_SEC; }
@@ -35,7 +35,7 @@ class TestSim: public CachedSimulation<TestState> {
     const char* GetTitle() { return TITLE; }
     
     void Advance();
-    TestState GetCurrentState();
+    ASState GetCurrentState();
     
     void Collide(dGeomID g1, dGeomID g2);
     

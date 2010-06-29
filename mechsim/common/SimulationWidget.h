@@ -1,5 +1,5 @@
-#ifndef __SIMULATIONVIEWER_H__
-#define __SIMULATIONVIEWER_H__
+#ifndef __SIMULATIONWIDGET_H__
+#define __SIMULATIONWIDGET_H__
 
 #include <QWidget>
 #include <QKeyEvent>
@@ -12,12 +12,12 @@
 
 class QSlider;
 
-class SimulationViewer : public QWidget
+class SimulationWidget : public QWidget
 {
     Q_OBJECT
     
     public:
-        SimulationViewer(Simulation* sim);
+        SimulationWidget(Simulation* sim);
         
     public slots:
         void toggleSimulationRunning();

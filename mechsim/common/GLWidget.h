@@ -83,13 +83,6 @@ class GLWidget : public QGLWidget
     void start();
     void pause();
     
-    static void drawSphere(double r, Vector3 p);
-    static void drawDiscSegment(double r, double h, double alpha);
-    static void drawCheckerboardFloor();
-    static void drawTube(double r, Vector3 p1, Vector3 p2);
-    static void drawODEBox(dGeomID id, double lx, double ly, double lz);
-    static void drawBox(Vector3 p1, Vector3 p2);
-    static void drawUnitCube();
     void drawCenter();
     
     static const double RAD_TO_DEG;

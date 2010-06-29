@@ -1,23 +1,23 @@
-#include "Test.h"
-#include "GLWidget.h"
+#include "AsymSphere.h"
+#include "GLHelper.h"
 #include <GL/gl.h>
 
 // ** Simulation parameters **
-const int TestSim::STEP_PER_SEC = 16;
-const int TestSim::INT_PER_STEP = 16;   // Integration intervals per timestep
-const char TestSim::TITLE[] = "Moment of inertia test";
+const int AsymSphere::STEP_PER_SEC = 16;
+const int AsymSphere::INT_PER_STEP = 16;   // Integration intervals per timestep
+const char AsymSphere::TITLE[] = "Moment of inertia test";
 
 // ** System parameters **
-const double TestSim::GAMMA   = 0.1;   // Floor slope
-const double TestSim::R = .5;
-const double TestSim::FLOOR_DIST = R;
+const double AsymSphere::GAMMA   = 0.1;   // Floor slope
+const double AsymSphere::R = .5;
+const double AsymSphere::FLOOR_DIST = R;
 
 // Width of slide
-const double TestState::DISP_SLIDEWIDTH = 1.0;
+const double ASState::DISP_SLIDEWIDTH = 1.0;
 // Half-length of slide
-const int TestState::DISP_SLIDELEN2 = 3;
+const int ASState::DISP_SLIDELEN2 = 3;
 
-void TestState::Draw() const
+void ASState::Draw() const
 {
     glMatrixMode(GL_MODELVIEW);
     
@@ -26,22 +26,22 @@ void TestState::Draw() const
     glPushMatrix();
     GL::Translate(fPos);
     GL::Rotate(fRot);
-    GLWidget::drawSphere(TestSim::R, Vector::Null);
+    GL::drawSphere(AsymSphere::R, Vector3::Null);
     glPopMatrix();
 }
 
-void TestState::DrawSlide() const
+void ASState::DrawSlide() const
 {
     float x1, z1, x2, z2;
-    const float xn = sin(TestSim::GAMMA);
-    const float zn = cos(TestSim::GAMMA);
+    const float xn = sin(AsymSphere::GAMMA);
+    const float zn = cos(AsymSphere::GAMMA);
     
     glNormal3f(xn, 0., zn);
     
     glBegin(GL_QUADS);
     for(int k=-DISP_SLIDELEN2; k<DISP_SLIDELEN2; k++) {
-        x1 = -TestSim::FLOOR_DIST * xn + k * zn;
-        z1 = -TestSim::FLOOR_DIST * zn - k * xn;
+        x1 = -AsymSphere::FLOOR_DIST * xn + k * zn;
+        z1 = -AsymSphere::FLOOR_DIST * zn - k * xn;
         x2 = x1 + zn;
         z2 = z1 - xn;
         
@@ -66,7 +66,7 @@ void TestState::DrawSlide() const
     glEnd();
 }
 
-TestSim::TestSim()
+AsymSphere::AsymSphere()
 {
     const double d = 0.4;
     const double phi0 = 0.;
@@ -94,13 +94,13 @@ TestSim::TestSim()
     fContactGroup = dJointGroupCreate(0);
 }
 
-TestSim::~TestSim()
+AsymSphere::~AsymSphere()
 {
     dWorldDestroy(fWorld);
     dJointGroupDestroy(fContactGroup);
 }
 
-void TestSim::Collide(dGeomID g1, dGeomID g2)
+void AsymSphere::Collide(dGeomID g1, dGeomID g2)
 {
     const int MAX_CONTACTS = 4;
     dContact contact[MAX_CONTACTS];
@@ -116,7 +116,7 @@ void TestSim::Collide(dGeomID g1, dGeomID g2)
     }
 }
 
-void TestSim::Advance()
+void AsymSphere::Advance()
 {
     for(int i=0; i<INT_PER_STEP; ++i) {
         Collide(fFloorG, fBodyG);
@@ -125,11 +125,11 @@ void TestSim::Advance()
     }
 }
 
-TestState TestSim::GetCurrentState()
+ASState AsymSphere::GetCurrentState()
 {
-    TestState state;
-    const Vector3 par(cos(TestSim::GAMMA), 0., -sin(TestSim::GAMMA));
-    const Vector3 nor(sin(TestSim::GAMMA), 0.,  cos(TestSim::GAMMA));
+    ASState state;
+    const Vector3 par(cos(AsymSphere::GAMMA), 0., -sin(AsymSphere::GAMMA));
+    const Vector3 nor(sin(AsymSphere::GAMMA), 0.,  cos(AsymSphere::GAMMA));
     
     state.fRot = Rotation::FromQuatArray(dBodyGetQuaternion(fBody));
     state.fCoG = Vector3(dBodyGetPosition(fBody));
@@ -138,7 +138,7 @@ TestState TestSim::GetCurrentState()
     
     state.fPos = Vector3(dBodyGetPosition(fBody))
             + state.fRot * dGeomGetOffsetPosition(fBodyG);
-    state.fPhi = Vector::dot(state.fPos, par) / TestSim::R;
+    state.fPhi = Vector::dot(state.fPos, par) / AsymSphere::R;
     state.fHeight = Vector::dot(state.fPos, nor);
     
     return state;
