@@ -9,6 +9,7 @@
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_odeiv.h>
 #include <gsl/gsl_roots.h>
+#include <gsl/gsl_multiroots.h>
 #include <gsl/gsl_permutation.h>
 #include <gsl/gsl_eigen.h>
 #include <gsl/gsl_deriv.h>
@@ -128,7 +129,6 @@ double leg_indicator_df(double t, void* par)
     double f, df;
     leg_indicator_fdf(t, par, &f, &df);
     return df;
-
 }
 
 #define THETADOT 0
@@ -137,9 +137,10 @@ double leg_indicator_df(double t, void* par)
 #define PHI 3
 #define TIME 4
 
-typedef double walker_t[5];
+typedef double walker_st_t[5];
+typedef double step_st_t[3];
 
-double step(walker_t walker)
+double step(walker_st_t walker_state)
 {
     gsl_root_fdfsolver* s;
     odesolver_t funcsolver;
@@ -149,125 +150,156 @@ double step(walker_t walker)
          .df = leg_indicator_df,
          .fdf = leg_indicator_fdf,
          .params = &funcsolver};
-    double x0, x=4.0;
+    double tcp, tc = 4.;
     
     ode_alloc(&funcsolver);
     
-    memcpy(funcsolver.points[0].y, walker, sizeof(walker_t));
+    memcpy(funcsolver.points[0].y, walker_state, sizeof(walker_st_t));
     
     s = gsl_root_fdfsolver_alloc(gsl_root_fdfsolver_steffenson);
-    gsl_root_fdfsolver_set(s, &fdf, x);
+    gsl_root_fdfsolver_set(s, &fdf, tc);
     
     int status;
     do {
         gsl_root_fdfsolver_iterate(s);
-        x0 = x;
-        x = gsl_root_fdfsolver_root(s);
-        status = gsl_root_test_delta(x, x0, 0, 1e-12);
+        tcp = tc;
+        tc = gsl_root_fdfsolver_root(s);
+        status = gsl_root_test_delta(tc, tcp, 0, 1e-12);
     } while(status == GSL_CONTINUE);
     
-    double tc = gsl_root_fdfsolver_root(s);
+    tc = gsl_root_fdfsolver_root(s);
     gsl_root_fdfsolver_free(s);
     
     leg_indicator_f(tc, &funcsolver);
     
-    memcpy(walker, funcsolver.points[funcsolver.cur_idx].y, sizeof(walker_t));
-    walker[TIME] = tc;
+    memcpy(walker_state, funcsolver.points[funcsolver.cur_idx].y, sizeof(walker_st_t));
+    walker_state[TIME] = tc;
     
     ode_free(&funcsolver);
     
     return tc;
 }
 
-void heelstrike(walker_t walker)
+void heelstrike(walker_st_t walker_state)
 {
-    double thetadot_m = walker[THETADOT];
-    double theta_m = walker[THETA];
+    double thetadot_m = walker_state[THETADOT];
+    double theta_m = walker_state[THETA];
     
-    walker[THETADOT] = cos(2.*theta_m) * thetadot_m;
-    walker[PHIDOT] = cos(2.*theta_m) * (1. - cos(2.*theta_m)) * thetadot_m;
-    walker[THETA] = -theta_m;
-    walker[PHI] = -2.*theta_m;
+    walker_state[THETADOT] = cos(2.*theta_m) * thetadot_m;
+    walker_state[PHIDOT] = cos(2.*theta_m) * (1. - cos(2.*theta_m)) * thetadot_m;
+    walker_state[THETA] = -theta_m;
+    walker_state[PHI] = -2.*theta_m;
 }
 
 typedef struct {
     double* x;
     int i, j;
-} stridefunc_par_t;
+} d_stridefunc_par_t;
 
-double stridefunc(double x, void* _par)
+// Evolve state of the walker from the beginning of one step to the beginning of
+// the next one
+void stridefunc(step_st_t step_state, double* t)
 {
-    const stridefunc_par_t* par = (const stridefunc_par_t*) _par;
-    walker_t walker;
+    walker_st_t walker_state;
+    walker_state[THETADOT] = step_state[THETADOT];
+    walker_state[PHIDOT]= step_state[PHIDOT];
+    walker_state[THETA] = step_state[THETA];
+    walker_state[PHI] = 2. * step_state[THETA];
     
-    walker[0] = par->x[0];
-    walker[1] = par->x[1];
-    walker[2] = par->x[2];
+    step(walker_state);
+    heelstrike(walker_state);
     
-    walker[par->j] += x;
-    
-    walker[3] = 2.*walker[2];
-    
-    step(walker);
-    heelstrike(walker);
-    
-    return walker[par->i];
+    step_state[THETADOT] = walker_state[THETADOT];
+    step_state[PHIDOT] = walker_state[PHIDOT];
+    step_state[THETA] = walker_state[THETA];
+    if(t) *t = walker_state[TIME];
 }
 
-void calc_dS(double x[3], gsl_matrix* result)
+double diff_stridefunc(double eps, void* _par)
+{
+    const d_stridefunc_par_t* par = (const d_stridefunc_par_t*) _par;
+    step_st_t x;
+    
+    memcpy(x, par->x, sizeof(step_st_t));
+    
+    x[par->j] += eps;
+    
+    stridefunc(x, 0);
+    
+    return x[par->i];
+}
+
+void calc_dS(step_st_t x, gsl_matrix* result)
 {
     int i, j;
-    stridefunc_par_t sfpar;
+    d_stridefunc_par_t sfpar;
     sfpar.x = x;
-    gsl_function gfunc = { .function = stridefunc, .params = &sfpar };
+    gsl_function gfunc = { .function = diff_stridefunc, .params = &sfpar };
     
     for(i=0; i<3; ++i) {
         for(j=0; j<3; ++j) {
             double dsixj, error;
             
             sfpar.i = i; sfpar.j = j;
-            gsl_deriv_central(&gfunc, 0.0, 1e-4, &dsixj, &error);
+            gsl_deriv_central(&gfunc, 0.0, 1e-8, &dsixj, &error);
             gsl_matrix_set(result, i, j, dsixj);
         }
     }
 }
 
-void newton_step(double x_star[3], double* t)
+int stridefunc_wrap(const gsl_vector* x, void* p, gsl_vector* f)
 {
-    int k;
-    gsl_matrix* dS = gsl_matrix_alloc(3, 3);
-    calc_dS(x_star, dS);
+    double* tc = (double*) p;
+    step_st_t step_state;
+    step_state[THETADOT] = gsl_vector_get(x, 0);
+    step_state[PHIDOT] = gsl_vector_get(x, 1);
+    step_state[THETA] = gsl_vector_get(x, 2);
     
-    for(k=0; k<3; ++k) {
-        gsl_matrix_set(dS, k, k, gsl_matrix_get(dS, k, k) - 1.);
-    }
+    stridefunc(step_state, tc);
     
-    gsl_vector* sxx = gsl_vector_alloc(3);
-    gsl_vector* dx = gsl_vector_alloc(3);
-    walker_t xp;
+    gsl_vector_set(f, 0, step_state[THETADOT] - gsl_vector_get(x, 0));
+    gsl_vector_set(f, 1, step_state[PHIDOT] - gsl_vector_get(x, 1));
+    gsl_vector_set(f, 2, step_state[THETA] - gsl_vector_get(x, 2));
     
-    xp[0] = x_star[0];
-    xp[1] = x_star[1];
-    xp[2] = x_star[2];
-    xp[3] = 2.*x_star[2];
-    
-    step(xp);
-    heelstrike(xp);
-    
-    for(k=0; k<3; ++k)
-        gsl_vector_set(sxx, k, x_star[k] - xp[k]);
-    
-    gsl_permutation* p = gsl_permutation_alloc(3);
-    int s;
-    gsl_linalg_LU_decomp(dS, p, &s);
-    gsl_linalg_LU_solve(dS, p, sxx, dx);
-    
-    for(k=0; k<3; ++k)
-        x_star[k] += gsl_vector_get(dx, k);
-    *t = xp[4];
+    return GSL_SUCCESS;
 }
 
-void print_eigen(gsl_matrix* mat)
+void find_limit_cycle(step_st_t x_star, double* tc)
+{
+    int iter=0;
+    int status;
+    
+    gsl_multiroot_function f = { &stridefunc_wrap, 3, tc };
+    
+    gsl_vector* x = gsl_vector_alloc(3);
+    gsl_vector_set(x, 0, x_star[THETADOT]);
+    gsl_vector_set(x, 1, x_star[PHIDOT]);
+    gsl_vector_set(x, 2, x_star[THETA]);
+    
+    const gsl_multiroot_fsolver_type* T = gsl_multiroot_fsolver_hybrids;
+    gsl_multiroot_fsolver* s = gsl_multiroot_fsolver_alloc(T, 3);
+    gsl_multiroot_fsolver_set(s, &f, x);
+    
+    do {
+        iter++;
+        status = gsl_multiroot_fsolver_iterate(s);
+        if(status) break;
+        status = gsl_multiroot_test_residual(s->f, 1e-12);
+    } while(status == GSL_CONTINUE && iter < 100);
+    
+    if(status != GSL_SUCCESS) {
+        fprintf(stderr, "Failed to find limit cycle!\n");
+    }
+    
+    x_star[THETADOT] = gsl_vector_get(s->x, 0);
+    x_star[PHIDOT] = gsl_vector_get(s->x, 1);
+    x_star[THETA] = gsl_vector_get(s->x, 2);
+    
+    gsl_multiroot_fsolver_free(s);
+    gsl_vector_free(x);
+}
+
+void print_eigen(gsl_matrix* mat, const char* prefix)
 {
     gsl_vector_complex* eval = gsl_vector_complex_alloc(3);
     gsl_matrix_complex* evec = gsl_matrix_complex_alloc(3, 3);
@@ -280,30 +312,18 @@ void print_eigen(gsl_matrix* mat)
     int i;
     for(i=0; i<3; ++i) {
         gsl_complex eval_i = gsl_vector_complex_get(eval, i);
-        printf("%.6f + %.6fi\n", GSL_REAL(eval_i), GSL_IMAG(eval_i));
+        printf("%s% 7.6f %+7.6fi\n", prefix, GSL_REAL(eval_i), GSL_IMAG(eval_i));
     }
     
     gsl_vector_complex_free(eval);
     gsl_matrix_complex_free(evec);
 }
 
-void find_limit_cycle(double x_star[3], double* tc)
-{
-    int i;
-    for(i=0; i<10; ++i) {
-        newton_step(x_star, tc);
-    }
-}
-
-// Limit cycle calculation result (cached)
-const double THETADOT_STAR = -0.156080146674965;
-const double PHIDOT_STAR = -0.007287197449037;
-const double THETA_STAR = 0.153389564875669;
-
-void matrix_print(gsl_matrix* mat)
+void matrix_print(gsl_matrix* mat, const char* prefix)
 {
     int i, j;
     for(i=0; i<mat->size1; ++i) {
+        printf("%s", prefix);
         for(j=0; j<mat->size2; ++j) {
             printf("% 10.6f ", gsl_matrix_get(mat, i, j));
         }
@@ -311,36 +331,7 @@ void matrix_print(gsl_matrix* mat)
     }
 }
 
-int main()
-{
-    /* double x_star[3];
-    x_star[THETADOT] = -0.15;
-    x_star[PHIDOT] = 0.;
-    x_star[THETA] = 0.15;
-    double tc;
-    
-    find_limit_cycle(x_star, &tc);
-    
-    printf("%.15f %.15f %.15f %.15f\n", x_star[THETADOT], x_star[PHIDOT], x_star[THETA], tc);
-    */
-    
-    double x_star[3] = { THETADOT_STAR, PHIDOT_STAR, THETA_STAR };
-    
-    gsl_matrix* mat = gsl_matrix_alloc(3, 3);
-    calc_dS(x_star, mat);
-    // matrix_print(mat);
-    print_eigen(mat);
-    gsl_matrix_free(mat);
-    
-    return 0;
-}
-
-/* double _func(double x)
-{
-    return cos(x) - sin(2*x);
-} */
-
-/* void print_curve(void)
+void print_curve(step_st_t x_star, double tc)
 {
     const gsl_odeiv_step_type *T = gsl_odeiv_step_rkf45;
     
@@ -354,25 +345,62 @@ int main()
     const double tstep = 0.01;
     double h = 1e-6;
     
-    double y[DIM] = { -0.156080, -0.002787, 0.153390, 2.*0.153390 };
-    int i;
+    double x[DIM];
+    x[THETADOT] = x_star[THETADOT];
+    x[PHIDOT] = x_star[PHIDOT];
+    x[THETA] = x_star[THETA];
+    x[PHI] = 2. * x_star[THETA];
     
-    for(i=0; i<(100*5); ++i) {
+    int i = 0;
+    int stop = 0;
+    
+    do {
         double ti = i * tstep;
-        while(t < ti) {
-            gsl_odeiv_evolve_apply(e, c, s, &sys, &t, ti, &h, y);
+        
+        if(ti > tc) {
+            ti = tc;
+            stop = 1;
         }
         
-        printf("%.6f %.6f %.6f %.6f\n", t, y[2], y[3], 2.*y[2]-y[3]);
-    }
+        while(t < ti) {
+            gsl_odeiv_evolve_apply(e, c, s, &sys, &t, ti, &h, x);
+        }
+        
+        printf("%.6f %.6f %.6f %.6f %.6f\n", t, x[THETADOT], x[PHIDOT], x[THETA], x[PHI]);
+        i++;
+    } while(!stop);
     
     gsl_odeiv_evolve_free(e);
     gsl_odeiv_control_free(c);
     gsl_odeiv_step_free(s);
 }
 
-int main()
+int main(int argc, char** argv)
 {
-    print_curve();
+    step_st_t x_star;
+    x_star[THETADOT] = -0.15;
+    x_star[PHIDOT] = 0.;
+    x_star[THETA] = 0.15;
+    double tc;
+    
+    find_limit_cycle(x_star, &tc);
+    
+    if(argc == 1) {
+        printf("Limit cycle:\n");
+        printf("    theta_dot_star = % 8.6f\n", x_star[THETADOT]);
+        printf("    phi_dot_star   = % 8.6f\n", x_star[PHIDOT]);
+        printf("    theta_star     = % 8.6f\n", x_star[THETA]);
+        printf("    T              = % 8.6f\n", tc);
+        
+        printf("Monodromy matrix eigenvalues:\n");
+        gsl_matrix* mat = gsl_matrix_alloc(3, 3);
+        calc_dS(x_star, mat);
+        print_eigen(mat, "    ");
+        gsl_matrix_free(mat);
+    } else {
+        print_curve(x_star, tc);
+    }
+    
     return 0;
-} */
+}
+
