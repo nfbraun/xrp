@@ -13,6 +13,7 @@ const int McGeer::INT_PER_STEP = 16;   // Integration intervals per timestep
 const char McGeer::TITLE[] = "McGeer Passive Walker";
 
 // ** System parameters **
+const double McGeer::G       = 9.81;
 const double McGeer::GAMMA   = 0.0456;   // Floor slope
 const double McGeer::FLOOR_DIST = 1.0;   // shortest distance floor to origin
 const double McGeer::M_T     = 0.1;
@@ -45,9 +46,9 @@ const double McGeer::OUTER_LEG_DIST = 0.4;
 
 // ** INITIAL PARAMETERS ** (manually tuned for limit cycle)
 const double McGeer::THETA_C  =  0.35;
-const double McGeer::OMEGA_C  =  0.362;
-const double McGeer::OMEGA_FT = -0.085;
-const double McGeer::OMEGA_FS =  0.74;
+const double McGeer::OMEGA_C  =  0.362 * sqrt(McGeer::G);
+const double McGeer::OMEGA_FT = -0.085 * sqrt(McGeer::G);
+const double McGeer::OMEGA_FS =  0.74 * sqrt(McGeer::G);
 
 // ** Display parameters (these do not enter into the simulation) **
 // Distance between the two legs
@@ -201,7 +202,7 @@ McGeer::McGeer()
     dInitODE();
     
     fWorld = dWorldCreate();
-    dWorldSetGravity(fWorld, 0., 0., -1.); //-9.81);
+    dWorldSetGravity(fWorld, 0., 0., -G);
     
     fFloorG = dCreatePlane(0, sin(GAMMA), 0., cos(GAMMA), -FLOOR_DIST);
     

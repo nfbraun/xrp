@@ -79,6 +79,7 @@ class McGeer: public CachedSimulation<MGState> {
     static const int INT_PER_STEP;
     static const char TITLE[];
     
+    static const double G;
     static const double GAMMA;
     static const double FLOOR_DIST;
     static const double M_T;
