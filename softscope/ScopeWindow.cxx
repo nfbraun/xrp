@@ -82,8 +82,6 @@ void ScopeWindow::channelScaleChanged(int ch)
     fOffsetWidgets[ch]->setSingleStep(scale);
     fScopeWidget->channel(ch)->setUPerDiv(scale);
     fScopeWidget->chParamsChanged();
-    
-    std::cout << "scale(" << ch << ") = " << scale << std::endl;
 }
 
 void ScopeWindow::channelOffsetChanged(int ch)
@@ -92,8 +90,6 @@ void ScopeWindow::channelOffsetChanged(int ch)
     
     fScopeWidget->channel(ch)->setOffset(offset);
     fScopeWidget->chParamsChanged();
-    
-    std::cout << "offset(" << ch << ") = " << offset << std::endl;
 }
 
 void ScopeWindow::makeChannelCfg(QGridLayout* l, int ch, QSignalMapper* enableMapper, QSignalMapper *scaleMapper, QSignalMapper* offsetMapper)

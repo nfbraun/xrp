@@ -109,8 +109,6 @@ void ScopeWidget::drawRegion(QPainter& painter, int t1, int t2)
 
 void ScopeWidget::redrawDisplay()
 {
-    std::cout << "redrawDisplay()" << std::endl;
-
     int head = fReader.head();
     
     QPainter painter(&fDisplayPixmap);
@@ -194,7 +192,7 @@ void ScopeWidget::timestep()
     update();
 }
 
-void ScopeWidget::paintEvent(QPaintEvent *ev)
+void ScopeWidget::paintEvent(QPaintEvent*)
 {
     QPainter painter(this);
     updateDisplay();

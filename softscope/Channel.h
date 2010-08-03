@@ -7,7 +7,7 @@ class Channel {
   public:
     Channel() {}
     Channel(const QColor& color)
-      : fColor(color), fUPerDiv(1.), fOffset(0.) {}
+      : fColor(color), fUPerDiv(1.), fOffset(0.), fEnabled(true) {}
     
     inline QColor color() const  { return fColor; }
     inline float uPerDiv() const { return fUPerDiv; }
