@@ -15,5 +15,11 @@ simprint: $(OBJS) simprint.o
 simview: $(OBJS) simview.o
 	g++ -o $@ $(LDFLAGS) $(LIBS) $(OBJS) simview.o
 
+springtest: springtest.o
+	g++ -o $@ -lode springtest.o
+
+pdtest: pdtest.o
+	g++ -o $@ -lode pdtest.o
+
 %.o: %.cxx $(HEADERS) Makefile
 	g++ $(CFLAGS) -o $@ -c $<

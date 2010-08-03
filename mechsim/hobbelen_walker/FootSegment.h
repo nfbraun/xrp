@@ -13,10 +13,11 @@ class FootSegment: public BodyConf
           fPos(Vector3::Null), fTheta(0.)
            { }
     
-    double l() const { return fl; }
-    double w() const { return fw; }
-    double r() const { return fr; }
-    double h() const { return fh; }
+    double l()     const { return fl; }
+    double w()     const { return fw; }
+    double r()     const { return fr; }
+    double h()     const { return fh; }
+    double theta() const { return fTheta; }
     
     virtual Vector3 CoG() const  { return fPos; }
     virtual Rotation Rot() const { return Rotation(fTheta, Vector3::eY); }

@@ -9,25 +9,25 @@ Vector3 FootSegment::p1() const
 // Front contact circle center
 Vector3 FootSegment::pf() const
 {
-    return CoG() - h()*nor() + (l() - h())*rbfhat();
+    return CoG() - h()*nor() + (l() - w() - h())*rbfhat();
 }
 
 // Back contact circle center
 Vector3 FootSegment::pb() const
 {
-    return CoG() - h()*nor() - h()*rbfhat();
+    return CoG() - h()*nor() - (w() + h())*rbfhat();
 }
 
 // Front contact circle center in body (unrotated) coordinates
 Vector3 FootSegment::pfb() const
 {
-    return -h()*Vector3::eZ - h()*Vector3::eX;
+    return -h()*Vector3::eZ + (l() - w() - h())*Vector3::eX;
 }
 
 // Back contact circle center in body (unrotated) coordinates
 Vector3 FootSegment::pbb() const
 {
-    return -h()*Vector3::eZ + (l()-h())*Vector3::eX;
+    return -h()*Vector3::eZ - (w() + h())*Vector3::eX;
 }
 
 void FootSegment::SetCoG(Vector3 pos, double theta)

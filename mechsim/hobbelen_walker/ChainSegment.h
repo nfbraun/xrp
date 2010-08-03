@@ -10,9 +10,10 @@ class ChainSegment: public BodyConf {
     ChainSegment(double m, double I, double l, double c, double w)
       : BodyConf(m, I), fl(l), fc(c), fw(w), fPos(Vector3::Null), fTheta(0.) { }
     
-    double l() const { return fl; }
-    double c() const { return fc; }
-    double w() const { return fw; }
+    double l()     const { return fl; }
+    double c()     const { return fc; }
+    double w()     const { return fw; }
+    double theta() const { return fTheta; }
     
     virtual Vector3 CoG() const  { return fPos; }
     virtual Rotation Rot() const { return Rotation(fTheta, Vector3::eY); }
