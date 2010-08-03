@@ -1,6 +1,6 @@
 MCU=atmega8
 MCUFREQ=-DF_CPU=8000000UL
-SERPORT=/dev/ttyS0
+SERPORT=/dev/ttyUSB0
 PROGTYPE=butterfly
 BAUDRATE=38400
 SOURCES=pendulum.c speedctrl.c

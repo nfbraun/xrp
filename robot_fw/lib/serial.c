@@ -52,6 +52,14 @@ void s_puti16(uint16_t x)
     s_putchr((x & 0xFF00) >> 8);
 }
 
+void s_puti32(uint32_t x)
+{
+    s_putchr((x & 0x000000FF));
+    s_putchr((x & 0x0000FF00) >>  8);
+    s_putchr((x & 0x00FF0000) >> 16);
+    s_putchr((x & 0xFF000000) >> 24);
+}
+
 void s_putdata(const char* c, int n)
 {
     int i;

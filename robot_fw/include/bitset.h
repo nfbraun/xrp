@@ -1,5 +1,5 @@
-#ifndef UTIL_H
-#define UTIL_H
+#ifndef __BITSET_H__
+#define __BITSET_H__
 
 #ifndef _UV
 #define _UV(x) (1 << (x))

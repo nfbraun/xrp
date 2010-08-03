@@ -1,10 +1,11 @@
 MCU=atmega8
 MCUFREQ=-DF_CPU=8000000UL
-POSTSTATE=noreset
-PROGTYPE=dapa
-SOURCES=blink.c
+SERPORT=/dev/ttyUSB0
+PROGTYPE=butterfly
+BAUDRATE=38400
+SOURCES=adc.c serencode.c
 LIBDIR=../lib
-# LIBS=$(LIBDIR)/serial.c
+LIBS=$(LIBDIR)/serial.c
 INCDIR=../include
 TARGET=blink
 
@@ -13,7 +14,7 @@ TARGET=blink
 build: $(TARGET).hex
 
 upload: build
-	avrdude -p $(MCU) -c $(PROGTYPE) -E $(POSTSTATE) -U flash:w:$(TARGET).hex
+	avrdude -P $(SERPORT) -p $(MCU) -c $(PROGTYPE) -b $(BAUDRATE) -U flash:w:$(TARGET).hex
 
 $(TARGET).elf: $(SOURCES) $(HEADERS) Makefile
 	avr-gcc -I$(INCDIR) $(MCUFREQ) -Os -o $@ -mmcu=$(MCU) $(LIBS) $(SOURCES)
