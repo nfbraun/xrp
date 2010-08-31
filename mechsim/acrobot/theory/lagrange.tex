@@ -1,0 +1,56 @@
+\documentclass[a4paper]{article}
+\begin{document}
+Lagragian
+\begin{displaymath}
+L(\dot{q}, q) = T(\dot{q}, q) - V(q) =
+\frac{1}{2} \sum_{i,j} m_{ij}(q) \dot{q}_i \dot{q}_j - V(q)
+\end{displaymath}
+where
+\begin{displaymath}
+m_{ij}(q) = m_{ji}(q)
+\end{displaymath}
+without loss of generality.
+
+\begin{eqnarray*}
+&&\frac{\partial L}{\partial \dot{q_k}} =
+\frac{\partial T}{\partial \dot{q_k}} \\
+&& = \frac{\partial}{\partial \dot{q_k}}\frac{1}{2}\left[
+\sum_{i\neq k} \sum_{j\neq k} m_{ij}(q) \dot{q}_i \dot{q}_j
++ \sum_{j \neq k} m_{kj}(q) \dot{q}_k \dot{q}_j
++ \sum_{i \neq k} m_{ik}(q) \dot{q}_i \dot{q}_k
++ m_{kk}(q) \dot{q}_k \dot{q}_k \right]\\
+&& = \frac{1}{2} \left[\sum_{j \neq k} m_{kj}(q) \dot{q}_j
++ \sum_{i \neq k} m_{ik}(q) \dot{q}_i
++ 2 m_{kk}(q) \dot{q}_k\right]\\
+&& = \frac{1}{2} \sum_i (m_{ki}(q) + m_{ik}(q)) \dot{q}_i\\
+&& = \sum_i m_{ik}(q) \dot{q}_i
+\end{eqnarray*}
+
+\begin{eqnarray*}
+\frac{\mathrm{d}}{\mathrm{d}t} \frac{\partial L}{\partial \dot{q}_k}
+&=& \sum_i m_{ik} \ddot{q_i} + \sum_i \frac{\mathrm{d} m_{ik}(q)}{\mathrm{d} t} \dot{q_i}\\
+&=& \sum_i m_{ik} \ddot{q_i} + \sum_i \sum_l \frac{\partial m_{ik}}{\partial q_l} \dot{q}_l \dot{q}_i
+\end{eqnarray*}
+
+\begin{displaymath}
+\frac{\partial L}{\partial q_k} = \frac{1}{2} \sum_{i,j} \frac{\partial m_{ij}}{\partial q_k}
+\dot{q}_i \dot{q}_j - \frac{\partial V}{\partial q_k}
+\end{displaymath}
+
+\begin{displaymath}
+\frac{\mathrm{d}}{\mathrm{d}t} \frac{\partial L}{\partial \dot{q}_k} - \frac{\partial L}{\partial q_k}
+= \sum_i m_{ik}(q) \ddot{q_i} + \sum_{i,j} \frac{\partial m_{ik}}{\partial q_j} \dot{q}_i \dot{q}_j
+- \frac{1}{2} \sum_{i,j} \frac{\partial m_{ij}}{\partial q_k} \dot{q}_i \dot{q}_j
++ \frac{\partial V}{\partial q_k} = u_k
+\end{displaymath}
+
+Introduce matrix $M(q) = (m_{ik}(q))$ and $Q(\dot{q}, q)$:
+\begin{displaymath}
+M \ddot{q} + C(\dot{q}, q) + \frac{\partial V}{\partial q} = u
+\end{displaymath}
+
+Equations of motion:
+\begin{displaymath}
+\ddot{q} = M^{-1}(q) \left(u - C(\dot{q}, q) - \frac{\partial V}{\partial q}\right)
+\end{displaymath}
+\end{document}
