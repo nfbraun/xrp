@@ -1,36 +1,72 @@
 #include <vector>
 #include <iostream>
+#include <cmath>
 #include <ginac/ginac.h>
 #include "GiJIT.h"
+#include <stdint.h>
 
-int main()
+void test1()
+{
+    std::cout << "Test1:" << std::endl;
+    {
+        GiNaC::symbol q0("q0"), q1("q1"), qdot0("qdot0"), qdot1("qdot1");
+        GiNaC::ex ex = -( -2.*cos(q1)-3.)/( 2.*cos(q1)+3.)/( pow(cos(q1),2.0)-2.)*( -0.1*qdot1-(qdot0*qdot0)*sin(q1)+9.81*sin( q0+q1))*( cos(q1)+1.0)-( 19.62*sin(q0)+9.81*sin(q0+q1)+-0.1*qdot0+2.*qdot1*qdot0*sin(q1)+(qdot1*qdot1)*sin(q1))/( pow(cos(q1),2.0)-2.);
+        
+        typedef GiJIT::CodeGen<GiJIT::Number, GiJIT::Number, GiJIT::Number, GiJIT::Number> codegen;
+        codegen::func_t func = codegen::compile(ex, qdot0, qdot1, q0, q1);
+        
+        // GiJIT::dump();
+        
+        std::cout << "  Result:   " << func(.4, .3, 1.5, 2.3) << std::endl;
+    }
+    
+    {
+        double q0 = 1.5, q1 = 2.3, qdot0 = .4, qdot1 = .3;
+        double ex = -( -2.*cos(q1)-3.)/( 2.*cos(q1)+3.)/( pow(cos(q1),2.0)-2.)*( -0.1*qdot1-(qdot0*qdot0)*sin(q1)+9.81*sin( q0+q1))*( cos(q1)+1.0)-( 19.62*sin(q0)+9.81*sin(q0+q1)+-0.1*qdot0+2.*qdot1*qdot0*sin(q1)+(qdot1*qdot1)*sin(q1))/( pow(cos(q1),2.0)-2.);
+        
+        std::cout << "  Expected: " << ex << std::endl;
+    }
+}
+
+void test2()
 {
     GiNaC::symbol x("x"), y("y"), z("z");
-    //GiNaC::ex ex = sqrt(pow(x,2) + pow(y,2) + pow(z, 2));
     GiNaC::matrix mat(1, 3);
     mat = x, y, z;
     
     GiNaC::ex ex = sqrt((mat * mat.transpose()).evalm());
-    // std::cout << ex.diff(x)*ex << std::endl;
+        
+    GiNaC::matrix rmat(2, 2);
+    rmat = ex.diff(x)*ex, ex.diff(y)*ex,
+           ex.diff(z)*ex, 4.*atan(1.);
     
-    typedef GiJIT::CodeGenV<GiJIT::Result, GiJIT::Vector> codegen;
+    typedef GiJIT::CodeGenR<GiJIT::ReturnDummyInt,
+        GiJIT::DummyArg<void *>, GiJIT::Result, GiJIT::Vector > codegen;
     
-    codegen::func_t func = codegen::compile(
-        GiNaC::lst(ex.diff(x)*ex, ex.diff(y)*ex, ex.diff(z)*ex),
-        GiNaC::lst(x,y,z));
+    codegen::func_t func = codegen::compile(42, 0,
+        rmat, GiNaC::lst(x,y,z));
     
-    GiJIT::dump();
-    
+    // GiJIT::dump();
+        
     double vx[] = { 3., 4., 12. };
-    double result[3];
+    double result[4];
     
-    func(result, vx);
+    std::cout << "Test2:" << std::endl;
+    std::cout << "  Result:   ";
+    std::cout << func(0, result, vx) << " ";
+    std::cout << result[0] << " " << result[1] << " " << result[2] << " ";
+    std::cout << result[3] << std::endl;
     
-    // std::cout << func(vx) << std::endl;
-    
-    //func(vx, vx[2], &result);
-    
-    std::cout << result[0] << " " << result[1] << " " << result[2] << std::endl;
+    std::cout << "  Expected: ";
+    std::cout << 42 << " " << vx[0] << " " << vx[1] << " " << vx[2] << " ";
+    std::cout << M_PI << std::endl;
+}
+
+int main()
+{
+    std::cout.precision(17);
+    test1();
+    test2();
     
     return 0;
 }

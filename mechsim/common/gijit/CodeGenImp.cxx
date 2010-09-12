@@ -1,6 +1,7 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+#include <stdint.h>
 #include <llvm/DerivedTypes.h>
 #include <llvm/Support/IRBuilder.h>
 #include <llvm/Target/TargetSelect.h>
@@ -26,9 +27,9 @@ void dump()
     CodeGenImp::getCodeGenImp()->dump();
 }
 
-void* compileImp(const ArgVector& args, bool returnNum, GiNaC::ex ex)
+void* compileImp(const ArgVector& args, const Return* ret)
 {
-    return CodeGenImp::getCodeGenImp()->compile(args, returnNum, ex);
+    return CodeGenImp::getCodeGenImp()->compile(args, ret);
 }
 
 VectorArg::VectorArg(const GiNaC::lst& slst)
@@ -41,77 +42,151 @@ VectorArg::VectorArg(const GiNaC::lst& slst)
     }
 }
 
+const llvm::Type* CodeGenImp::convertCType(const CType_Any* type)
+{
+    if(dynamic_cast< const CType<void>* >(type))
+        return llvm::Type::getVoidTy(fContext);
+    else if(dynamic_cast< const CType<int8_t>* >(type))
+        return llvm::Type::getInt8Ty(fContext);
+    else if(dynamic_cast< const CType<int16_t>* >(type))
+        return llvm::Type::getInt16Ty(fContext);
+    else if(dynamic_cast< const CType<int32_t>* >(type))
+        return llvm::Type::getInt32Ty(fContext);
+    else if(dynamic_cast< const CType<int64_t>* >(type))
+        return llvm::Type::getInt64Ty(fContext);
+    else if(dynamic_cast< const CType<float>* >(type))
+        return llvm::Type::getFloatTy(fContext);
+    else if(dynamic_cast< const CType<double>* >(type))
+        return llvm::Type::getDoubleTy(fContext);
+    else if(dynamic_cast< const CType<void*>* >(type))
+        // void* is not available in llvm, manual suggests using i8* instead
+        return llvm::Type::getInt8PtrTy(fContext);
+    else if(dynamic_cast< const CType<int8_t*>* >(type))
+        return llvm::Type::getInt8PtrTy(fContext);
+    else if(dynamic_cast< const CType<int16_t*>* >(type))
+        return llvm::Type::getInt16PtrTy(fContext);
+    else if(dynamic_cast< const CType<int32_t*>* >(type))
+        return llvm::Type::getInt32PtrTy(fContext);
+    else if(dynamic_cast< const CType<int64_t*>* >(type))
+        return llvm::Type::getInt64PtrTy(fContext);
+    else if(dynamic_cast< const CType<float*>* >(type))
+        return llvm::Type::getFloatPtrTy(fContext);
+    else if(dynamic_cast< const CType<double*>* >(type))
+        return llvm::Type::getDoublePtrTy(fContext);
+    else
+        throw std::runtime_error("Unknown C type");
+}
+
 const llvm::Type* CodeGenImp::getInputType(const Argument* arg)
 {
     if(dynamic_cast<const NumberArg*>(arg))
-        return getInputType(dynamic_cast<const NumberArg*>(arg));
+        return llvm::Type::getDoubleTy(fContext);
     else if(dynamic_cast<const VectorArg*>(arg))
-        return getInputType(dynamic_cast<const VectorArg*>(arg));
+        return llvm::Type::getDoublePtrTy(fContext);
     else if(dynamic_cast<const ResultArg*>(arg))
-        return getInputType(dynamic_cast<const ResultArg*>(arg));
+        return llvm::Type::getDoublePtrTy(fContext);
+    else if(dynamic_cast<const DummyArg_Any*>(arg))
+        return convertCType((dynamic_cast<const DummyArg_Any*>(arg))->getCType());
+    else
+        throw std::runtime_error("Internal error: unknown argument type");
 }
 
-const llvm::Type* CodeGenImp::getInputType(const NumberArg* arg)
+const llvm::Type* CodeGenImp::getReturnType(const Return* ret)
 {
-    return llvm::Type::getDoubleTy(fContext);
-}
-
-const llvm::Type* CodeGenImp::getInputType(const VectorArg* arg)
-{
-    return llvm::Type::getDoublePtrTy(fContext);
-}
-
-const llvm::Type* CodeGenImp::getInputType(const ResultArg* arg)
-{
-    return llvm::Type::getDoublePtrTy(fContext);
+    if(dynamic_cast<const ReturnVoid*>(ret))
+        return llvm::Type::getVoidTy(fContext);
+    else if(dynamic_cast<const ReturnNumber*>(ret))
+        return llvm::Type::getDoubleTy(fContext);
+    else if(dynamic_cast<const ReturnDummyNumber*>(ret))
+        return llvm::Type::getDoubleTy(fContext);
+    else if(dynamic_cast<const ReturnDummyInt*>(ret))
+        return llvm::Type::getInt32Ty(fContext);
+    else
+        throw std::runtime_error("Internal error: unknown return type");
 }
 
 void CodeGenImp::registerArguments(Visitor& v, llvm::Function::arg_iterator& pos,
     std::map<const Argument*, llvm::Function::arg_iterator>& resultArgs,
     llvm::IRBuilder<>& builder, const Argument* arg)
 {
-    if(dynamic_cast<const NumberArg*>(arg))
-        registerArguments(v, pos, resultArgs, builder,
-            dynamic_cast<const NumberArg*>(arg));
-    else if(dynamic_cast<const VectorArg*>(arg))
-        registerArguments(v, pos, resultArgs, builder,
-            dynamic_cast<const VectorArg*>(arg));
-    else if(dynamic_cast<const ResultArg*>(arg))
-        registerArguments(v, pos, resultArgs, builder,
-            dynamic_cast<const ResultArg*>(arg));
-}
-
-void CodeGenImp::registerArguments(Visitor& v, llvm::Function::arg_iterator& pos,
-    std::map<const Argument*, llvm::Function::arg_iterator>& resultArgs,
-    llvm::IRBuilder<>& builder, const NumberArg* arg)
-{
-    v.registerSymbol(arg->getSym(), pos++);
-}
-
-void CodeGenImp::registerArguments(Visitor& v, llvm::Function::arg_iterator& pos,
-    std::map<const Argument*, llvm::Function::arg_iterator>& resultArgs,
-    llvm::IRBuilder<>& builder, const VectorArg* arg)
-{
-    int off = 0;
-    
-    for(std::vector<GiNaC::symbol>::const_iterator s = arg->getSyms().begin();
-        s != arg->getSyms().end(); s++) {
-        llvm::Value* offV = llvm::ConstantInt::get(
-           llvm::Type::getInt32Ty(fContext), off++);
-        llvm::Value* ptr = builder.CreateGEP(pos, offV);
-        llvm::Value* val = builder.CreateLoad(ptr);
+    if(dynamic_cast<const NumberArg*>(arg)) {
+        v.registerSymbol((dynamic_cast<const NumberArg*>(arg))->getSym(), pos++);
+    } else if(dynamic_cast<const VectorArg*>(arg)) {
+        int off = 0;
+        const std::vector<GiNaC::symbol>& syms =
+            (dynamic_cast<const VectorArg*>(arg))->getSyms();
         
-        v.registerSymbol(*s, val);
+        for(std::vector<GiNaC::symbol>::const_iterator s = syms.begin();
+            s != syms.end(); s++) {
+            llvm::Value* offV = llvm::ConstantInt::get(
+               llvm::Type::getInt32Ty(fContext), off++);
+            llvm::Value* ptr = builder.CreateGEP(pos, offV);
+            llvm::Value* val = builder.CreateLoad(ptr);
+            
+            v.registerSymbol(*s, val);
+        }
+        
+        pos++;
+    } else if(dynamic_cast<const ResultArg*>(arg)) {
+        resultArgs[dynamic_cast<const ResultArg*>(arg)] = pos++;
+    } else if(dynamic_cast<const DummyArg_Any*>(arg)) {
+        pos++;
     }
-    
-    pos++;
 }
 
-void CodeGenImp::registerArguments(Visitor& v, llvm::Function::arg_iterator& pos,
+void CodeGenImp::createResultStore(Visitor& v,
     std::map<const Argument*, llvm::Function::arg_iterator>& resultArgs,
-    llvm::IRBuilder<>& builder, const ResultArg* arg)
+    llvm::IRBuilder<>& builder, const ResultArg* result)
 {
-    resultArgs[arg] = pos++;
+    llvm::Function::arg_iterator apos = resultArgs[result];
+    int off = 0;
+    const GiNaC::ex& ex = result->getEx();
+    
+    if(GiNaC::is_a<GiNaC::lst>(ex)) {
+        const GiNaC::lst& lst = GiNaC::ex_to<GiNaC::lst>(ex);
+        for(GiNaC::lst::const_iterator elem = lst.begin();
+            elem != lst.end(); elem++) {
+            llvm::Value* offV = llvm::ConstantInt::get(
+                    llvm::Type::getInt32Ty(fContext), off++);
+            llvm::Value* ptr = builder.CreateGEP(apos, offV);
+            builder.CreateStore(v.getValue(*elem), ptr);
+        }
+    } else if(GiNaC::is_a<GiNaC::matrix>(ex)) {
+        const GiNaC::matrix& matrix = GiNaC::ex_to<GiNaC::matrix>(ex);
+        for(size_t elem = 0; elem != matrix.nops(); elem++) {
+            llvm::Value* offV = llvm::ConstantInt::get(
+                    llvm::Type::getInt32Ty(fContext), off++);
+            llvm::Value* ptr = builder.CreateGEP(apos, offV);
+            builder.CreateStore(v.getValue(ex.op(elem)), ptr);
+        }
+    } else {
+        llvm::Value* offV = llvm::ConstantInt::get(
+                llvm::Type::getInt32Ty(fContext), 0);
+        llvm::Value* ptr = builder.CreateGEP(apos, offV);
+        builder.CreateStore(v.getValue(ex), ptr);
+    }
+}
+
+void CodeGenImp::createRet(Visitor& v, llvm::IRBuilder<>& builder,
+    const Return* ret)
+{
+    if(dynamic_cast<const ReturnVoid*>(ret)) {
+        builder.CreateRetVoid();
+    } else {
+        llvm::Value* retval;
+        if(dynamic_cast<const ReturnNumber*>(ret)) {
+            retval = v.getValue((dynamic_cast<const ReturnNumber*>(ret))->getEx());
+        } else if(dynamic_cast<const ReturnDummyNumber*>(ret)) {
+            retval = llvm::ConstantFP::get(llvm::Type::getDoubleTy(fContext),
+                (dynamic_cast<const ReturnDummyNumber*>(ret))->getX());
+        } else if(dynamic_cast<const ReturnDummyInt*>(ret)) {
+            retval = llvm::ConstantInt::get(llvm::Type::getInt32Ty(fContext),
+                (dynamic_cast<const ReturnDummyInt*>(ret))->getX());
+        } else {
+            throw std::runtime_error("Internal error: unhandled return type");
+        }
+        builder.CreateRet(retval);
+    }
 }
 
 CodeGenImp::CodeGenImp()
@@ -144,22 +219,15 @@ void CodeGenImp::dump()
     fModule->dump();
 }
 
-llvm::Function* CodeGenImp::compileIR(const ArgVector& args, bool returnNum,
-                                   GiNaC::ex returnEx)
+llvm::Function* CodeGenImp::compileIR(const ArgVector& args, const Return* ret)
 {
     std::vector<const llvm::Type*> argTypes;
     for(ArgVector::const_iterator arg = args.begin(); arg != args.end(); arg++) {
         argTypes.push_back(getInputType(*arg));
     }
     
-    const llvm::Type* retType;
-    if(returnNum)
-        retType = llvm::Type::getDoubleTy(fContext);
-    else
-        retType = llvm::Type::getVoidTy(fContext);
-    
     llvm::FunctionType* ft = llvm::FunctionType::get(
-            retType, argTypes, false);
+            getReturnType(ret), argTypes, false);
     
     llvm::Function* func = llvm::Function::Create(ft,
                   llvm::Function::ExternalLinkage, "", fModule);
@@ -182,40 +250,18 @@ llvm::Function* CodeGenImp::compileIR(const ArgVector& args, bool returnNum,
     
     for(ArgVector::const_iterator arg = args.begin(); arg != args.end(); arg++) {
         const ResultArg* result = dynamic_cast<const ResultArg*>(*arg);
-        if(result) {
-            int off = 0;
-            GiNaC::ex ex = result->getEx();
-            
-            if(GiNaC::is_a<GiNaC::lst>(ex)) {
-                GiNaC::lst lst = GiNaC::ex_to<GiNaC::lst>(ex);
-                for(GiNaC::lst::const_iterator elem = lst.begin();
-                    elem != lst.end(); elem++) {
-                    llvm::Value* offV = llvm::ConstantInt::get(
-                            llvm::Type::getInt32Ty(fContext), off++);
-                    llvm::Value* ptr = builder.CreateGEP(resultArgs[result], offV);
-                    llvm::Value* val = builder.CreateStore(v.getValue(*elem), ptr);
-                }
-            } else {
-                llvm::Value* offV = llvm::ConstantInt::get(
-                        llvm::Type::getInt32Ty(fContext), 0);
-                llvm::Value* ptr = builder.CreateGEP(resultArgs[result], offV);
-                llvm::Value* val = builder.CreateStore(v.getValue(ex), ptr);
-            }
-        }
+        if(result)
+            createResultStore(v, resultArgs, builder, result);
     }
     
-    if(returnNum) {
-        builder.CreateRet(v.getValue(returnEx));
-    } else {
-        builder.CreateRetVoid();
-    }
+    createRet(v, builder, ret);
     
     return func;
 }
 
-void* CodeGenImp::compile(const ArgVector& args, bool returnNum, GiNaC::ex ex)
+void* CodeGenImp::compile(const ArgVector& args, const Return* ret)
 {
-    llvm::Function* func = compileIR(args, returnNum, ex);
+    llvm::Function* func = compileIR(args, ret);
     
     llvm::verifyFunction(*func);
     fFPM->run(*func);

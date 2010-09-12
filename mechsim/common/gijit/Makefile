@@ -1,7 +1,7 @@
 HEADERS = GiJIT.h CodeGenImp.h Visitor.h FuncFactory.h
 SOURCES = CodeGenImp.cxx Visitor.cxx FuncFactory.cxx
 OBJS = $(SOURCES:.cxx=.o)
-CXXFLAGS = $(shell llvm-config --cxxflags) -fexceptions -fPIC
+CXXFLAGS = $(shell llvm-config --cxxflags) -fexceptions -fPIC -Wall
 LDFLAGS = $(shell llvm-config --ldflags)
 LIBS = $(shell llvm-config --libs core jit native interpreter) -lginac
 TARGET = libgijit.so.1

@@ -12,6 +12,7 @@
 #include <ginac/ginac.h>
 
 #include "GiJIT.h"
+#include "CType.h"
 #include "Visitor.h"
 
 namespace GiJIT {
@@ -22,32 +23,25 @@ class CodeGenImp {
     ~CodeGenImp();
     
     void dump();
-    void* compile(const ArgVector& args, bool returnNum,
-                    GiNaC::ex ex = GiNaC::ex());
+    void* compile(const ArgVector& args, const Return* ret);
     
   private:
     CodeGenImp();
     
     const llvm::Type* getInputType(const Argument* arg);
-    const llvm::Type* getInputType(const NumberArg* arg);
-    const llvm::Type* getInputType(const VectorArg* arg);
-    const llvm::Type* getInputType(const ResultArg* arg);
+    const llvm::Type* getReturnType(const Return* ret);
+    
+    const llvm::Type* convertCType(const CType_Any* type);
     
     void registerArguments(Visitor& v, llvm::Function::arg_iterator& pos,
         std::map<const Argument*, llvm::Function::arg_iterator>& resultArgs,
         llvm::IRBuilder<>& builder, const Argument* arg);
-    void registerArguments(Visitor& v, llvm::Function::arg_iterator& pos,
+    void createResultStore(Visitor& v,
         std::map<const Argument*, llvm::Function::arg_iterator>& resultArgs,
-        llvm::IRBuilder<>& builder, const NumberArg* arg);
-    void registerArguments(Visitor& v, llvm::Function::arg_iterator& pos,
-        std::map<const Argument*, llvm::Function::arg_iterator>& resultArgs,
-        llvm::IRBuilder<>& builder, const VectorArg* arg);
-    void registerArguments(Visitor& v, llvm::Function::arg_iterator& pos,
-        std::map<const Argument*, llvm::Function::arg_iterator>& resultArgs,
-        llvm::IRBuilder<>& builder, const ResultArg* arg);
+        llvm::IRBuilder<>& builder, const ResultArg* result);
+    void createRet(Visitor& v, llvm::IRBuilder<>& builder, const Return* ret);
     
-    llvm::Function* compileIR(const ArgVector& x, bool returnNum,
-                              GiNaC::ex ex = GiNaC::ex());
+    llvm::Function* compileIR(const ArgVector& x, const Return* ret);
     
     llvm::LLVMContext& fContext;
     llvm::Module* fModule;
