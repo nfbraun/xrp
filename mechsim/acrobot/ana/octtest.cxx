@@ -1,3 +1,7 @@
+// Solution according to MATLAB documentation:
+//  0.5895    1.8216
+//  1.8216    8.8188
+
 #include <iostream>
 #include "Octave.h"
 

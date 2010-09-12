@@ -1,51 +1,119 @@
-#include <gsl/gsl_errno.h>
-#include <exception>
-#include <cmath>
 #include "ODESolver.h"
+#include <stdexcept>
+#include <gsl/gsl_errno.h>
 
-const double ODESolver::EPS_ABS = 1e-8;
+ODESolver::ODESolver(int ndim, const GiNaC::ex& function,
+              const GiNaC::symbol& t,
+              const std::vector<GiNaC::symbol>& y_vec,
+              const double y_ini[],
+              const gsl_odeiv_step_type* stype)
+    : RawODESolver(ndim, getFunction(ndim, function, t, y_vec),
+            getJacobian(ndim, function, t, y_vec), y_ini, 0, stype)
+{ }
 
-ODESolver::ODESolver(int ndim, deriv_func_t* deriv_func,
-                     const double qdot_ini[], const double q_ini[],
-                     void* params)
-    : fNdim(ndim), ft(0.)
+bool ODESolver::funcValid(int ndim, const GiNaC::ex& function)
 {
-    const gsl_odeiv_step_type *T = gsl_odeiv_step_rkf45;
+    using namespace GiNaC;
     
-    fODE_s = gsl_odeiv_step_alloc(T, 2*ndim);
-    fODE_c = gsl_odeiv_control_y_new(EPS_ABS, 0.);
-    fODE_e = gsl_odeiv_evolve_alloc(2*ndim);
-    
-    fODE_sys.function = deriv_func;
-    fODE_sys.jacobian = NULL;
-    fODE_sys.dimension = 2*ndim;
-    fODE_sys.params = params;
-    
-    fODE_h = 1e-6;
-    
-    fy = new double[2*ndim];
-    for(int i=0; i<ndim; i++) {
-        fy[i] = qdot_ini[i];
-        fy[i+ndim] = q_ini[i];
+    if(is_a<lst>(function)) {
+        return (ex_to<lst>(function).nops() == (size_t)ndim);
+    } else if(is_a<matrix>(function)) {
+        const matrix& mat = ex_to<matrix>(function);
+        return ((mat.rows() == (size_t)ndim && mat.cols() == 1) ||
+                (mat.rows() == 1 && mat.cols() == (size_t)ndim));
+    } else if(ndim == 1) {
+        return true;
+    } else {
+        return false;
     }
 }
 
-ODESolver::~ODESolver()
+ODESolver::func_compiler::func_t ODESolver::getFunction(int ndim,
+        const GiNaC::ex& function, const GiNaC::symbol& t,
+        const std::vector<GiNaC::symbol>& yvec)
 {
-    delete[] fy;
-    gsl_odeiv_evolve_free(fODE_e);
-    gsl_odeiv_control_free(fODE_c);
-    gsl_odeiv_step_free(fODE_s);
+    if(!funcValid(ndim, function))
+        throw std::runtime_error("Function does not have expected form");
+    return func_compiler::compile(GSL_SUCCESS, t, yvec, function, 0);
 }
 
-void ODESolver::EvolveFwd(double t1)
+ODESolver::jacob_compiler::func_t ODESolver::getJacobian(int ndim,
+        const GiNaC::ex& function, const GiNaC::symbol& t,
+        const std::vector<GiNaC::symbol>& yvec)
 {
-    while(ft < t1) {
-        int status = gsl_odeiv_evolve_apply(fODE_e, fODE_c, fODE_s, &fODE_sys, &ft, t1,
-                                            &fODE_h, fy);
-        if(status != GSL_SUCCESS) {
-            throw std::exception();  // FIXME
+    // Warning: this code is *untested*!
+    GiNaC::matrix dfdy(ndim, ndim);
+    GiNaC::matrix dfdt(ndim, 1);
+    int i, j;
+    
+    if(GiNaC::is_a<GiNaC::lst>(function)) {
+        const GiNaC::lst& func = GiNaC::ex_to<GiNaC::lst>(function);
+        i=0;
+        for(GiNaC::lst::const_iterator fi = func.begin();
+            fi != func.end(); fi++) {
+            j=0;
+            for(std::vector<GiNaC::symbol>::const_iterator yj = yvec.begin();
+                yj != yvec.end(); yj++) {
+                dfdy(i,j) = (*fi).diff(*yj);
+                j++;
+            }
+            dfdt(i,0) = (*fi).diff(t);
+            i++;
         }
     }
+    
+    return jacob_compiler::compile(GSL_SUCCESS, t, yvec, dfdy, dfdt, 0);
 }
 
+GiNaC::ex ODE2Solver::getEx(int ndim, const GiNaC::ex& function,
+        const std::vector<GiNaC::symbol>& qdot_vec)
+{
+    using namespace GiNaC;
+    lst ex;
+    
+    // y[0:ndim] = qdotdot
+    if(is_a<lst>(function) && ex_to<lst>(function).nops() == (size_t)ndim) {
+        ex = ex_to<lst>(function);
+    } else if(is_a<matrix>(function)) {
+        const matrix& mat = ex_to<matrix>(function);
+        if((mat.rows() == (size_t)ndim && mat.cols() == 1) ||
+           (mat.rows() == 1 && mat.cols() == (size_t)ndim)) {
+            for(size_t i = 0; i != mat.nops(); i++) {
+                ex.append(mat.op(i));
+            }
+        } else {
+            throw std::runtime_error("Function does not have expected form");
+        }
+    } else if(ndim == 1) {
+        ex.append(function);
+    } else {
+        throw std::runtime_error("Function does not have expected form");
+    }
+    
+    // y[ndim:2*ndim] = qdot
+    for(int i=0; i<ndim; i++)
+        ex.append(qdot_vec[i]);
+    
+    return ex;
+}
+
+std::vector<GiNaC::symbol> ODE2Solver::combineSymVect(
+    const std::vector<GiNaC::symbol>& v1,
+    const std::vector<GiNaC::symbol>& v2)
+{
+    std::vector<GiNaC::symbol> v;
+    v.insert(v.end(), v1.begin(), v1.end());
+    v.insert(v.end(), v2.begin(), v2.end());
+    return v;
+}
+
+ODEArray<double> ODE2Solver::combineIniVect(int ndim, const double ini1[],
+        const double ini2[])
+{
+    ODEArray<double> a(2*ndim);
+    for(int i=0; i<ndim; i++)
+        a[i] = ini1[i];
+    for(int i=0; i<ndim; i++)
+        a[i+ndim] = ini2[i];
+    return a;
+}

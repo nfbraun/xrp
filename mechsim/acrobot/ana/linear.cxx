@@ -1,7 +1,7 @@
 #include <iostream>
 #include <ginac/ginac.h>
 #include <gsl/gsl_errno.h>
-#include "ODESolver.h"
+#include "RawODESolver.h"
 #include "Octave.h"
 #include "Acrobot.h"
 
@@ -112,18 +112,17 @@ int main()
         }
     }
     
-    const double qdot_ini[] = { 1.0, 0.0 };
-    const double q_ini[] = { -1, 2 };
+    const double y_ini[] = { 1.0, 0.0, -1, 2 };
     
     const double tstep = 1./16.;
     int i;
     
-    ODESolver solver(2, &linear_deriv, qdot_ini, q_ini, mat);
+    RawODESolver solver(4, &linear_deriv, 0, y_ini, mat);
     
     for(i=0; i<50; ++i) {
         solver.EvolveFwd(i * tstep);
-        std::cout << solver.t() << " " << solver.q()[0] << " " << solver.q()[1];
-        std::cout << " " << solver.qdot()[0] << " " << solver.qdot()[1] << std::endl;
+        std::cout << solver.t() << " " << solver.y()[2] << " " << solver.y()[3];
+        std::cout << " " << solver.y()[0] << " " << solver.y()[1] << std::endl;
     }
     
     return 0;
