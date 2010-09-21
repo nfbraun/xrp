@@ -43,11 +43,10 @@ class MGState: public SimulationState {
 
   private:
     void DrawLeg(Vector3 thighPos, Rotation thighRot, Vector3 shankPos, Rotation shankRot) const;
-    void DrawSlide() const;
+    void DrawSlide(double dist, double s0, double s1) const;
     
     static const double DISP_LEGWIDTH;
     static const double DISP_SLIDEWIDTH;
-    static const int DISP_SLIDELEN2;
 };
 
 class McGeer: public CachedSimulation<MGState> {
@@ -56,7 +55,7 @@ class McGeer: public CachedSimulation<MGState> {
     ~McGeer();
     
     double GetTimestep() { return 1./STEP_PER_SEC; }
-    int GetDefaultEndTime() { return 60 * STEP_PER_SEC; }
+    int GetDefaultEndTime() { return 15 * STEP_PER_SEC; }
     
     const char* GetTitle() { return TITLE; }
     
@@ -73,7 +72,7 @@ class McGeer: public CachedSimulation<MGState> {
     dBodyID fInnerThigh, fInnerShank;
     dBodyID fOuterThigh, fOuterShank;
 
-    dGeomID fFloorG, fInnerFootG, fOuterFootG;
+    dGeomID fFloorG1, fFloorG2, fInnerFootG, fOuterFootG;
     
     static const int STEP_PER_SEC;
     static const int INT_PER_STEP;
@@ -108,6 +107,10 @@ class McGeer: public CachedSimulation<MGState> {
     
     static const double INNER_LEG_DIST;
     static const double OUTER_LEG_DIST;
+    
+    static const double SLIDELEN_1;
+    static const double SLIDELEN_2;
+    static const double STEP_HEIGHT;
 };
 
 #endif

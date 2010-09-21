@@ -6,7 +6,7 @@ int main()
 {
     McGeer sim;
     
-    for(int t=0; t<4*sim.GetDefaultEndTime(); t++) {
+    for(int t=0; t<sim.GetDefaultEndTime(); t++) {
         const MGState* state = sim.GetState(t);
         
         std::cout << t*sim.GetTimestep() << " ";
@@ -18,8 +18,10 @@ int main()
         std::cout << state->fILeg.omegaS() << " ";
         std::cout << state->fOLeg.omegaT() << " ";
         std::cout << state->fOLeg.omegaS() << " "; */
-        std::cout << state->fILeg.footClearance() << " ";
+        //std::cout << state->fILeg.footClearance() << " ";
         //std::cout << state->fOLeg.footClearance() << " ";
+        //std::cout << state->fILeg.shankCoG().y() << " ";
+        //std::cout << state->fOLeg.shankCoG().y() << " ";
         
         std::cout << std::endl;
     }

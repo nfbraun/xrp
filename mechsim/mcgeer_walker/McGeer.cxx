@@ -44,6 +44,11 @@ const double McGeer::EPS_T = \
 const double McGeer::INNER_LEG_DIST = 0.2;
 const double McGeer::OUTER_LEG_DIST = 0.4;
 
+// Parameters configuring the world
+const double McGeer::SLIDELEN_1 = 2.8;
+const double McGeer::SLIDELEN_2 = 6.;
+const double McGeer::STEP_HEIGHT = 6e-3;
+
 // ** INITIAL PARAMETERS ** (manually tuned for limit cycle)
 const double McGeer::THETA_C  =  0.35;
 const double McGeer::OMEGA_C  =  0.362 * sqrt(McGeer::G);
@@ -51,14 +56,10 @@ const double McGeer::OMEGA_FT = -0.085 * sqrt(McGeer::G);
 const double McGeer::OMEGA_FS =  0.74 * sqrt(McGeer::G);
 
 // ** Display parameters (these do not enter into the simulation) **
-// Distance between the two legs
-
 // Width of the boxes representing the legs
 const double MGState::DISP_LEGWIDTH = .05;
 // Width of slide
 const double MGState::DISP_SLIDEWIDTH = 1.0;
-// Half-length of slide
-const int MGState::DISP_SLIDELEN2 = 30;
 
 // Angle between thigh and slide surface normal
 double LegState::thighAng() const
@@ -98,7 +99,9 @@ void MGState::Draw() const
 {
     glMatrixMode(GL_MODELVIEW);
     
-    DrawSlide();
+    DrawSlide(McGeer::FLOOR_DIST, -.5, McGeer::SLIDELEN_1);
+    DrawSlide(McGeer::FLOOR_DIST + McGeer::STEP_HEIGHT, McGeer::SLIDELEN_1,
+        McGeer::SLIDELEN_1 + McGeer::SLIDELEN_2);
     
     Vector3 d;
     glColor3f(1., 1., 0.);
@@ -112,7 +115,7 @@ void MGState::Draw() const
     DrawLeg(fOLeg.fTPos - d, fOLeg.fTRot, fOLeg.fSPos - d, fOLeg.fSRot);
 }
 
-void MGState::DrawSlide() const
+void MGState::DrawSlide(double dist, double s0, double s1) const
 {
     float x1, z1, x2, z2;
     const float xn = sin(McGeer::GAMMA);
@@ -121,11 +124,19 @@ void MGState::DrawSlide() const
     glNormal3f(xn, 0., zn);
     
     glBegin(GL_QUADS);
-    for(int k=-DISP_SLIDELEN2; k<DISP_SLIDELEN2; k++) {
-        x1 = -McGeer::FLOOR_DIST * xn + k * zn;
-        z1 = -McGeer::FLOOR_DIST * zn - k * xn;
-        x2 = x1 + zn;
-        z2 = z1 - xn;
+    float s = s0;
+    int k = 0;
+    bool stop = false;
+    do {
+        x1 = -dist * xn + s * zn;
+        z1 = -dist * zn - s * xn;
+        s += 1.0; k++;
+        if(s > s1) {
+            s = s1;
+            stop = true;
+        }
+        x2 = -dist * xn + s * zn;
+        z2 = -dist * zn - s * xn;
         
         if(k % 2)
             glColor3f(1., 0., 0.);
@@ -144,7 +155,7 @@ void MGState::DrawSlide() const
         glVertex3f(x1, -DISP_SLIDEWIDTH/2., z1);
         glVertex3f(x2, -DISP_SLIDEWIDTH/2., z2);
         glVertex3f(x2, 0, z2);
-    }
+    } while(!stop);
     glEnd();
 }
 
@@ -204,7 +215,19 @@ McGeer::McGeer()
     fWorld = dWorldCreate();
     dWorldSetGravity(fWorld, 0., 0., -G);
     
-    fFloorG = dCreatePlane(0, sin(GAMMA), 0., cos(GAMMA), -FLOOR_DIST);
+    dQuaternion q;
+    double d;
+    fFloorG1 = dCreateBox(0, 2*SLIDELEN_1, 5., 1.);
+    d = -FLOOR_DIST-.5;
+    dGeomSetPosition(fFloorG1, d*sin(GAMMA), 0., d*cos(GAMMA));
+    dQFromAxisAndAngle(q, 0., 1., 0., GAMMA);
+    dGeomSetQuaternion(fFloorG1, q);
+    
+    fFloorG2 = dCreateBox(0, 2*(SLIDELEN_1 + SLIDELEN_2), 5., 1.);
+    d = -FLOOR_DIST-STEP_HEIGHT-.5;
+    dGeomSetPosition(fFloorG2, d*sin(GAMMA), 0., d*cos(GAMMA));
+    dQFromAxisAndAngle(q, 0., 1., 0., GAMMA);
+    dGeomSetQuaternion(fFloorG2, q);
     
     const double h = HIP_TO_FOOTCTR * cos(THETA_C);
     const Vector3 hipPos = (h-FLOOR_DIST+R) * Vector3(sin(GAMMA), 0., cos(GAMMA));
@@ -321,7 +344,7 @@ void McGeer::InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, Vector3 hip
     
     Vector3 footCtr = shankRot.conj() * (footCtrOffset - shankCoGOffset);
     
-    footG = dCreateCapsule(0, R, legDist);
+    footG = dCreateCylinder(0, R, legDist);
     dGeomSetBody(footG, shank);
     dGeomSetOffsetPosition(footG, footCtr.x(), footCtr.y(), footCtr.z());
     
@@ -348,8 +371,11 @@ void McGeer::Collide(dGeomID g1, dGeomID g2)
 void McGeer::Advance()
 {
     for(int i=0; i<INT_PER_STEP; ++i) {
-        Collide(fFloorG, fInnerFootG);
-        Collide(fFloorG, fOuterFootG);
+        Collide(fFloorG1, fInnerFootG);
+        Collide(fFloorG1, fOuterFootG);
+        Collide(fFloorG2, fInnerFootG);
+        Collide(fFloorG2, fOuterFootG);
+        
         dWorldStep(fWorld, 1./(STEP_PER_SEC * INT_PER_STEP));
         dJointGroupEmpty(fContactGroup);
     }
