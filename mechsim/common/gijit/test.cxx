@@ -62,11 +62,29 @@ void test2()
     std::cout << M_PI << std::endl;
 }
 
+void test3()
+{
+    // Test case for bug found on 2010-09-21.
+    // This only needs to run through without an LLVM error.
+    
+    GiNaC::symbol(x);
+    
+    GiNaC::ex f = tan(x);
+    typedef GiJIT::CodeGen< GiJIT::Number > codegen;
+    codegen::func_t cf = codegen::compile(f, x);
+    codegen::func_t cf2 = codegen::compile(f, x);
+    
+    // GiJIT::dump();
+    
+    std::cout << "Test3: passed" << std::endl;
+}
+
 int main()
 {
     std::cout.precision(17);
     test1();
     test2();
+    test3();
     
     return 0;
 }

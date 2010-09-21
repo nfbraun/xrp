@@ -14,6 +14,7 @@
 #include "GiJIT.h"
 #include "CType.h"
 #include "Visitor.h"
+#include "FuncFactory.h"
 
 namespace GiJIT {
 
@@ -48,6 +49,8 @@ class CodeGenImp {
     llvm::ExecutionEngine* fExEngine;
     
     llvm::FunctionPassManager* fFPM;
+    
+    FuncFactory* fFuncFactory;
     
     static CodeGenImp* fGlobalCodeGenImp;
 };

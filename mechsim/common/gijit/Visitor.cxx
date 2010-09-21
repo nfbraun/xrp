@@ -121,7 +121,7 @@ void Visitor::visit(const GiNaC::numeric& ex)
 
 void Visitor::visit(const GiNaC::function& ex)
 {
-    llvm::Function* func = fFuncFactory.get(ex.get_name());
+    llvm::Function* func = fFuncFactory->get(ex.get_name());
     if(!func)
         throw std::runtime_error("Unknown function " + ex.get_name());
     

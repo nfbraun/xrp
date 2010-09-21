@@ -40,16 +40,15 @@ class Visitor
     llvm::LLVMContext& fContext;
     llvm::Module* fModule;
     llvm::IRBuilder<>& fBuilder;
-    
-    FuncFactory fFuncFactory;
+    FuncFactory* fFuncFactory;
     
   public:
     Visitor(llvm::LLVMContext& context, llvm::Module* module,
-            llvm::IRBuilder<>& builder)
+            llvm::IRBuilder<>& builder, FuncFactory* funcfactory)
         : fContext(context),
           fModule(module),
           fBuilder(builder),
-          fFuncFactory(fContext, fModule)
+          fFuncFactory(funcfactory)
         {}
     
     llvm::Value* getValue(const GiNaC::ex& ex)

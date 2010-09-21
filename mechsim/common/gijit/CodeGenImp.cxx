@@ -207,10 +207,13 @@ CodeGenImp::CodeGenImp()
     fFPM->add(new llvm::TargetData(*fExEngine->getTargetData()));
     //fFPM->add(llvm::createGVNPass());
     fFPM->doInitialization();
+    
+    fFuncFactory = new FuncFactory(fContext, fModule);
 }
 
 CodeGenImp::~CodeGenImp()
 {
+    delete fFuncFactory;
     fFPM = 0;
 }
 
@@ -238,7 +241,7 @@ llvm::Function* CodeGenImp::compileIR(const ArgVector& args, const Return* ret)
     
     builder.SetInsertPoint(bb);
     
-    Visitor v(fContext, fModule, builder);
+    Visitor v(fContext, fModule, builder, fFuncFactory);
     llvm::Function::arg_iterator ai = func->arg_begin();
     
     std::map<const Argument*, llvm::Function::arg_iterator> resultArgs;
