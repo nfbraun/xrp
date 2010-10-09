@@ -5,11 +5,11 @@
 
 const int ScopeWidget::UPDATE_INTERVAL = 50;
 
-ScopeWidget::ScopeWidget(QWidget* parent, int tperdiv)
+ScopeWidget::ScopeWidget(const char* sourcename, QWidget* parent, int tperdiv)
     : QWidget(parent),
       fRunning(true),
       fTicsPerDiv(tperdiv),
-      fReader("test.fifo", ticsPerScreen(), N_CHANNELS)
+      fReader(sourcename, ticsPerScreen(), N_CHANNELS)
 {
     fChannels[0] = Channel(Qt::yellow);
     fChannels[1] = Channel(Qt::cyan);
@@ -152,7 +152,9 @@ void ScopeWidget::updateDisplay()
 {
     int head = fReader.head();
     
-    if(head <= fLastHead)
+    if(fReader.checkAndClearReset())
+        redrawDisplay();
+    else if(head <= fLastHead)
         return;
     else if((head - fLastHead) >= ticsPerScreen())
         redrawDisplay();

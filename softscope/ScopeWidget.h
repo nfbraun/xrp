@@ -3,7 +3,6 @@
 
 #include "DataReader.h"
 #include "Channel.h"
-#include <inttypes.h>
 #include <QWidget>
 #include <QPaintEvent>
 #include <QTimer>
@@ -14,7 +13,7 @@ class ScopeWidget : public QWidget
     Q_OBJECT
     
   public:
-    ScopeWidget(QWidget *parent = 0, int tperdiv = 1);
+    ScopeWidget(const char* sourcename, QWidget *parent = 0, int tperdiv = 1);
     
     QSize minimumSizeHint() const;
     QSize sizeHint() const;
@@ -50,7 +49,7 @@ class ScopeWidget : public QWidget
     QTimer* fTimer;
     bool fRunning;
     int fTicsPerDiv;
-    DataReader<int16_t> fReader;
+    DataReader<float> fReader;
     int fLastHead;
     static const int UPDATE_INTERVAL;
     QPixmap fGridPixmap, fDisplayPixmap;

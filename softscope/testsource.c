@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <inttypes.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -9,13 +8,13 @@
 int main()
 {
     int fd;
-    fd = open("test.fifo", O_WRONLY);
+    fd = open("softscope.fifo", O_WRONLY);
     if(fd < 0) {
-        perror("Open test.fifo");
+        perror("Open softscope.fifo");
         return -1;
     }
     
-    int16_t data[4];
+    float data[4];
     int t;
     while(1) {
         data[0] = ((float) sin((float)t / 10.) * 10000.);
@@ -32,7 +31,7 @@ int main()
     }
     
     if(close(fd) < 0) {
-        perror("Close test.pipe");
+        perror("Close softscope.fifo");
         return -1;
     }
     

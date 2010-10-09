@@ -41,9 +41,9 @@ int main()
 {
     int fd;
     
-    fd = open("test.fifo", O_RDONLY | O_NONBLOCK);
+    fd = open("softscope.fifo", O_RDONLY | O_NONBLOCK);
     if(fd < 0) {
-        perror("Open test.pipe");
+        perror("Open softscope.fifo");
         return -1;
     }
     

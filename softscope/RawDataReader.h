@@ -8,6 +8,8 @@ class RawDataReader {
     RawDataReader(const char* fname, int bufsize, int chunksize);
     ~RawDataReader();
     inline int head()  { return fHead; }
+    inline bool checkAndClearReset()
+        { bool ret = fHadReset; fHadReset = false; return ret; }
     void reset(int bufsize = -1);
     bool readAll();
     char* atRaw(int t);
@@ -22,6 +24,8 @@ class RawDataReader {
     int fChunksize;  // size of one chunk in bytes
     int fBufPos;     // buffer index for next byte to be read
     int fHead;       // id of newest available chunk
+    bool fHadEOF;    // true after end-of-file (read() returns 0)
+    bool fHadReset;  // true after new data stream has begun
 };
 
 #endif

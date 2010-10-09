@@ -1,5 +1,4 @@
 #include "DataReader.h"
-#include <iostream>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -10,7 +9,7 @@ RawDataReader::RawDataReader(const char* fname, int bufsize, int chunksize)
 {
     // Note that read() may read incomplete chunks. We make the buffer one
     // chunk larger than requested to have space for this.
-
+    
     fChunksize = chunksize;
     fNChunks = bufsize + 1;
     fBufsize = fNChunks * chunksize;
@@ -68,6 +67,8 @@ int RawDataReader::do_read(char* buf, int len)
     if(res < 0) {
         perror("read()");
         return -1;
+    } else if(res == 0) {
+        fHadEOF = true;
     }
     
     return res;
@@ -77,15 +78,25 @@ bool RawDataReader::readAll()
 {
     int n_read = 0;
     
-    do {
+    while(1) {
         n_read = do_read(&fBuf[fBufPos], fBufsize - fBufPos);
-        if(n_read < 0)
+        if(n_read <= 0)
             break;
         
+        if(fHadEOF) {
+            // new data has arrived after end of file
+            fHead = -1;
+            fHadReset = true;
+            fHadEOF = false;
+        }
         fHead += (n_read + fBufPos % fChunksize) / fChunksize;
         fBufPos += n_read;
         fBufPos %= fBufsize;
-    } while(n_read > 0);
+    }
+    if(fHadEOF) {
+        // end of file, start anew when next data arrives
+        fBufPos = 0;
+    }
     
     return (n_read >= 0);
 }

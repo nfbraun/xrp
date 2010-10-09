@@ -15,7 +15,7 @@ class ScopeWindow : public QWidget
   Q_OBJECT
   
   public:
-    ScopeWindow();
+    ScopeWindow(const char* sourcename);
   
   public slots:
     void channelEnableChanged(int ch);

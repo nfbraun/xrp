@@ -13,10 +13,11 @@ const int ScopeWindow::T_PER_DIV_CHOICES[] =
 const int ScopeWindow::T_PER_DIV_DEFAULT = 6; // index!
 const int ScopeWindow::T_PER_DIV_WIDTH = 4;   // max width in characters
 
-ScopeWindow::ScopeWindow()
+ScopeWindow::ScopeWindow(const char* sourcename)
     : QWidget()
 {
-    fScopeWidget = new ScopeWidget(this, T_PER_DIV_CHOICES[T_PER_DIV_DEFAULT]);
+    fScopeWidget = new ScopeWidget(sourcename, this,
+        T_PER_DIV_CHOICES[T_PER_DIV_DEFAULT]);
     
     QVBoxLayout *l0 = new QVBoxLayout;
     QGridLayout *l1 = new QGridLayout;

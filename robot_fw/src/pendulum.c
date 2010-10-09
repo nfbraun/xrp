@@ -2,6 +2,7 @@
 #include "motor.h"
 #include "serial.h"
 #include "speedctrl.h"
+#include "serencode.h"
 #include <stdio.h>
 #include <inttypes.h>
 #include <avr/interrupt.h>
@@ -66,7 +67,7 @@ void reset_controller(void)
 
 // Angle for upright pendulum
 // #define PHI_0 2270
-#define PHI_0 2275
+#define PHI_0 2241
 
 ISR(TIMER2_COMP_vect)
 {
@@ -94,7 +95,7 @@ int main()
     ssi_init();
     motor_init();
     serial_init();
-    scons_init();
+    // scons_init();
     timer2_init();
     sei(); // enable interrupts
     
@@ -111,10 +112,12 @@ int main()
         // Rate limit
         while(holdoff);
         holdoff = 1;
-    
+        
         phi = get_angle();
-        printf("%d\n", phi);
-    
+        
+        se_start_frame(6);
+        se_puti16(phi);
+        
         if(enable) {
             // Read out wheel position
             speed_0 = get_speed(&wheel_pos_0);
@@ -124,7 +127,7 @@ int main()
                                       phi - old_phi,
                                       GET_WHEEL_POS(wheel_pos_0),
                                       phi - PHI_0);
-                                      
+            
             old_phi = phi;
             
             motor_0 = sp_ctrl_step(target_speed >> 20,
@@ -135,8 +138,11 @@ int main()
                                    &error_int_1);
             
             set_speed(motor_0, motor_1);
+            
+            se_puti32(GET_WHEEL_POS(wheel_pos_0));
         } else {
             set_speed(0, 0);
+            se_puti32(0);
         }
         
         if(phi > PHI_MIN && phi < PHI_MAX) {
