@@ -5,9 +5,9 @@ PROGTYPE=butterfly
 BAUDRATE=38400
 SOURCES=pendulum.c speedctrl.c
 LIBDIR=../lib
-LIBS=motor.c twi.c ssi.c serial.c scons.c serencode.c
+LIBS=motor.c twi.c ssi.c serial.c scons.c serencode.c adc.c
 INCDIR=../include
-HEADERS=bitset.h motor.h serial.h twi.h ssi.h serencode.h
+HEADERS=bitset.h motor.h serial.h twi.h ssi.h serencode.h adc.h
 TARGET=pendulum
 
 .PHONY: build upload

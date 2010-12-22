@@ -3,6 +3,7 @@
 #include "serial.h"
 #include "speedctrl.h"
 #include "serencode.h"
+#include "adc.h"
 #include <stdio.h>
 #include <inttypes.h>
 #include <avr/interrupt.h>
@@ -61,13 +62,12 @@ void reset_controller(void)
     target_speed = 0;
 }
 
-// Phi range for safety shutdown
-#define PHI_MIN 1900 //2100
-#define PHI_MAX 2700 //2450
-
 // Angle for upright pendulum
-// #define PHI_0 2270
-#define PHI_0 2241
+#define PHI_0 2728
+
+// Phi range for safety shutdown
+#define PHI_MIN (PHI_0 - 300)
+#define PHI_MAX (PHI_0 + 300)
 
 ISR(TIMER2_COMP_vect)
 {
@@ -97,6 +97,7 @@ int main()
     serial_init();
     // scons_init();
     timer2_init();
+    adc_init();
     sei(); // enable interrupts
     
     // chip select for SSI
@@ -115,8 +116,10 @@ int main()
         
         phi = get_angle();
         
-        se_start_frame(6);
+        se_start_frame(10);
         se_puti16(phi);
+        se_puti16(adc_read(0));
+        se_puti16(adc_read(1));
         
         if(enable) {
             // Read out wheel position

@@ -25,8 +25,8 @@ void pwm_init(void)
 
 void motor_init(void)
 {
-  DDRC |= 0x0F;  // Init PC3..PC0 as outputs
-  PORTC &= ~0x0F;
+  DDRB |= 0xF0;  // Init PB7..PB4 as outputs
+  PORTB &= ~0xF0;
   
   pwm_init();
 }
@@ -37,16 +37,16 @@ void set_speed(int8_t left, int8_t right)
   
   // extract direction
   if(left >= 0) {
-    dir |= 0x02;
+    dir |= 0x20;
   } else {
-    dir |= 0x01;
+    dir |= 0x10;
     left = -left;
   }
   
   if(right >= 0) {
-    dir |= 0x04;
+    dir |= 0x40;
   } else {
-    dir |= 0x08;
+    dir |= 0x80;
     right = -right;
   }
   
@@ -55,10 +55,10 @@ void set_speed(int8_t left, int8_t right)
   if(right > 100) right = 100;
   
   // Avoid shoot-through (allow MOSFET gates to discharge)
-  if((PORTC & 0x0F) != dir) {
+  if((PORTB & 0xF0) != dir) {
     OCR1A = OCR1B = 0;
     _delay_ms(2);
-    PORTC = (PORTC & 0xF0) | dir;
+    PORTB = (PORTB & 0x0F) | dir;
   }
   
   OCR1A = left;
