@@ -4,7 +4,9 @@
 #include <avr/sleep.h>
 #include "bitset.h"
 #include <inttypes.h>
-#include "serencode.h"
+#include <serencode.h>
+
+#define N_CH 1
 
 volatile uint8_t ch;
 
@@ -17,17 +19,21 @@ ISR(ADC_vect)
     uint16_t val = ADCW;
     
     if(ch == 0)
-        se_start_frame(6);
+        se_start_frame(2 * N_CH);
     
     se_puti16(val);
     
     ch++;
-    if(ch < 3) {
+    if(ch < N_CH) {
         adc_start_single(ch);
     }
 }
 
+#if defined(__AVR_ATmega8__)
 ISR(TIMER2_COMP_vect)
+#elif defined(__AVR_ATmega328P__)
+ISR(TIMER2_COMPA_vect)
+#endif
 {
     ch = 0;
     adc_start_single(0);
@@ -48,10 +54,18 @@ void adc_init(void)
 
 void timer2_init(void)
 {
+#if defined(__AVR_ATmega8__)
     OCR2 = F_CPU / (1024UL * 100UL);
     // Reset counter to OCR2; clock source = t/1024
     TCCR2 = _UV(WGM21) | _UV(CS22) | _UV(CS21) | _UV(CS20);
     _SETBIT(TIMSK, OCIE2);
+#elif defined(__AVR_ATmega328P__)
+    OCR2A = F_CPU / (1024UL * 100UL);
+    // Reset counter to OCR2; clock source = t/1024
+    TCCR2A = _UV(WGM21);
+    TCCR2B = _UV(CS22) | _UV(CS21) | _UV(CS20);
+    _SETBIT(TIMSK2, OCIE2A);
+#endif
 }
 
 int main()

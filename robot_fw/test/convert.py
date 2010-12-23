@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from __future__ import division
 import struct
 import serdecode
 
@@ -8,9 +9,9 @@ serdecode.resync()
 
 while True:
     s = serdecode.read_frame()
-    x = struct.unpack("=hi", s)
-    outfile.write(struct.pack("=ff", x[0], x[1]))
-    outfile.write(struct.pack("=ff", 0., 0.))
+    x = struct.unpack("=h", s)
+    
+    outfile.write(struct.pack("=ffff", x[0], 0., 0., 0.))
     outfile.flush()
 
 outfile.close()

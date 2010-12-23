@@ -7,6 +7,6 @@ serdecode.resync()
 
 while True:
     s = serdecode.read_frame()
-    x = struct.unpack("=hi", s)
+    x = struct.unpack("=h", s)
     print x
 

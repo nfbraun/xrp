@@ -17,3 +17,12 @@
   
   If the user software handles ESC (0x1B) correctly, RESET is not needed on
   subsequent programmings.
+
+NOTES for ATmega328P:
+* Default fuse settings result in 1 MHz clock at startup (internal oscillator
+  at 8MHz and CKDIV8 fuse set). With this setting, a precise baud rate of 38.4
+  kbps cannot be obtained.
+
+* As of avr-libc 1.6.7, the default wdt_disable() function does not seem to
+  work for this chip. The watchdog must be disabled manually (see code example
+  in datasheet). (FIXME, try wdt_disable() and MCUSR = 0)

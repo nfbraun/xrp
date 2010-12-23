@@ -5,11 +5,20 @@
 
 int main()
 {
-    /* serial_init();
-    sei(); */
+    /* cli();
+    wdt_reset();
+    MCUSR &= ~(1 << WDRF);
+    WDTCSR |= (1 << WDCE) | (1 << WDE);
+    WDTCSR = 0x00; */
     
-    DDRB = 0x01;
-    PORTB |= 0x01;
-    _delay_ms(1000);
-    PORTB &= ~(0x01);
+    serial_init();
+    sei();
+    
+    DDRB = 0x03;
+    
+    PORTB |= 0x02;
+    _delay_ms(500);
+    PORTB &= ~0x02;
+    
+    while(1);
 }
