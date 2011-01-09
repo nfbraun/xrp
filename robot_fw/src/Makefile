@@ -4,11 +4,12 @@ SERPORT=/dev/ttyUSB0
 PROGTYPE=butterfly
 BAUDRATE=38400
 SOURCES=pendulum.c speedctrl.c
+# SOURCES=main.c speedctrl.c
 LIBDIR=../lib
-LIBS=motor.c twi.c ssi.c serial.c scons.c serencode.c adc.c
+LIBS=motor.c twi.c ssi.c serial.c scons.c serencode.c adc.c ir.c
 INCDIR=../include
 HEADERS=bitset.h motor.h serial.h twi.h ssi.h serencode.h adc.h
-TARGET=pendulum
+TARGET=main
 
 .PHONY: build upload
 

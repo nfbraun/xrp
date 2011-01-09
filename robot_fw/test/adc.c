@@ -6,7 +6,7 @@
 #include <inttypes.h>
 #include <serencode.h>
 
-#define N_CH 1
+#define N_CH 2
 
 volatile uint8_t ch;
 
@@ -35,8 +35,10 @@ ISR(TIMER2_COMP_vect)
 ISR(TIMER2_COMPA_vect)
 #endif
 {
+    _SETBIT(PORTB, 0);
     ch = 0;
     adc_start_single(0);
+    _CLRBIT(PORTB, 0);
 }
 
 void adc_start_single(uint8_t c)
@@ -74,6 +76,8 @@ int main()
     timer2_init();
     adc_init();
     sei();
+    
+    DDRB = 0x01;
     
     while(1) {
         sleep_mode();

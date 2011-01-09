@@ -1,11 +1,13 @@
 #include "serial.h"
 
-const uint8_t DATA_PREFIX = 0x40;
+const uint8_t ESCAPE = 0xBA;
+const uint8_t ESCAPE_CHAR = 0x40;
 const uint8_t SHORT_FRAME_PREFIX = 0x50;
 const uint8_t LONG_FRAME_PREFIX = 0x60;
 
 void se_start_frame(uint8_t n)
 {
+    s_putchr(ESCAPE);
     if(n < 0x10) {
         s_putchr(SHORT_FRAME_PREFIX | n);
     } else {
@@ -16,8 +18,12 @@ void se_start_frame(uint8_t n)
 
 void se_putchr(uint8_t c)
 {
-    s_putchr(DATA_PREFIX | (c & 0x0F));
-    s_putchr(DATA_PREFIX | (c >> 4));
+    if(c == ESCAPE) {
+        s_putchr(ESCAPE);
+        s_putchr(ESCAPE_CHAR);
+    } else {
+        s_putchr(c);
+    }
 }
 
 void se_puti16(uint16_t x)

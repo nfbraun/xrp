@@ -1,0 +1,79 @@
+#!/usr/bin/octave -q
+global G = 9.81;       # m * s^-2
+global R = 0.083/2;    # m
+global L = 0.256 - R;  # m
+global M_B = 2.14;     # kg
+global I_B = 0.1175;   # kg m^2
+
+global Sys_A Sys_B;
+mm = M_B*R*R + 2.*R*L*M_B + M_B*L*L + I_B;
+Sys_A = zeros(4, 4);
+Sys_A(1, 2) = M_B*G*L / mm;
+Sys_A(2, 1) = 1.;
+Sys_A(3, 2) = M_B*G*L / mm;
+Sys_A(4, 3) = 1.;
+
+Sys_B = zeros(4, 1);
+Sys_B(1,1) = -M_B*R*(R+L)/mm;
+Sys_B(3,1) = -M_B*R*(R+L)/mm + 1;
+
+r = 1.;
+Q = zeros(4, 4);
+Q(2,2) = 1.;
+Q(4,4) = .01;
+S = are(Sys_A, Sys_B*Sys_B'/r, Q);
+
+global u;
+u = -Sys_B'*S/r;
+
+function xdot = f_linear(x,t)
+    global Sys_A Sys_B u;
+    xdot = Sys_A * x + Sys_B * u * x;
+endfunction
+
+function xdot = f(x,t)
+    global G R L M_B I_B;
+    global u;
+    xdot = zeros(4, 1);
+    qdot0 = x(1);
+    q0 = x(2);
+    thetadotdot = u * x;
+    xdot(1) = (M_B*R*L*qdot0*qdot0*sin(q0) + M_B*G*L*sin(q0) \
+         - M_B*R*R*thetadotdot - M_B*R*L*cos(q0)*thetadotdot) / \
+         (M_B*R*R + 2.*R*L*M_B*cos(q0) + M_B*L*L + I_B);
+    xdot(2) = x(1);
+    xdot(3) = xdot(1) + thetadotdot;
+    xdot(4) = x(3);
+endfunction
+
+if false
+    # phidot, phi, psidot, psi
+    x0 = [ 0, 0.1, 0, 0 ];
+
+    t = linspace(0, 5, 100);
+    y = lsode("f", x0, t);
+    # y_l = lsode("f_linear", x0, t);
+
+    for i=1:100
+        printf("%.6f %.6f %.6f %.6f %.6f %.6f\n", t(i), y(i,1), y(i,2), y(i,3), y(i,4),
+            u * [y(i,1),y(i,2),y(i,3),y(i,4)]')
+        # printf("%d %d\n", t(i)*100+33, y(i,1)*180/pi*1.480+325)
+    endfor
+endif
+
+HZ = 100;
+k1 = u(1) / 685 * pi / 180 * HZ;
+# k1 = u(1) / 1.480 * pi / 180;
+k2 = u(2) / 685 * pi / 180;
+k3 = u(3) / 512 * pi * HZ;
+k4 = u(4) / 512 * pi;
+
+a = (512 / (pi * HZ * HZ)) * 2^20;
+
+if true
+    printf("#define A1 %.0f\n", k1*a);
+    printf("#define A2 %.0f\n", k2*a);
+    printf("#define A3 %.0f\n", k3*a);
+    printf("#define A4 %.0f\n", k4*a);
+endif
+

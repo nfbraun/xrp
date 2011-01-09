@@ -1,6 +1,7 @@
 import serial
 
-DATA_PREFIX = 0x40
+ESCAPE = 0xBA
+ESCAPE_CHAR = 0x40
 SHORT_FRAME_PREFIX = 0x50
 LONG_FRAME_PREFIX = 0x60
 
@@ -27,10 +28,17 @@ def read_frame():
 
     if _resync:
         _ser.flushInput()
-        s = _read(1)
-        while not(ord(s) & 0xF0 in (SHORT_FRAME_PREFIX, LONG_FRAME_PREFIX)):
+        while True:
             s = _read(1)
+            while not(ord(s) == ESCAPE):
+                s = _read(1)
+            s = _read(1)
+            if ord(s) != ESCAPE_CHAR:
+                break
     else:
+        s = _read(1)
+        if ord(s) != ESCAPE:
+            raise SerDecodeError("Garbage at beginning of frame: %02X" % ord(s))
         s = _read(1)
     
     if not(ord(s) & 0xF0 in (SHORT_FRAME_PREFIX, LONG_FRAME_PREFIX)):
@@ -44,10 +52,17 @@ def read_frame():
         s = _read(1)
         l = ord(s)
     
-    rdata = _read(2*l)
     data = str()
     
-    for i in range(0, 2*l, 2):
-        data += chr(ord(rdata[i]) & 0x0F | (ord(rdata[i+1]) & 0x0F) << 4)
+    for i in range(0, l):
+        s = _read(1)
+        if ord(s) == ESCAPE:
+            s = _read(1)
+            if ord(s) == ESCAPE_CHAR:
+                data += chr(ESCAPE)
+            else:
+                raise SerDecodeError("Unexpected escape sequence: %02X" % ord(s))
+        else:
+            data += s
         
     return data

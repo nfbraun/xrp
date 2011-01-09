@@ -1,16 +1,19 @@
 #include "bitset.h"
 #include "serial.h"
 #include "motor.h"
+#include <serencode.h>
+#include <ir.h>
 #include <stdio.h>
 #include <inttypes.h>
 #include <avr/interrupt.h>
 #include <avr/sleep.h>
 #include <util/delay.h>
+#include "speedctrl.h"
 
 #define abs(x) ((x) < 0 ? (-(x)) : (x))
 
-#define SSI_CS0n 2
-#define SSI_CS1n 3
+#define SSI_CS0n 3
+#define SSI_CS1n 4
 
 int16_t get_angle(int8_t ch)
 {
@@ -23,124 +26,143 @@ int16_t get_angle(int8_t ch)
     return (dat >> 6);
 }
 
-volatile int16_t old_angle_0, old_angle_1;
-volatile int16_t desired_speed_0 = 0, desired_speed_1 = 0;
-int16_t error_int_0 = 0, error_int_1 = 0;
+volatile int8_t holdoff = 1;
 
 ISR(TIMER2_COMP_vect)
 {
-    int16_t angle, speed, error, out_0, out_1;
-
-    // Motor 0
-    angle = get_angle(SSI_CS0n);
-    
-    speed = angle - old_angle_0;
-    old_angle_0 = angle;
-    if(speed > 800) speed -= 1024;
-    if(speed < -800) speed += 1024;
-    
-    error = desired_speed_0 - speed;
-    error_int_0 += error;
-    
-    printf("%d ", error);
-    
-    out_0 = error + (error_int_0 >> 1);
-    
-    if(out_0 > 100) out_0 = 100;
-    if(abs(out_0) < 15) out_0 = 0;
-    if(out_0 < -100) out_0 = -100;
-    
-    // Motor 1
-    angle = get_angle(SSI_CS1n);
-        
-    speed = old_angle_1 - angle;
-    old_angle_1 = angle;
-    if(speed > 800) speed -= 1024;
-    if(speed < -800) speed += 1024;
-    
-    error = desired_speed_1 - speed;
-    error_int_1 += error;
-    
-    printf("%d\n", error);
-    
-    out_1 = error + (error_int_1 >> 1);
-    
-    if(out_1 > 100) out_1 = 100;
-    if(abs(out_1) < 15) out_1 = 0;
-    if(out_1 < -100) out_1 = -100;
-    
-    // printf("%d %d\n", out_0, out_1);
-    
-    set_speed(out_0, out_1);
+    holdoff = 0;
 }
 
 void cmd_multi_angle(uint8_t n)
 {
-  uint8_t i;
-  // uint8_t val[4];
-  uint16_t val;
+    uint8_t i;
+    // uint8_t val[4];
+    uint16_t val;
   
-  for(i=0; i<n; ++i) {
-    _CLRBIT(PORTD, SSI_CS0n);
-    val = ssi_read();
-    _SETBIT(PORTD, SSI_CS0n);
-    //twi_read(0x28, val, 4);
-    
-    _delay_ms(10);
-    s_puti16(val);
-    
-    //s_putdata(val, sizeof(val));
-  }
+    for(i=0; i<n; ++i) {
+        _CLRBIT(PORTD, SSI_CS0n);
+        val = ssi_read();
+        _SETBIT(PORTD, SSI_CS0n);
+        //twi_read(0x28, val, 4);
+        
+        _delay_ms(10);
+        s_puti16(val);
+        
+        //s_putdata(val, sizeof(val));
+    }
 }
 
 void timer2_init(void)
 {
-    OCR2 = F_CPU / (1024UL * 50UL);
+    OCR2 = F_CPU / (1024UL * 100UL);
     // Reset counter to OCR2; clock source = t/1024
     TCCR2 = _UV(WGM21) | _UV(CS22) | _UV(CS21) | _UV(CS20);
     _SETBIT(TIMSK, OCIE2);
 }
 
+/* int main()
+{
+    serial_init();
+    scons_init();
+    ir_init();
+    sei();
+    
+    while(1) {
+        sleep_mode();
+        if(ir_state == IR_STATE_READY) {
+            printf("%02hhX %02hhX %02hhX %02hhX", ir_data[0], ir_data[1], ir_data[2], ir_data[3]);
+            if(check_checksum(ir_data, 0xC0))
+                printf(" [OK]\r\n");
+            else
+                printf(" [FAIL]\r\n");
+            ir_state = IR_STATE_ARMED;
+        }
+    }
+} */
+
+wheelpos_t wheel_pos_0, wheel_pos_1;
+int16_t error_int_0, error_int_1;
+int16_t target_speed;
+
+void reset_controller(void)
+{
+    init_wheel_pos(&wheel_pos_0, SSI_CS0n);
+    init_wheel_pos(&wheel_pos_1, SSI_CS1n);
+    
+    error_int_0 = 0;
+    error_int_1 = 0;
+    
+    target_speed = 0;
+}
+
 int main()
 {
-  motor_init();
-  serial_init();
-  //twi_init();
-  ssi_init();
-  scons_init();
-  
-  _SETBIT(DDRD, SSI_CS0n);
-  _SETBIT(DDRD, SSI_CS1n);
-  _SETBIT(PORTD, SSI_CS0n);
-  _SETBIT(PORTD, SSI_CS1n);
-  
-  _SETBIT(DDRD, 4);
-  
-  old_angle_0 = get_angle(SSI_CS0n);
-  old_angle_1 = get_angle(SSI_CS1n);
-  timer2_init();
-
-  sei(); // enable interrupts
-  
-  desired_speed_0 = 0;
-  desired_speed_1 = 0;
-  
-  _delay_ms(1000);
-  
-  desired_speed_0 = 40;
-  desired_speed_1 = 40;
-  
-  _delay_ms(1000);
-  
-  desired_speed_0 = 0;
-  desired_speed_1 = 0;
-  
-  // set_speed(70, 0);
-  
-  while(1) {
-    sleep_mode();
-  }
-
+    int16_t speed_0, speed_1;
+    int8_t motor_0, motor_1;
+    
+    int8_t bad_cnt = 0;
+    
+    motor_init();
+    serial_init();
+    //twi_init();
+    ssi_init();
+    ir_init();
+    scons_init();
+    
+    _SETBIT(DDRD, SSI_CS0n);
+    _SETBIT(DDRD, SSI_CS1n);
+    _SETBIT(PORTD, SSI_CS0n);
+    _SETBIT(PORTD, SSI_CS1n);
+    
+    timer2_init();
+    
+    sei(); // enable interrupts
+    
+    reset_controller();
+    
+    while(1) {
+        sleep_mode();
+        
+        if(ir_state == IR_STATE_READY) {
+            // printf("%02hhX %02hhX %02hhX %02hhX", ir_data[0], ir_data[1], ir_data[2], ir_data[3]);
+            if(check_checksum(ir_data, 0xC0)) {
+                bad_cnt = 0;
+                target_speed = 2 * (ir_data[1] & 0x0F);
+                if(ir_data[2] & 0x40)
+                    target_speed = -target_speed;
+            } else {
+                if(bad_cnt < 10)
+                    bad_cnt++;
+            }
+            if(bad_cnt > 8)
+                target_speed = 0;
+            ir_state = IR_STATE_ARMED;
+        }
+        
+        if(!holdoff) {
+            // Read out wheel position
+            speed_0 = get_speed(&wheel_pos_0);
+            speed_1 = get_speed(&wheel_pos_1);
+            
+            motor_0 = sp_ctrl_step(target_speed,
+                                   speed_0,
+                                   &error_int_0);
+            motor_1 = sp_ctrl_step(target_speed,
+                                   speed_1,
+                                   &error_int_1);
+            
+            set_speed(motor_0, motor_1);
+            
+            holdoff = 1;
+            
+            se_start_frame(8);
+            se_puti16(target_speed);
+            se_puti16(speed_0);
+            se_puti16(error_int_0);
+            se_puti16(motor_0);
+        }
+    }
+    
   /* while(1) {
     if(cmd_ready) {
       switch(cmdbuf[0]) {

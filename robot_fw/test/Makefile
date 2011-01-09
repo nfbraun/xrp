@@ -1,4 +1,4 @@
-MCU=atmega328p
+MCU=atmega8
 MCUFREQ=-DF_CPU=8000000UL
 SERPORT=/dev/ttyUSB0
 PROGTYPE=butterfly

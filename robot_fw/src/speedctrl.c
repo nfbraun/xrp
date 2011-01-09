@@ -12,7 +12,7 @@ void init_wheel_pos(wheelpos_t* wp, int8_t ch)
     
     wp->old_wheel_pos = (dat >> 6);
     // Note different sign convention for left and right encoder
-    if(ch & 0x01)
+    if(!(ch & 0x01))
         wp->old_wheel_pos = 1023 - wp->old_wheel_pos;
     
     wp->wheel_pos_0 = wp->old_wheel_pos;
@@ -34,7 +34,7 @@ int16_t get_speed(wheelpos_t* wp)
     
     wheel_pos = (dat >> 6);
     // Note different sign convention for left and right encoder
-    if(wp->ch & 0x01)
+    if(!(wp->ch & 0x01))
         wheel_pos = 1023 - wheel_pos;
     
     speed = wheel_pos - wp->old_wheel_pos;
@@ -60,7 +60,7 @@ int8_t sp_ctrl_step(int16_t set_speed, int16_t speed, int16_t* error_int)
     if(*error_int > ERROR_INT_CLAMP) *error_int = ERROR_INT_CLAMP;
     else if(*error_int < -ERROR_INT_CLAMP) *error_int = -ERROR_INT_CLAMP;
     
-    error += *error_int / 2;
+    error += *error_int / 4;
     
     if(error > MOTOR_CLAMP) error = MOTOR_CLAMP;
     else if(error < -MOTOR_CLAMP) error = -MOTOR_CLAMP;
