@@ -47,7 +47,7 @@ MainWindow::MainWindow(QWidget* parent)
     viewMenu->addAction(channelAct);
     
     QAction* goAct = fChannelWidget->toggleGOAction();
-    goAct->setShortcut(QString("Shift+F9"));
+    goAct->setShortcut(QString("F10"));
     viewMenu->addAction(goAct);
     
     viewMenu->addSeparator();
@@ -163,8 +163,7 @@ void MainWindow::reloadAll()
     for(std::list<File*>::iterator file = fFiles.begin();
         file != fFiles.end(); file++)
     {
-        // WARNING: these pointers may be invalid after reload()!
-        std::vector<Channel*> oldChannels = (*file)->channels();
+        std::vector<Channel> oldChannels = (*file)->channels();
         File::reload_result_t result = (*file)->reload();
         fErrorStr += (*file)->errorstr().c_str();
         if(result == File::RELOAD_FAIL) {
@@ -173,7 +172,7 @@ void MainWindow::reloadAll()
             fChannelWidget->reloadFile(*(*file), oldChannels);
         }
     }
-    
+    fChannelWidget->updateChannelNames();
     fVCWidget->chParamsChanged();
     showMessages();
 }

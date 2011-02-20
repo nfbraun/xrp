@@ -40,9 +40,9 @@ void VCWidget::scaleXToFit()
     
     for(int vch=0; vch < N_VCHANNELS; vch++) {
         if(vchannel(vch)->enabled()) {
-            Channel* ch = vchannel(vch)->channel();
-            minX = std::min(minX, ch->data().minX());
-            maxX = std::max(maxX, ch->data().maxX());
+            Channel ch(vchannel(vch)->channel());
+            minX = std::min(minX, ch.data().minX());
+            maxX = std::max(maxX, ch.data().maxX());
         }
     }
     
@@ -62,11 +62,11 @@ void VCWidget::scaleYToFit()
     
     for(int vch=0; vch < N_VCHANNELS; vch++) {
         if(vchannel(vch)->enabled()) {
-            Channel* ch = vchannel(vch)->channel();
-            double gain = ch->gain();
-            double offset = ch->offset();
-            minY = std::min(minY, ch->data().getMinY()*gain + offset);
-            maxY = std::max(maxY, ch->data().getMaxY()*gain + offset);
+            Channel ch(vchannel(vch)->channel());
+            double gain = ch.gain();
+            double offset = ch.offset();
+            minY = std::min(minY, ch.data().getMinY()*gain + offset);
+            maxY = std::max(maxY, ch.data().getMaxY()*gain + offset);
         }
     }
     
@@ -228,13 +228,13 @@ QPixmap VCWidget::renderTile(int xoff, int yoff)
     
     for(int vch=0; vch < N_VCHANNELS; vch++) {
         if(vchannel(vch)->enabled()) {
-            Channel* ch = vchannel(vch)->channel();
-            double gain = ch->gain();
-            double offset = ch->offset();
+            Channel ch(vchannel(vch)->channel());
+            double gain = ch.gain();
+            double offset = ch.offset();
             Data::const_iterator_t d =
-                ch->data().getFirst(fTr.xTileToUsr(xoff*cTileWidth-1));
+                ch.data().getFirst(fTr.xTileToUsr(xoff*cTileWidth-1));
             Data::const_iterator_t last =
-                ch->data().getLast(fTr.xTileToUsr((xoff+1)*cTileWidth));
+                ch.data().getLast(fTr.xTileToUsr((xoff+1)*cTileWidth));
             
             painter.setPen(QPen(vchannel(vch)->color(), 1));
             

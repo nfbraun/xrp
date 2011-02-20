@@ -9,17 +9,8 @@ File::File(const std::string& fname)
     reload();
 }
 
-File::~File()
-{
-    deleteAllChannels();
-}
 void File::deleteAllChannels()
 {
-    for(std::vector<Channel*>::iterator ch = fChannels.begin();
-        ch != fChannels.end(); ch++) {
-        delete *ch;
-    }
-    
     fChannels.clear();
 }
 
@@ -36,7 +27,7 @@ File::reload_result_t File::reload()
     if((fChannels.size()+1) != file.nval()) {
         deleteAllChannels();
         for(unsigned int n=0; n<(file.nval()-1); n++) {
-            fChannels.push_back(new Channel());
+            fChannels.push_back(Channel(true));
         }
         retval = RELOAD_LAYOUT_CHANGED;
     }
@@ -58,8 +49,8 @@ File::reload_result_t File::reload()
             name = str.str();
         }
         
-        fChannels[n]->setData(tdata);
-        fChannels[n]->setName(name);
+        fChannels[n].setData(tdata);
+        fChannels[n].setName(name);
     }
     
     fFail = false;
