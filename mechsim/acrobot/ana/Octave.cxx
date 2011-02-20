@@ -4,6 +4,7 @@
 #include <octave/octave.h>
 #include <octave/parse.h>
 #include <octave/toplev.h>
+#include "Octave.h"
 
 class OctRunner {
   public:
@@ -45,6 +46,28 @@ Matrix are(const Matrix& a, const Matrix& b, const Matrix& c)
     f_ret = feval("are", f_arg);
     
     return f_ret(0).matrix_value();
+}
+
+Matrix matTo(const GiNaC::matrix& mat)
+{
+    unsigned int rows = mat.rows(), cols = mat.cols();
+    Matrix octmat(mat.rows(), mat.cols());
+    
+    for(int i=0; i<rows; i++)
+        for(int j=0; j<cols; j++)
+            octmat(i,j) = GiNaC::ex_to<GiNaC::numeric>(mat(i,j)).to_double();
+    
+    return octmat;
+}
+
+GiNaC::matrix matFrom(const Matrix& mat)
+{
+    unsigned int rows = mat.rows(), cols = mat.cols();
+    GiNaC::matrix gimat(rows, cols);
+    for(int i=0; i<rows; i++)
+        for(int j=0; j<cols; j++)
+            gimat(i,j) = mat(i,j);
+    return gimat;
 }
 
 } // end namespace Octave

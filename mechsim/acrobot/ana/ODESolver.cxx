@@ -8,7 +8,7 @@ ODESolver::ODESolver(int ndim, const GiNaC::ex& function,
               const double y_ini[],
               const gsl_odeiv_step_type* stype)
     : RawODESolver(ndim, getFunction(ndim, function, t, y_vec),
-            getJacobian(ndim, function, t, y_vec), y_ini, 0, stype)
+            0, y_ini, 0, stype)
 { }
 
 bool ODESolver::funcValid(int ndim, const GiNaC::ex& function)

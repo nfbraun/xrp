@@ -25,13 +25,20 @@ class Lagrange
     GiNaC::matrix C() const;
     GiNaC::matrix dVdQ() const;
     
+    GiNaC::ex T() const;
+    GiNaC::ex E() const;
+    
+    const int ndim() const { return fNdim; }
     const System::Vector& q() const { return fQ; }
     const System::Vector& qdot() const { return fQdot; }
     const System::Vector& x() const { return fX; }
     const GiNaC::matrix& M() const { return fM; }
+    const GiNaC::ex& V() const { return fV; }
+    
+    GiNaC::matrix x_vec() const;
     
   private:
-    int ndim;
+    int fNdim;
     GiNaC::matrix fM;
     GiNaC::ex fV, fu;
     System::Vector fQ, fQdot, fX;
