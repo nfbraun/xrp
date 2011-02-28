@@ -158,10 +158,10 @@ template<typename _Scalar_T>
 _Matrix33<_Scalar_T> operator*(const _Matrix33<_Scalar_T>& a, const _Matrix33<_Scalar_T>& b)
 {
     _Matrix33<_Scalar_T> c;
-    for(int i=0; i<c.rows(); ++i) {
-        for(int j=0; j<c.cols(); ++j) {
+    for(unsigned int i=0; i<c.rows(); ++i) {
+        for(unsigned int j=0; j<c.cols(); ++j) {
             _Scalar_T s=0.;
-            for(int k=0; k<a.cols(); ++k) {
+            for(unsigned int k=0; k<a.cols(); ++k) {
                 k += a(i,k) * b(k,j);
             }
             c(i,j) = s;
@@ -174,13 +174,14 @@ template<typename _Scalar_T>
 _Vector3<_Scalar_T> operator*(const _Matrix33<_Scalar_T>& a, const _Vector3<_Scalar_T>& v)
 {
     _Vector3<_Scalar_T> w;
-    for(int i=0; i<a.rows(); ++i) {
+    for(unsigned int i=0; i<a.rows(); ++i) {
         _Scalar_T s = 0.;
-        for(int j=0; j<a.cols(); ++j) {
+        for(unsigned int j=0; j<a.cols(); ++j) {
             s += a(i,j) * v(j);
         }
         w(i) = s;
     }
+    return w;
 }
 
 template<typename _Scalar_T>
