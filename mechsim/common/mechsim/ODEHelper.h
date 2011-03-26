@@ -12,6 +12,12 @@ namespace ODE {
         { dJointSetHingeAnchor(j, r.x(), r.y(), r.z()); }
     inline void JointSetHingeAxis(dJointID j, Vector3 a)
         { dJointSetHingeAxis(j, a.x(), a.y(), a.z()); }
+    inline void JointSetUniversalAnchor(dJointID j, Vector3 r)
+        { dJointSetUniversalAnchor(j, r.x(), r.y(), r.z()); }
+    inline void JointSetUniversalAxis1(dJointID j, Vector3 a)
+        { dJointSetUniversalAxis1(j, a.x(), a.y(), a.z()); }
+    inline void JointSetUniversalAxis2(dJointID j, Vector3 a)
+        { dJointSetUniversalAxis2(j, a.x(), a.y(), a.z()); }
     inline void GeomSetOffsetPosition(dGeomID g, Vector3 r)
         { dGeomSetOffsetPosition(g, r.x(), r.y(), r.z()); }
 } // end namespace ODE

@@ -11,8 +11,8 @@
  */
 
 // ** Simulation parameters **
-const int Hobbelen::STEP_PER_SEC = 50;
-const int Hobbelen::INT_PER_STEP = 32;   // Integration intervals per timestep
+const int Hobbelen::STEP_PER_SEC = 25;
+const int Hobbelen::INT_PER_STEP = 64;   // Integration intervals per timestep
 const char Hobbelen::TITLE[] = "2D Walker";
 
 // ** Display parameters (these do not enter into the simulation) **
@@ -50,23 +50,15 @@ void HobState::Draw() const
     glColor3f(1., 1., 1.);
     fBodyQ.TransformGL();
     GL::Translate(Body.cb());
-    glScalef(.1, OUTER_LEG_DIST + DISP_LEGWIDTH, Body.l());
+    glScalef(.1, DISP_BODYWIDTH, Body.l());
     GL::drawUnitCube();
     glPopMatrix();
     
     glColor3f(1., 1., 0.);
-    glTranslatef(0., -INNER_LEG_DIST/2., 0.);
-    DrawLeg(fIULegQ, fILLegQ, fIFootQ);
-    glTranslatef(0., INNER_LEG_DIST, 0.);
-    DrawLeg(fIULegQ, fILLegQ, fIFootQ);
-    glTranslatef(0., -INNER_LEG_DIST/2., 0.);
+    DrawLeg(fLULegQ, fLLLegQ, fLFootQ);
     
     glColor3f(1., 0., 1.);
-    glTranslatef(0., -OUTER_LEG_DIST/2., 0.);
-    DrawLeg(fOULegQ, fOLLegQ, fOFootQ);
-    glTranslatef(0., OUTER_LEG_DIST, 0.);
-    DrawLeg(fOULegQ, fOLLegQ, fOFootQ);
-    glTranslatef(0., -OUTER_LEG_DIST/2., 0.);
+    DrawLeg(fRULegQ, fRLLegQ, fRFootQ);
     
     glPopMatrix();
 }
@@ -90,10 +82,10 @@ void HobState::DrawLeg(const BodyQ& upperLegQ, const BodyQ& lowerLegQ,
     
     footQ.TransformGL();
     
-    GL::drawTube(Foot.r(), HobbelenConst::Foot.pfb() - .05 * Vector3::eY,
-                           HobbelenConst::Foot.pfb() + .05 * Vector3::eY);
-    GL::drawTube(Foot.r(), HobbelenConst::Foot.pbb() - .05 * Vector3::eY,
-                           HobbelenConst::Foot.pbb() + .05 * Vector3::eY);
+    GL::drawTube(Foot.r(), HobbelenConst::Foot.pfb() - HobbelenConst::FOOT_WIDTH/2.*Vector3::eY,
+                           HobbelenConst::Foot.pfb() + HobbelenConst::FOOT_WIDTH/2.*Vector3::eY);
+    GL::drawTube(Foot.r(), HobbelenConst::Foot.pbb() - HobbelenConst::FOOT_WIDTH/2.*Vector3::eY,
+                           HobbelenConst::Foot.pbb() + HobbelenConst::FOOT_WIDTH/2.*Vector3::eY);
     glPopMatrix();
 }
 
@@ -134,8 +126,10 @@ void HobState::DrawSlide() const
 }
 
 Hobbelen::Hobbelen()
-    : fSwingSpl(HobbelenConst::SWING_SPL_N_POINTS,
-                HobbelenConst::SWING_SPL_X, HobbelenConst::SWING_SPL_Y)
+    : fSwingHipSpl(HobbelenConst::SWING_HIP_N_POINTS,
+                   HobbelenConst::SWING_HIP_X, HobbelenConst::SWING_HIP_Y),
+      fSwingKneeSpl(HobbelenConst::SWING_KNEE_N_POINTS,
+                    HobbelenConst::SWING_KNEE_X, HobbelenConst::SWING_KNEE_Y)
 {
     using namespace HobbelenConst;
     
@@ -151,9 +145,12 @@ Hobbelen::Hobbelen()
     
     dInitODE();
     
-    // Initially, inner leg pair in swing leg
-    fILegState = Pushoff;
-    fOLegState = Stance;
+    fDesiredLRoll = 0.;
+    fDesiredRRoll = 0.;
+    
+    // Initially, left leg is swing leg
+    fLLegState = Pushoff;
+    fRLegState = Stance;
     
     fWorld = dWorldCreate();
     dWorldSetGravity(fWorld, 0., 0., -9.81);
@@ -162,37 +159,46 @@ Hobbelen::Hobbelen()
                            -FLOOR_DIST);
     
     ChainSegment BodyC(HobbelenConst::Body);
-    ChainSegment OULegC(HobbelenConst::UpperLeg);
-    ChainSegment OLLegC(HobbelenConst::LowerLeg);
-    FootSegment  OFootC(HobbelenConst::Foot);
-    ChainSegment IULegC(HobbelenConst::UpperLeg);
-    ChainSegment ILLegC(HobbelenConst::LowerLeg);
-    FootSegment  IFootC(HobbelenConst::Foot);
+    ChainSegment RULegC(HobbelenConst::UpperLeg);
+    ChainSegment RLLegC(HobbelenConst::LowerLeg);
+    FootSegment  RFootC(HobbelenConst::Foot);
+    ChainSegment LULegC(HobbelenConst::UpperLeg);
+    ChainSegment LLLegC(HobbelenConst::LowerLeg);
+    FootSegment  LFootC(HobbelenConst::Foot);
     
-    OFootC.SetPB((-FLOOR_DIST + OFootC.r()) * FloorNormal,
+    RFootC.SetPB((-FLOOR_DIST + RFootC.r()) * FloorNormal - LEG_DIST/2.*Vector3::eY,
                  GAMMA);
-    OLLegC.SetP2(OFootC.p1(), -THETA_C + GAMMA);
-    OULegC.SetP2(OLLegC.p1(), -THETA_C + GAMMA);
-    BodyC.SetP2(OULegC.p1(), 0.);
-    IULegC.SetP1(OULegC.p1(), THETA_C + GAMMA);
-    ILLegC.SetP1(IULegC.p2(), THETA_C + GAMMA);
-    IFootC.SetP1(ILLegC.p2(), GAMMA);
+    RLLegC.SetP2(RFootC.p1(), -THETA_C + GAMMA);
+    RULegC.SetP2(RLLegC.p1(), -THETA_C + GAMMA);
+    BodyC.SetP2(RULegC.p1() + LEG_DIST/2.*Vector3::eY, 0.);
+    LULegC.SetP1(BodyC.p2() + LEG_DIST/2.*Vector3::eY, THETA_C + GAMMA);
+    LLLegC.SetP1(LULegC.p2(), THETA_C + GAMMA);
+    LFootC.SetP1(LLLegC.p2(), GAMMA);
     
-    InitLeg(fILeg, IULegC, ILLegC, IFootC);
-    InitLeg(fOLeg, OULegC, OLLegC, OFootC);
+    InitLeg(fLLeg, LULegC, LLLegC, LFootC);
+    InitLeg(fRLeg, RULegC, RLLegC, RFootC);
     
     fBodyB = BodyFromConfig(BodyC);
-    fILeg.HipJ.id = dJointCreateHinge(fWorld, 0);
-    fILeg.HipJ.off = THETA_C - GAMMA;
-    dJointAttach(fILeg.HipJ.id, fILeg.ULegB, fBodyB);
-    ODE::JointSetHingeAnchor(fILeg.HipJ.id, IULegC.p1());
-    ODE::JointSetHingeAxis(fILeg.HipJ.id, Vector3::eY);
+    fLLeg.HipJ.id = dJointCreateUniversal(fWorld, 0);
+    fLLeg.HipJ.off = THETA_C - GAMMA;
+    dJointAttach(fLLeg.HipJ.id, fLLeg.ULegB, fBodyB);
+    ODE::JointSetUniversalAnchor(fLLeg.HipJ.id, LULegC.p1());
+    ODE::JointSetUniversalAxis1(fLLeg.HipJ.id, Vector3::eX);
+    ODE::JointSetUniversalAxis2(fLLeg.HipJ.id, Vector3::eY);
     
-    fOLeg.HipJ.id = dJointCreateHinge(fWorld, 0);
-    fOLeg.HipJ.off = -THETA_C + GAMMA;
-    dJointAttach(fOLeg.HipJ.id, fOLeg.ULegB, fBodyB);
-    ODE::JointSetHingeAnchor(fOLeg.HipJ.id, OULegC.p1());
-    ODE::JointSetHingeAxis(fOLeg.HipJ.id, Vector3::eY);
+    #ifndef WALKER_3D
+    dJointSetUniversalParam(fLLeg.HipJ.id, dParamVel, 0.);
+    dJointSetUniversalParam(fLLeg.HipJ.id, dParamFMax, 100.);
+    #endif
+    
+    fRLeg.HipJ.id = dJointCreateUniversal(fWorld, 0);
+    fRLeg.HipJ.off = -THETA_C + GAMMA;
+    dJointAttach(fRLeg.HipJ.id, fRLeg.ULegB, fBodyB);
+    ODE::JointSetUniversalAnchor(fRLeg.HipJ.id, RULegC.p1());
+    ODE::JointSetUniversalAxis1(fRLeg.HipJ.id, Vector3::eX);
+    ODE::JointSetUniversalAxis2(fRLeg.HipJ.id, Vector3::eY);
+    dJointSetUniversalParam(fRLeg.HipJ.id, dParamVel, 0.);
+    dJointSetUniversalParam(fRLeg.HipJ.id, dParamFMax, 100.);
     
     dJointID jm = dJointCreateAMotor(fWorld, 0);
     dJointAttach(jm, fBodyB, 0);
@@ -201,12 +207,12 @@ Hobbelen::Hobbelen()
     dJointSetAMotorParam(jm, dParamFMax, 100.);
     dJointSetAMotorParam(jm, dParamVel, 0.);
     
-    RotMotion mot = RotMotion::Rotation(OFootC.p1(), OMEGA_C * Vector3::eY);
+    RotMotion mot = RotMotion::Rotation(RFootC.p1(), OMEGA_C * Vector3::eY);
     
-    ODE::BodySetLinearVel(fOLeg.LLegB, mot.v(OLLegC.CoG()));
-    ODE::BodySetAngularVel(fOLeg.LLegB, mot.omega());
-    ODE::BodySetLinearVel(fOLeg.ULegB, mot.v(OULegC.CoG()));
-    ODE::BodySetAngularVel(fOLeg.ULegB, mot.omega());
+    ODE::BodySetLinearVel(fRLeg.LLegB, mot.v(RLLegC.CoG()));
+    ODE::BodySetAngularVel(fRLeg.LLegB, mot.omega());
+    ODE::BodySetLinearVel(fRLeg.ULegB, mot.v(RULegC.CoG()));
+    ODE::BodySetAngularVel(fRLeg.ULegB, mot.omega());
     
     ODE::BodySetLinearVel(fBodyB, mot.v(BodyC.p2()));
     ODE::BodySetAngularVel(fBodyB, Vector3::Null);
@@ -224,7 +230,7 @@ Hobbelen::Hobbelen()
     ODE::BodySetAngularVel(fILeg.FootB, mot.omega()); */
     
     // Lock stance knee
-    SetKneeLock(fOLeg.KneeJ, true);
+    SetKneeLock(fRLeg.KneeJ, true);
     
     // Prevent swing foot from oscillation
     // dJointSetHingeParam(fILeg.AnkleJ.id, dParamLoStop, -fILeg.AnkleJ.off);
@@ -264,20 +270,24 @@ void Hobbelen::InitLeg(HobLeg& leg, ChainSegment upperLegC, ChainSegment lowerLe
     
     leg.FootB = BodyFromConfig(footC);
     
-    leg.FFootG = dCreateCapsule(0, footC.r(), .1);
+    leg.FFootG = dCreateCapsule(0, footC.r(), HobbelenConst::FOOT_WIDTH);
     dGeomSetBody(leg.FFootG, leg.FootB);
     ODE::GeomSetOffsetPosition(leg.FFootG, footC.pfb());
     dGeomSetOffsetQuaternion(leg.FFootG, Rotation(M_PI/2., Vector3::eX).quatarray());
     
-    leg.BFootG = dCreateCapsule(0, footC.r(), .1);
+    leg.BFootG = dCreateCapsule(0, footC.r(), HobbelenConst::FOOT_WIDTH);
     dGeomSetBody(leg.BFootG, leg.FootB);
     ODE::GeomSetOffsetPosition(leg.BFootG, footC.pbb());
     dGeomSetOffsetQuaternion(leg.BFootG, Rotation(M_PI/2., Vector3::eX).quatarray());
     
-    leg.AnkleJ.id = dJointCreateHinge(fWorld, 0);
+    leg.AnkleJ.id = dJointCreateUniversal(fWorld, 0);
     dJointAttach(leg.AnkleJ.id, leg.LLegB, leg.FootB);
-    ODE::JointSetHingeAnchor(leg.AnkleJ.id, lowerLegC.p2());
-    ODE::JointSetHingeAxis(leg.AnkleJ.id, Vector3::eY);
+    ODE::JointSetUniversalAnchor(leg.AnkleJ.id, lowerLegC.p2());
+    ODE::JointSetUniversalAxis1(leg.AnkleJ.id, Vector3::eX);
+    ODE::JointSetUniversalAxis2(leg.AnkleJ.id, Vector3::eY);
+    
+    dJointSetUniversalParam(leg.AnkleJ.id, dParamVel, 0.);
+    dJointSetUniversalParam(leg.AnkleJ.id, dParamFMax, 100.);
     
     leg.AnkleJ.off = lowerLegC.theta() - footC.theta();
 }
@@ -329,10 +339,10 @@ void Hobbelen::HipTorqueControl()
     dJointAddHingeTorque(fOLeg.HipJ.id, torque);
 } */
 
-void Hobbelen::AnkleTorqueControl(const HobJoint& ankleJ, StepState state)
+void Hobbelen::AnklePitchTorqueControl(const HobJoint& ankleJ, StepState state)
 {
-    double ang = dJointGetHingeAngle(ankleJ.id) + ankleJ.off;
-    double rate = dJointGetHingeAngleRate(ankleJ.id);
+    double ang = dJointGetUniversalAngle2(ankleJ.id) + ankleJ.off;
+    double rate = dJointGetUniversalAngle2Rate(ankleJ.id);
     double torque;
     
     if(state == Pushoff) ang += 0.25;
@@ -364,18 +374,26 @@ void Hobbelen::AnkleTorqueControl(const HobJoint& ankleJ, StepState state)
         torque += gain * (ang_ref - ang);
     }
     
-    dJointAddHingeTorque(ankleJ.id, torque);
+    dJointAddUniversalTorques(ankleJ.id, 0., torque);
+}
+
+void Hobbelen::AnkleRollTorqueControl(const HobJoint& ankleJ)
+{
+    double ang = dJointGetUniversalAngle1(ankleJ.id);
+    double rate = dJointGetUniversalAngle1Rate(ankleJ.id);
+    double torque = -.01*ang - .005*rate;
+    dJointAddUniversalTorques(ankleJ.id, torque, 0.);
 }
 
 void Hobbelen::SwingHipTorqueControl(LegType leg, double t)
 {
     // Inter-leg angle
-    double phi = dJointGetHingeAngle(fOLeg.HipJ.id) + fOLeg.HipJ.off
-        - dJointGetHingeAngle(fILeg.HipJ.id) - fILeg.HipJ.off;
-    double phidot = dJointGetHingeAngleRate(fOLeg.HipJ.id)
-        - dJointGetHingeAngleRate(fILeg.HipJ.id);
+    double phi = dJointGetUniversalAngle2(fRLeg.HipJ.id) + fRLeg.HipJ.off
+        - dJointGetUniversalAngle2(fLLeg.HipJ.id) - fLLeg.HipJ.off;
+    double phidot = dJointGetUniversalAngle2Rate(fRLeg.HipJ.id)
+        - dJointGetUniversalAngle2Rate(fLLeg.HipJ.id);
     
-    if(leg == OuterLeg) {
+    if(leg == RightLeg) {
         phi = -phi; phidot = -phidot;
     }
     
@@ -383,13 +401,49 @@ void Hobbelen::SwingHipTorqueControl(LegType leg, double t)
     const double K_P = 3.0;
     const double K_D = 5.0;
     
-    const double torque = K_P * (fSwingSpl.eval(t) - phi)
-        + K_D * (fSwingSpl.eval_deriv(t) - phidot);
+    const double torque = K_P * (fSwingHipSpl.eval(t) - phi)
+        + K_D * (fSwingHipSpl.eval_deriv(t) - phidot);
     
-    if(leg == InnerLeg)
-        dJointAddHingeTorque(fILeg.HipJ.id, -torque);
+    if(leg == LeftLeg)
+        dJointAddUniversalTorques(fLLeg.HipJ.id, 0., -torque);
     else
-        dJointAddHingeTorque(fOLeg.HipJ.id, -torque);
+        dJointAddUniversalTorques(fRLeg.HipJ.id, 0., -torque);
+}
+
+void Hobbelen::SwingKneeTorqueControl(const HobJoint& kneeJ, double t)
+{
+    // Inter-leg angle
+    double phi = dJointGetHingeAngle(kneeJ.id) + kneeJ.off;
+    double phidot = dJointGetHingeAngleRate(kneeJ.id);
+    
+    // PD constants
+    const double K_P = 0.3;
+    const double K_D = 0.5;
+    
+    const double torque = K_P * (fSwingKneeSpl.eval(t) - phi)
+        + K_D * (fSwingKneeSpl.eval_deriv(t) - phidot);
+    
+    if(t > .2 && t < .8) {
+        dJointAddHingeTorque(kneeJ.id, torque);
+    }
+}
+
+
+void Hobbelen::Servo(const HobJoint& joint, double desiredAngle)
+{
+    const double maxV = 1.;
+    double vel = dJointGetUniversalAngle1(joint.id) - desiredAngle;
+    if(vel < -maxV) vel = -maxV;
+    if(vel > maxV) vel = maxV;
+    dJointSetUniversalParam(joint.id, dParamVel, vel);
+}
+
+void Hobbelen::LegRollControl()
+{
+    Servo(fLLeg.HipJ, fDesiredLRoll);
+    //Servo(fLLeg.AnkleJ, fDesiredLRoll);
+    Servo(fRLeg.HipJ, fDesiredRRoll);
+    //Servo(fRLeg.AnkleJ, fDesiredRRoll);
 }
 
 void Hobbelen::Collide(dGeomID g1, dGeomID g2)
@@ -411,59 +465,79 @@ void Hobbelen::Collide(dGeomID g1, dGeomID g2)
 void Hobbelen::Advance()
 {
     for(int i=0; i<INT_PER_STEP; ++i) {
-        Collide(fFloorG, fOLeg.FFootG);
-        Collide(fFloorG, fOLeg.BFootG);
-        Collide(fFloorG, fILeg.FFootG);
-        Collide(fFloorG, fILeg.BFootG);
+        Collide(fFloorG, fRLeg.FFootG);
+        Collide(fFloorG, fRLeg.BFootG);
+        Collide(fFloorG, fLLeg.FFootG);
+        Collide(fFloorG, fLLeg.BFootG);
         
         // State machine
-        if(fILegState == Pushoff) {
-            if(GetTipClearance(fILeg.FootB) > 1e-3) {
-                fILegState = Swing;
+        if(fLLegState == Pushoff) {
+            if(GetTipClearance(fLLeg.FootB) > 1e-3) {
+                fLLegState = Swing;
             }
-        } else if(fILegState == Swing) {
-            if(GetHeelClearance(fILeg.FootB) < 1e-3) {
-                fILegState = Touchdown;
-                SetKneeLock(fILeg.KneeJ, true);
-                fOLegState = Pushoff;
-                SetKneeLock(fOLeg.KneeJ, false);
+        } else if(fLLegState == Swing) {
+            if(GetHeelClearance(fLLeg.FootB) < 1e-3) {
+                fLLegState = Touchdown;
+                SetKneeLock(fLLeg.KneeJ, true);
+                fRLegState = Pushoff;
+                SetKneeLock(fRLeg.KneeJ, false);
                 fSwingT = 0.;
             }
-        } else if(fILegState == Touchdown) {
-            if(GetTipClearance(fILeg.FootB) < 1e-3) {
-                fILegState = Stance;
+        } else if(fLLegState == Touchdown) {
+            if(GetTipClearance(fLLeg.FootB) < 1e-3) {
+                fLLegState = Stance;
             }
-        } else if(fILegState == Stance) {
+        } else if(fLLegState == Stance) {
             // Remain in stance mode until touchdown of swing leg
         }
         
-        if(fOLegState == Pushoff) {
-            if(GetTipClearance(fOLeg.FootB) > 1e-3) {
-                fOLegState = Swing;
+        if(fRLegState == Pushoff) {
+            if(GetTipClearance(fRLeg.FootB) > 1e-3) {
+                fRLegState = Swing;
             }
-        } else if(fOLegState == Swing) {
-            if(GetHeelClearance(fOLeg.FootB) < 1e-3) {
-                fOLegState = Touchdown;
-                SetKneeLock(fOLeg.KneeJ, true);
-                fILegState = Pushoff;
-                SetKneeLock(fILeg.KneeJ, false);
+        } else if(fRLegState == Swing) {
+            if(GetHeelClearance(fRLeg.FootB) < 1e-3) {
+                fRLegState = Touchdown;
+                SetKneeLock(fRLeg.KneeJ, true);
+                fLLegState = Pushoff;
+                SetKneeLock(fLLeg.KneeJ, false);
                 fSwingT = 0.;
             }
-        } else if(fOLegState == Touchdown) {
-            if(GetTipClearance(fOLeg.FootB) < 1e-3) {
-                fOLegState = Stance;
+        } else if(fRLegState == Touchdown) {
+            if(GetTipClearance(fRLeg.FootB) < 1e-3) {
+                fRLegState = Stance;
             }
-        } else if(fOLegState == Stance) {
+        } else if(fRLegState == Stance) {
             // Remain in stance mode until touchdown of swing leg
         }
         
-        if(fILegState == Swing)
-            SwingHipTorqueControl(InnerLeg, fSwingT);
-        if(fOLegState == Swing)
-            SwingHipTorqueControl(OuterLeg, fSwingT);
+        if(fLLegState == Swing) {
+            SwingHipTorqueControl(LeftLeg, fSwingT);
+            #ifdef ACTIVE_KNEE
+            SwingKneeTorqueControl(fLLeg.KneeJ, fSwingT);
+            #endif
+        }
+        if(fRLegState == Swing) {
+            SwingHipTorqueControl(RightLeg, fSwingT);
+            #ifdef ACTIVE_KNEE
+            SwingKneeTorqueControl(fRLeg.KneeJ, fSwingT);
+            #endif
+        }
         
-        AnkleTorqueControl(fILeg.AnkleJ, fILegState);
-        AnkleTorqueControl(fOLeg.AnkleJ, fOLegState);
+        AnklePitchTorqueControl(fLLeg.AnkleJ, fLLegState);
+        AnklePitchTorqueControl(fRLeg.AnkleJ, fRLegState);
+        
+        #ifdef WALKER_3D
+        //Servo(fLLeg.HipJ, fDesiredLRoll);
+        //Servo(fRLeg.HipJ, fDesiredRRoll);
+        
+        AnkleRollTorqueControl(fLLeg.AnkleJ);
+        AnkleRollTorqueControl(fRLeg.AnkleJ);
+        
+        if(fT > .5) {
+            //fDesiredLRoll = .1;
+        }
+        #endif
         
         dWorldStep(fWorld, 1./(STEP_PER_SEC * INT_PER_STEP));
         dJointGroupEmpty(fContactGroup);
@@ -481,35 +555,37 @@ HobState Hobbelen::GetCurrentState()
     
     state.fBodyQ = BodyQ::FromODE(fBodyB);
     
-    state.fIULegQ = BodyQ::FromODE(fILeg.ULegB);
-    state.fILLegQ = BodyQ::FromODE(fILeg.LLegB);
-    state.fIFootQ = BodyQ::FromODE(fILeg.FootB);
+    state.fLULegQ = BodyQ::FromODE(fLLeg.ULegB);
+    state.fLLLegQ = BodyQ::FromODE(fLLeg.LLegB);
+    state.fLFootQ = BodyQ::FromODE(fLLeg.FootB);
     
-    state.fOULegQ = BodyQ::FromODE(fOLeg.ULegB);
-    state.fOLLegQ = BodyQ::FromODE(fOLeg.LLegB);
-    state.fOFootQ = BodyQ::FromODE(fOLeg.FootB);
+    state.fRULegQ = BodyQ::FromODE(fRLeg.ULegB);
+    state.fRLLegQ = BodyQ::FromODE(fRLeg.LLegB);
+    state.fRFootQ = BodyQ::FromODE(fRLeg.FootB);
     
-    state.fIHipAngle = dJointGetHingeAngle(fILeg.HipJ.id) + fILeg.HipJ.off;
-    state.fOHipAngle = dJointGetHingeAngle(fOLeg.HipJ.id) + fOLeg.HipJ.off;
+    state.fLHipAngle = dJointGetUniversalAngle2(fLLeg.HipJ.id) + fLLeg.HipJ.off;
+    state.fRHipAngle = dJointGetUniversalAngle2(fRLeg.HipJ.id) + fRLeg.HipJ.off;
     
-    if(fILegState == Swing || fILegState == Pushoff)
-        state.fDesiredInterLeg = fSwingSpl.eval(fSwingT);
+    if(fLLegState == Swing || fLLegState == Pushoff)
+        state.fDesiredInterLeg = fSwingHipSpl.eval(fSwingT);
     else
-        state.fDesiredInterLeg = -fSwingSpl.eval(fSwingT);
+        state.fDesiredInterLeg = -fSwingHipSpl.eval(fSwingT);
     
-    state.fIKneeAngle = dJointGetHingeAngle(fILeg.KneeJ.id) + fILeg.KneeJ.off;
-    state.fOKneeAngle = dJointGetHingeAngle(fOLeg.KneeJ.id) + fOLeg.KneeJ.off;
+    state.fDesiredKneeAngle = fSwingKneeSpl.eval(fSwingT);
     
-    state.fIAnkleAngle = dJointGetHingeAngle(fILeg.AnkleJ.id) + fILeg.AnkleJ.off;
-    state.fOAnkleAngle = dJointGetHingeAngle(fOLeg.AnkleJ.id) + fOLeg.AnkleJ.off;
+    state.fLKneeAngle = dJointGetHingeAngle(fLLeg.KneeJ.id) + fLLeg.KneeJ.off;
+    state.fRKneeAngle = dJointGetHingeAngle(fRLeg.KneeJ.id) + fRLeg.KneeJ.off;
     
-    state.fITipClear = GetTipClearance(fILeg.FootB);
-    state.fIHeelClear = GetHeelClearance(fILeg.FootB);
-    state.fOTipClear = GetTipClearance(fOLeg.FootB);
-    state.fOHeelClear = GetHeelClearance(fOLeg.FootB);
+    state.fLAnkleAngle = dJointGetUniversalAngle2(fLLeg.AnkleJ.id) + fLLeg.AnkleJ.off;
+    state.fRAnkleAngle = dJointGetUniversalAngle2(fRLeg.AnkleJ.id) + fRLeg.AnkleJ.off;
     
-    state.fILegState = fILegState;
-    state.fOLegState = fOLegState;
+    state.fLTipClear = GetTipClearance(fLLeg.FootB);
+    state.fLHeelClear = GetHeelClearance(fLLeg.FootB);
+    state.fRTipClear = GetTipClearance(fRLeg.FootB);
+    state.fRHeelClear = GetHeelClearance(fRLeg.FootB);
+    
+    state.fLLegState = fLLegState;
+    state.fRLegState = fRLegState;
     
     return state;
 }

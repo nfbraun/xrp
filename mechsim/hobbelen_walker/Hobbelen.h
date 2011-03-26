@@ -25,20 +25,37 @@ const ChainSegment LowerLeg(0.9, 0.0068, 0.3, 0.15,      0.);
 //                     m,   I,      l,     w,      r,    h  [SI units]
 const FootSegment Foot(0.1, 0.0001, 0.085, 0.0175, 0.02, 0.025);
 
+#ifdef WALKER_3D
+const double FOOT_WIDTH = 0.1;
+const double LEG_DIST = 0.2;
+#else
+const double FOOT_WIDTH = 0.1;
+const double LEG_DIST = 0.0;
+#endif
+
 const double K_AL = 5.;
 const double K_A = 20.;
 
 // Swing leg trajectory
 const double STEP_T = 0.8;
-const int SWING_SPL_N_POINTS = 6;
-const double SWING_SPL_X[SWING_SPL_N_POINTS] =
+const int SWING_HIP_N_POINTS = 6;
+const double SWING_HIP_X[SWING_HIP_N_POINTS] =
     { 0.*STEP_T, 0.1*STEP_T, 0.2*STEP_T, 0.4*STEP_T, 0.7*STEP_T, 1.*STEP_T };
-const double SWING_SPL_Y[SWING_SPL_N_POINTS] =
+const double SWING_HIP_Y[SWING_HIP_N_POINTS] =
     { -0.54, -0.54, -0.4, 0.2, 0.55, 0.44 };
+const int SWING_KNEE_N_POINTS = 7;
+const double SWING_KNEE_X[SWING_KNEE_N_POINTS] =
+    { 0.*STEP_T, 0.15*STEP_T, 0.25*STEP_T, 0.35*STEP_T, 0.55*STEP_T, 0.7*STEP_T, 1.*STEP_T };
+const double SWING_KNEE_Y[SWING_KNEE_N_POINTS] =
+    { 0., -.1, -0.6, -1.0, -0.5, -.01, 0.0 };
+
+// The following parameter(s) only influence the disaply on screen, not the
+//  simulation
+const double DISP_BODYWIDTH = 0.3;
 
 // These do not matter much, as long as they are large enough
-const double INNER_LEG_DIST = 0.2;
-const double OUTER_LEG_DIST = 0.4;
+// const double INNER_LEG_DIST = 0.2;
+// const double OUTER_LEG_DIST = 0.4;
 }; // end namespace HobbelenConst
 
 class BodyQ {
@@ -69,18 +86,19 @@ class HobState: public SimulationState {
     double fT;
     
     BodyQ fBodyQ;
-    BodyQ fIULegQ, fILLegQ, fIFootQ;
-    BodyQ fOULegQ, fOLLegQ, fOFootQ;
+    BodyQ fLULegQ, fLLLegQ, fLFootQ;
+    BodyQ fRULegQ, fRLLegQ, fRFootQ;
     
-    double fIHipAngle, fOHipAngle;
+    double fLHipAngle, fRHipAngle;
     double fDesiredInterLeg;
-    double fIKneeAngle, fOKneeAngle;
-    double fIAnkleAngle, fOAnkleAngle;
+    double fLKneeAngle, fRKneeAngle;
+    double fDesiredKneeAngle;
+    double fLAnkleAngle, fRAnkleAngle;
     
-    double fITipClear, fIHeelClear;
-    double fOTipClear, fOHeelClear;
+    double fLTipClear, fLHeelClear;
+    double fRTipClear, fRHeelClear;
     
-    int fILegState, fOLegState;
+    int fLLegState, fRLegState;
     
     void Draw() const;
     void DrawLeg(const BodyQ& upperLegQ, const BodyQ& lowerLegQ,
@@ -108,7 +126,7 @@ struct HobLeg {
     HobJoint HipJ, KneeJ, AnkleJ;
 };
 
-enum LegType { InnerLeg, OuterLeg };
+enum LegType { LeftLeg, RightLeg };
 enum StepState { Pushoff, Swing, Touchdown, Stance };
 
 class Hobbelen: public CachedSimulation<HobState> {
@@ -128,8 +146,13 @@ class Hobbelen: public CachedSimulation<HobState> {
     double GetHeelClearance(dBodyID footB);
     double GetTipClearance(dBodyID footB);
     void SetKneeLock(const HobJoint& kneeJ, bool lock);
-    void AnkleTorqueControl(const HobJoint& ankleJ, StepState state);
+    void AnklePitchTorqueControl(const HobJoint& ankleJ, StepState state);
+    void AnkleRollTorqueControl(const HobJoint& ankleJ);
     void SwingHipTorqueControl(LegType leg, double t);
+    void SwingKneeTorqueControl(const HobJoint& kneeJ, double t);
+    void Servo(const HobJoint& joint, double desiredAngle);
+    void LegRollControl();
+    
     void Collide(dGeomID g1, dGeomID g2);
     
     dWorldID fWorld;
@@ -147,11 +170,13 @@ class Hobbelen: public CachedSimulation<HobState> {
     dGeomID fFloorG;
     dBodyID fBodyB;
     
-    HobLeg fILeg, fOLeg;
+    HobLeg fLLeg, fRLeg;
     
-    Spline fSwingSpl;
+    Spline fSwingHipSpl, fSwingKneeSpl;
     double fSwingT;
-    StepState fILegState, fOLegState;
+    StepState fLLegState, fRLegState;
+    
+    double fDesiredLRoll, fDesiredRRoll;
 };
 
 #endif
