@@ -99,17 +99,33 @@ void MGState::Draw() const
 {
     glMatrixMode(GL_MODELVIEW);
     
+    DrawRobot(false);
+    
+    GL::shadowsBeginFloor();
     DrawSlide(McGeer::FLOOR_DIST, -.5, McGeer::SLIDELEN_1);
+    GL::shadowsBeginObjects(Vector3(sin(McGeer::GAMMA), 0., cos(McGeer::GAMMA)),
+                            -McGeer::FLOOR_DIST);
+    DrawRobot(true);
+    GL::shadowsEnd();
+    
+    GL::shadowsBeginFloor();
     DrawSlide(McGeer::FLOOR_DIST + McGeer::STEP_HEIGHT, McGeer::SLIDELEN_1,
         McGeer::SLIDELEN_1 + McGeer::SLIDELEN_2);
-    
+    GL::shadowsBeginObjects(Vector3(sin(McGeer::GAMMA), 0., cos(McGeer::GAMMA)),
+                            -McGeer::FLOOR_DIST - McGeer::STEP_HEIGHT);
+    DrawRobot(true);
+    GL::shadowsEnd();
+}
+
+void MGState::DrawRobot(bool shadowmode) const
+{
     Vector3 d;
-    glColor3f(1., 1., 0.);
+    if(!shadowmode) glColor3f(1., 1., 0.);
     d = (McGeer::INNER_LEG_DIST / 2.) * Vector3::eY;
     DrawLeg(fILeg.fTPos + d, fILeg.fTRot, fILeg.fSPos + d, fILeg.fSRot);
     DrawLeg(fILeg.fTPos - d, fILeg.fTRot, fILeg.fSPos - d, fILeg.fSRot);
-
-    glColor3f(1., 0., 1.);
+    
+    if(!shadowmode) glColor3f(1., 0., 1.);
     d = (McGeer::OUTER_LEG_DIST / 2.) * Vector3::eY;
     DrawLeg(fOLeg.fTPos + d, fOLeg.fTRot, fOLeg.fSPos + d, fOLeg.fSRot);
     DrawLeg(fOLeg.fTPos - d, fOLeg.fTRot, fOLeg.fSPos - d, fOLeg.fSRot);

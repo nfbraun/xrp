@@ -387,17 +387,25 @@ void GLWidget::normalizeAngles()
 
 void GLWidget::initializeGL()
 {
+    // Needed for projection shadow
+    glEnable(GL_BLEND);
+    
     glEnable(GL_DEPTH_TEST);
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
+    
+    // Needed because glScale() affects the normal vector
+    glEnable(GL_NORMALIZE);
+    
+    // Set ambient/diffuse color via glColor()
     glEnable(GL_COLOR_MATERIAL);
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
-
-    const float Light0Position[] = {0., 5., 1., 0.};
+    
+    const float Light0Position[] = {1., 1., 1., 0.};
     glLightfv(GL_LIGHT0, GL_POSITION, Light0Position);
     const float Light0Ambient[] = {0., 0., 0., 1. };
     glLightfv(GL_LIGHT0, GL_AMBIENT, Light0Ambient);
-    const float Light0Diffuse[] = {10., 10., 10., 1.};
+    const float Light0Diffuse[] = {1., 1., 1., 1.};
     glLightfv(GL_LIGHT0, GL_DIFFUSE, Light0Diffuse);
     const float GlobalAmbient[] = {.2, .2, .2, 1.};
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, GlobalAmbient);

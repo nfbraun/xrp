@@ -42,6 +42,7 @@ class MGState: public SimulationState {
     LegState fILeg, fOLeg;
 
   private:
+    void DrawRobot(bool shadowmode) const;
     void DrawLeg(Vector3 thighPos, Rotation thighRot, Vector3 shankPos, Rotation shankRot) const;
     void DrawSlide(double dist, double s0, double s1) const;
     

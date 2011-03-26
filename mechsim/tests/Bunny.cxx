@@ -17,7 +17,16 @@ void BunnyState::Draw() const
     glScalef(10., 10., 10.);
     glCallList(fParent->GetBunnyList());
     glPopMatrix();
+    
+    GL::shadowsBeginFloor();
     GL::drawCheckerboardFloor();
+    GL::shadowsBeginObjects(Vector3(0., 0., 1.), 0.);
+    glPushMatrix();
+    glTranslatef(2.*sin(fT/8.), 0., 0.);
+    glScalef(10., 10., 10.);
+    glCallList(fParent->GetBunnyList());
+    glPopMatrix();
+    GL::shadowsEnd();
 }
 
 Bunny::Bunny()
@@ -55,7 +64,7 @@ GLuint Bunny::GetBunnyList()
             break;
         }
         Vector3f v1(tri->v1), v2(tri->v2), v3(tri->v3);
-        Vector3f normal = Vector::cross(v1-v2, v1-v3).norm();
+        Vector3f normal = -Vector::cross(v1-v2, v1-v3).norm();
         glNormal3fv(normal);
         glVertex3fv(v1-c);
         glVertex3fv(v2-c);

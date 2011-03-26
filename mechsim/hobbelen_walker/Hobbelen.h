@@ -49,7 +49,7 @@ const double SWING_KNEE_X[SWING_KNEE_N_POINTS] =
 const double SWING_KNEE_Y[SWING_KNEE_N_POINTS] =
     { 0., -.1, -0.6, -1.0, -0.5, -.01, 0.0 };
 
-// The following parameter(s) only influence the disaply on screen, not the
+// The following parameter(s) only influence the display on screen, not the
 //  simulation
 const double DISP_BODYWIDTH = 0.3;
 
@@ -101,6 +101,7 @@ class HobState: public SimulationState {
     int fLLegState, fRLegState;
     
     void Draw() const;
+    void DrawRobot(bool shadowmode) const;
     void DrawLeg(const BodyQ& upperLegQ, const BodyQ& lowerLegQ,
                        const BodyQ& footQ) const;
     

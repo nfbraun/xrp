@@ -72,25 +72,30 @@ void drawDiscSegment(const double r, double h, const double alpha)
         glVertex3f(x4, y4, -h);
         glVertex3f(x3, y3, -h);
         
-        glNormal3f(-cos(phi), -sin(phi), 0.);
-        glVertex3f(x1, y1, h);
-        glVertex3f(x3, y3, h);
-        glVertex3f(x3, y3, -h);
-        glVertex3f(x1, y1, -h);
-        
         glNormal3f(cos(phi), sin(phi), 0.);
         glVertex3f(x2, y2, h);
         glVertex3f(x4, y4, h);
         glVertex3f(x4, y4, -h);
         glVertex3f(x2, y2, -h);
     }
+    
+    glNormal3f(0., -1., 0.);
+    x1 = -r * sin(alpha/2.);
+    y1 = rc;
+    x3 = -x1;
+    y3 = rc;
+    glVertex3f(x1, y1, h);
+    glVertex3f(x3, y3, h);
+    glVertex3f(x3, y3, -h);
+    glVertex3f(x1, y1, -h);
+    
     glEnd();
 }
 
 void drawCheckerboardFloor()
 {
     glBegin(GL_QUADS);
-        glNormal3f(0., 0., -1.);
+        glNormal3f(0., 0., 1.);
         
         for(int x=-5; x <= 5; ++x) {
             for(int y=-5; y <= 5; ++y) {
@@ -216,6 +221,59 @@ void drawUnitCube()
     glVertex3f( .5,  .5, -.5);
 
     glEnd();
+}
+
+void shadowsBeginFloor()
+{
+    glClear(GL_STENCIL_BUFFER_BIT);
+    glEnable(GL_STENCIL_TEST);
+    
+    glStencilFunc(GL_ALWAYS, 1, 0xffffffff);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+}
+
+void shadowsBeginObjects(Vector3 floor_n, double floor_d)
+// Floor is plane with n_x*x + n_y*y + n_z*z = d
+{
+    GLfloat mod[16];
+    glGetFloatv(GL_MODELVIEW_MATRIX, mod);
+    
+    // Position of light in eye coordinates
+    const float px = 1., py =  1., pz = 1.;
+    
+    // (lx, ly, lz) is position of light in modelview coordinates
+    // NOTE: assumes modelview matrix is orthogonal
+    float lx =  mod[0]*px +  mod[1]*py +  mod[2]*pz;
+    float ly =  mod[4]*px +  mod[5]*py +  mod[6]*pz;
+    float lz =  mod[8]*px +  mod[9]*py + mod[10]*pz;
+    
+    const float nx = floor_n.x(), ny = floor_n.y(), nz = floor_n.z();
+    float dot = nx*lx + ny*ly + nz*lz;
+    
+    glStencilFunc(GL_LESS, 0, 0xffffffff);
+    glStencilOp(GL_REPLACE, GL_REPLACE, GL_REPLACE);
+    
+    glPolygonOffset(-1., -1.);
+    glEnable(GL_POLYGON_OFFSET_FILL);
+    
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor4f(0., 0., 0., .5);
+    
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    const GLfloat mat[] = { dot - nx*lx, -nx*ly,       -nx*lz,       0,
+                           -ny*lx,        dot - ny*ly, -ny*lz,       0,
+                           -nz*lx,       -nz*ly,        dot - nz*lz, 0,
+                            floor_d*lx,   floor_d*ly,   floor_d*lz,  dot };
+    glMultMatrixf(mat);
+}
+
+void shadowsEnd()
+{
+    glPopMatrix();
+    
+    glDisable(GL_POLYGON_OFFSET_FILL);
+    glDisable(GL_STENCIL_TEST);
 }
 
 } // end namespace GL

@@ -43,21 +43,33 @@ void HobState::Draw() const
     using namespace HobbelenConst;
     
     glMatrixMode(GL_MODELVIEW);
+    
+    DrawRobot(false);
+    
+    GL::shadowsBeginFloor();
+    DrawSlide();
+    GL::shadowsBeginObjects(Vector3(sin(GAMMA), 0., cos(GAMMA)), -FLOOR_DIST);
+    DrawRobot(true);
+    GL::shadowsEnd();
+}
+
+void HobState::DrawRobot(bool shadowmode) const
+{
+    using namespace HobbelenConst;
+    
     glPushMatrix();
     
-    DrawSlide();
-    
-    glColor3f(1., 1., 1.);
+    if(!shadowmode) glColor3f(1., 1., 1.);
     fBodyQ.TransformGL();
     GL::Translate(Body.cb());
     glScalef(.1, DISP_BODYWIDTH, Body.l());
     GL::drawUnitCube();
     glPopMatrix();
     
-    glColor3f(1., 1., 0.);
+    if(!shadowmode) glColor3f(1., 1., 0.);
     DrawLeg(fLULegQ, fLLLegQ, fLFootQ);
     
-    glColor3f(1., 0., 1.);
+    if(!shadowmode) glColor3f(1., 0., 1.);
     DrawLeg(fRULegQ, fRLLegQ, fRFootQ);
     
     glPopMatrix();

@@ -32,10 +32,19 @@ void BSState::Draw() const
     glColor3f(1., 1., 0.);
     GL::drawSphere(.3, fBPos);
     
+    GL::shadowsBeginFloor();
     glColor3f(0., 1., 0.);
     GL::drawODEBox(gSlideG, 3., 1., .2);
+    Vector3 n(sin(.2), 0., cos(.2));
+    GL::shadowsBeginObjects(n, Vector::dot(n, Vector3(0., 0., 9.) + .1 * n));
+    GL::drawSphere(.3, fBPos);
+    GL::shadowsEnd();
     
+    GL::shadowsBeginFloor();
     GL::drawCheckerboardFloor();
+    GL::shadowsBeginObjects(Vector3(0., 0., 1.), 0.);
+    GL::drawSphere(.3, fBPos);
+    GL::shadowsEnd();
 }
 
 BallSlide::BallSlide()

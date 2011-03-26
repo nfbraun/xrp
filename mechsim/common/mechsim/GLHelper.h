@@ -17,6 +17,10 @@ void drawODEBox(dGeomID id, double lx, double ly, double lz);
 void drawBox(Vector3 p1, Vector3 p2);
 void drawUnitCube();
 
+void shadowsBeginFloor();
+void shadowsBeginObjects(Vector3 floor_n, double floor_d);
+void shadowsEnd();
+
 const double RAD_TO_DEG = 180. / M_PI;
 
 inline void Translate(const Vector3& v)
