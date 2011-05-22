@@ -4,6 +4,7 @@
 #include "speedctrl.h"
 #include "serencode.h"
 #include "adc.h"
+#include "ir.h"
 #include <stdio.h>
 #include <inttypes.h>
 #include <avr/interrupt.h>
@@ -11,6 +12,8 @@
 
 #define SSI_CS0n 3
 #define SSI_CS1n 4
+
+#define SWITCH_PIN (PINB & _UV(3))
 
 int16_t poly(int16_t _x)
 {
@@ -33,14 +36,29 @@ int16_t get_angle(void)
 #endif
 
 // These values work somewhat, but I do not know why (or how to improve them).
-#define A1 4570
-#define A2 90   // was: 192
-#define A3 5190
-#define A4 10
+// scale = 2**20
+//#define A1 4570
+//#define A2 90   // was: 192
+//#define A3 5190
+//#define A4 10
 
-int32_t get_accel(int32_t x_dot, int32_t phi_dot, int32_t x, int32_t phi)
+// scale = 2**16
+//#define A1 285
+//#define A2   5
+//#define A3   0
+//#define A4   1
+//#define A5 324
+
+// #define A1 299
+#define A1 3151 //4000
+#define A2 13
+#define A3 6097
+#define A4 1
+#define A5 -5772
+
+int32_t get_accel(int32_t phi_dot, int32_t phi, int32_t x_dot, int32_t x, int32_t x_dot_s)
 {
-    return (A1*phi_dot + A2*phi + A3*x_dot + A4*x);
+    return (A1*phi_dot + A2*phi + A3*x_dot + A4*x + A5*x_dot_s);
 }
 
 int16_t old_phi;
@@ -50,6 +68,7 @@ volatile int8_t holdoff = 1;
 wheelpos_t wheel_pos_0, wheel_pos_1;
 int16_t error_int_0, error_int_1;
 int32_t target_speed;
+int32_t user_pos;
 
 void reset_controller(void)
 {
@@ -62,14 +81,19 @@ void reset_controller(void)
     error_int_1 = 0;
     
     target_speed = 0;
+    
+    user_pos = 0;
 }
 
 // Angle for upright pendulum
-#define PHI_0 2055
+#define PHI_0 1500
 
 // Phi range for safety shutdown
 #define PHI_MIN (PHI_0 - 20550)
 #define PHI_MAX (PHI_0 + 20550)
+
+// Zero level for angular rate sensor
+#define OMEGA_0 325
 
 ISR(TIMER2_COMP_vect)
 {
@@ -93,6 +117,9 @@ int main()
     int16_t speed_0, speed_1;
     int8_t motor_0, motor_1;
     
+    int8_t user_speed = 0;
+    int8_t bad_cnt = 0;
+    
     twi_init();
     ssi_init();
     motor_init();
@@ -100,6 +127,7 @@ int main()
     // scons_init();
     timer2_init();
     adc_init();
+    ir_init();
     sei(); // enable interrupts
     
     // chip select for SSI
@@ -117,6 +145,21 @@ int main()
         while(holdoff) { idle_cnt++; }
         holdoff = 1;
         
+        if(ir_state == IR_STATE_READY) {
+            if(check_checksum(ir_data, 0xC0)) {
+                bad_cnt = 0;
+                user_speed = (ir_data[1] & 0x0F);
+                if(ir_data[2] & 0x40)
+                    user_speed = -user_speed;
+            } else {
+                if(bad_cnt < 10)
+                    bad_cnt++;
+            }
+            if(bad_cnt > 8)
+                target_speed = 0;
+            ir_state = IR_STATE_ARMED;
+        }
+        
         phi = get_angle();
         omega = adc_read(1);
         
@@ -125,46 +168,63 @@ int main()
             speed_0 = get_speed(&wheel_pos_0);
             speed_1 = get_speed(&wheel_pos_1);
             
-            target_speed += get_accel(target_speed >> 20,
-                                      //325 - omega,
-                                      phi - old_phi,
+            target_speed += get_accel(//phi - old_phi,
+                                      omega - OMEGA_0,
+                                      phi - PHI_0,
+                                      speed_0,
                                       GET_WHEEL_POS(wheel_pos_0),
-                                      phi - PHI_0);
+                                      target_speed >> 16);
             
-            motor_0 = sp_ctrl_step(target_speed >> 20,
+            // user_pos += user_speed;
+            
+            motor_0 = sp_ctrl_step(target_speed >> 16,
                                    speed_0,
                                    &error_int_0);
-            motor_1 = sp_ctrl_step(target_speed >> 20,
+            motor_1 = sp_ctrl_step(target_speed >> 16,
                                    speed_1,
                                    &error_int_1);
             
             set_speed(motor_0, motor_1);
             
-            // WARNING: The amount of data transmitted here is on the border
-            // of what is acceptable.
-            se_start_frame(24);
-            
-            se_puti32(target_speed);
-            se_puti16(phi - old_phi);
+            // se_puti32(target_speed);
+            /* se_puti16(phi - old_phi);
             se_puti32(GET_WHEEL_POS(wheel_pos_0));
-            se_puti16(phi - PHI_0);
+            se_puti16(phi - PHI_0); */
             
-            se_puti16(speed_0);
-            se_puti16(speed_1);
+            // se_puti16(speed_0);
+            // se_puti16(speed_1);
             
-            se_puti16(325 - omega);
+            /* se_puti16(325 - omega);
             
-            se_puti16(idle_cnt);
+            se_puti16(idle_cnt); */
             
-            se_puti16(error_int_0);
-            se_puti16(error_int_1);
+            // se_puti16(error_int_0);
+            // se_puti16(error_int_1);
             
-            old_phi = phi;
+            // se_puti16(motor_0);
+            // se_puti16(motor_1);
         } else {
             set_speed(0, 0);
         }
         
-        if(phi > PHI_MIN && phi < PHI_MAX) {
+        se_start_frame(12);
+        //se_puti32(user_pos);
+        //se_puti16((int16_t)user_speed);
+        //se_puti16(idle_cnt);
+        // se_puti16(user_speed);
+        //se_puti32(target_speed);
+        //se_puti16(phi - old_phi);
+        //se_puti32(GET_WHEEL_POS(wheel_pos_0));
+        se_puti16(phi - PHI_0);
+        se_puti16(omega - OMEGA_0);
+        se_puti16(speed_0);
+        se_puti16(adc_read(2));
+        se_puti16(adc_read(3));
+        se_puti16(adc_read(4));
+        
+        old_phi = phi;
+        
+        if(phi > PHI_MIN && phi < PHI_MAX && SWITCH_PIN) {
             enable_count++;
         } else {
             enable = 0;

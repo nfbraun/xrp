@@ -1,6 +1,11 @@
 * Bootloader available from:
   http://www.siwawi.arubi.uni-kl.de/avr_projects/#avrprog_boot
 
+* Program low fuse (set internal oscillator to 8 MHz)
+  avrdude -p atmega8 -c dapa -U lfuse:w:0xe4:m
+  
+  Default value: 0xE1 (internal oscillator at 1 MHz)
+
 * Program high fuse:
   avrdude -p atmega8 -c dapa -U hfuse:w:0xda:m
   

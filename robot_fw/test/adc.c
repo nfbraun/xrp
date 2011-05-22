@@ -6,7 +6,7 @@
 #include <inttypes.h>
 #include <serencode.h>
 
-#define N_CH 2
+#define N_CH 5
 
 volatile uint8_t ch;
 
@@ -43,6 +43,7 @@ ISR(TIMER2_COMPA_vect)
 
 void adc_start_single(uint8_t c)
 {
+    // ADC reference voltage is AVcc
     ADMUX = _UV(REFS0) | (c & 0x07);
     _SETBIT(ADCSRA, ADSC);
     _SETBIT(ADCSRA, ADIE);

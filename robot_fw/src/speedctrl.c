@@ -20,7 +20,7 @@ void init_wheel_pos(wheelpos_t* wp, int8_t ch)
     wp->ch = ch;
 }
 
-#define MOTOR_CLAMP 80
+#define MOTOR_CLAMP 100
 #define ERROR_INT_CLAMP 30000L
 
 int16_t get_speed(wheelpos_t* wp)

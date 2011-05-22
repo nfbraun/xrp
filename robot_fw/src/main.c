@@ -124,7 +124,7 @@ int main()
         sleep_mode();
         
         if(ir_state == IR_STATE_READY) {
-            // printf("%02hhX %02hhX %02hhX %02hhX", ir_data[0], ir_data[1], ir_data[2], ir_data[3]);
+            printf("%02hhX %02hhX %02hhX %02hhX\r\n", ir_data[0], ir_data[1], ir_data[2], ir_data[3]);
             if(check_checksum(ir_data, 0xC0)) {
                 bad_cnt = 0;
                 target_speed = 2 * (ir_data[1] & 0x0F);
@@ -155,11 +155,11 @@ int main()
             
             holdoff = 1;
             
-            se_start_frame(8);
+            /* se_start_frame(8);
             se_puti16(target_speed);
             se_puti16(speed_0);
             se_puti16(error_int_0);
-            se_puti16(motor_0);
+            se_puti16(motor_0); */
         }
     }
     

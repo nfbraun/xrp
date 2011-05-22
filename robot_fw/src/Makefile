@@ -3,6 +3,7 @@ MCUFREQ=-DF_CPU=8000000UL
 SERPORT=/dev/ttyUSB0
 PROGTYPE=butterfly
 BAUDRATE=38400
+# SOURCES=motor_test_2.c speedctrl.c
 SOURCES=pendulum.c speedctrl.c
 # SOURCES=main.c speedctrl.c
 LIBDIR=../lib

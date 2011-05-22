@@ -14,6 +14,7 @@ ISR(ADC_vect)
 
 void adc_start_single(uint8_t c)
 {
+    // ADC reference voltage is AVcc
     ADMUX = _UV(REFS0) | (c & 0x07);
     _SETBIT(ADCSRA, ADSC);
     _SETBIT(ADCSRA, ADIE);

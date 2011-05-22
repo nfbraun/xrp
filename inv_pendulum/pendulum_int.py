@@ -79,6 +79,12 @@ oldPhi = phiIni * 652.
 oldX = 0
 vSet = 0
 
+print "#:1:vx"
+print "#:2:phiDot"
+print "#:3:x"
+print "#:4:phi"
+print "#:5:vSet"
+
 while t < 100.:
     x,y,z = car.getPosition()
     vx,vy,vz = car.getLinearVel()

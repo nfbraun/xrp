@@ -11,9 +11,11 @@ class Sys:
     M_B = 2.14    # kg
     I_B = 0.1175  # kg m^2
 
-def get_accel(phidot, phi, psidot, psi):
-    u = (4570, 192, 5190, 10)
-    return phidot*u[0] + phi*u[1] + psidot*u[2] + psi*u[3]
+def get_accel(phidot, phi, psidot, psi, psidot_s):
+    # u = (4570, 110, 5190, 10)
+    # u = (4570, 192, 5190, 10)
+    u = (16610, 521, 12358, 21, -4942)
+    return phidot*u[0] + phi*u[1] + psidot*u[2] + psi*u[3] + psidot_s*u[4]
 
 def near_callback(args, geom1, geom2):
     contacts = ode.collide(geom1, geom2)
@@ -55,7 +57,7 @@ motor = ode.AMotor(world)
 motor.attach(wheel, body)
 motor.setNumAxes(1)
 motor.setAxis(0, 0, (0., 1., 0.))
-motor.setParam(ode.ParamFMax, 1.)
+motor.setParam(ode.ParamFMax, 10.)
 motor.setParam(ode.ParamVel, 0.)
 
 floor = ode.GeomPlane(space, (0., 0., 1.), -Sys.R)
@@ -70,7 +72,9 @@ motor_v = 0
 old_phi = int(0.1 * (180/math.pi)*685)
 old_psi = 0
 
-while t < 10.:
+fifo = [0] * 1
+
+while t < 5.:
     bx,by,bz = body.getPosition()
     wx,wy,wz = wheel.getPosition()
     bvx,bvy,bvz = body.getLinearVel()
@@ -81,18 +85,20 @@ while t < 10.:
     p = (t, boy, math.atan2(bx-wx,bz-wz), woy, wx / Sys.R, target_v/(2**20))
     print ("%.6f " * len(p)) % p
     
-    phi = int((math.atan2(bx-wx,bz-wz))*(180/math.pi)*685 + 1*685*(random.random()-.5))
+    phi = int((math.atan2(bx-wx,bz-wz))*(180/math.pi)*685 + 0*685*(random.random()-.5))
     psi = int((wx / Sys.R)*(512/math.pi))
     # phi = math.atan2(bx-wx, bz-wz)*(180/math.pi)*685
     # psi = wx/Sys.R*512/math.pi
     # phi_dot = boy * (180/math.pi)*685 * dt
     # psi_dot = woy * (512/math.pi) * dt
-    target_v += get_accel(phi-old_phi, phi, int(target_v/(2**20)), psi)
-    if int(target_v / 2**20) > motor_v:
+    target_v += get_accel(phi-old_phi, phi, motor_v, psi, int(target_v/(2**16)))
+    if int(target_v / 2**16) > motor_v:
         motor_v += .5
-    elif int(target_v / 2**20) < motor_v:
+    elif int(target_v / 2**16) < motor_v:
         motor_v -= .5
-    motor.setParam(ode.ParamVel, motor_v/512*math.pi*100)
+    motor.setParam(ode.ParamVel, fifo[0]/512*math.pi*100)
+    del fifo[0]
+    fifo.append(motor_v)
     old_phi = phi
     old_psi = psi
     # target_v += get_accel(boy, math.atan2(bx-wx,bz-wz), woy, wx / Sys.R) * dt
