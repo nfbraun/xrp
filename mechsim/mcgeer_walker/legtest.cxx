@@ -41,7 +41,7 @@ int main(int argc, char**)
         std::cout << "phi0  = " << phi0 << std::endl;
     }
     
-    const double d0 = Vector::dot(GetFootCtr(state0), par);
+    const double d0 = VectorOp::dot(GetFootCtr(state0), par);
     
     if(argc == 2) {
         for(int t=0; t<sim.GetDefaultEndTime()/2; t++) {
@@ -65,8 +65,8 @@ int main(int argc, char**)
                        + .5 * leg.I()(1,1) * phiDot * phiDot; */
             
             Vector3 center = GetFootCtr(state);
-            double height = Vector::dot(center, nor);
-            double dist = Vector::dot(center, par);
+            double height = VectorOp::dot(center, nor);
+            double dist = VectorOp::dot(center, par);
             std::cout << t*sim.GetTimestep() << " ";
             // std::cout << T << " " << Tp;
             // std::cout << T + V << " ";

@@ -91,7 +91,7 @@ Vector3 LegState::footCtr() const
 double LegState::footClearance() const
 {
     const Vector3 normal = Vector3(sin(McGeer::GAMMA), 0., cos(McGeer::GAMMA));
-    return Vector::dot(footCtr(), normal) + McGeer::FLOOR_DIST - McGeer::R;
+    return VectorOp::dot(footCtr(), normal) + McGeer::FLOOR_DIST - McGeer::R;
 }
 
 

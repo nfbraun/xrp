@@ -174,7 +174,7 @@ std::ostream& operator<< (std::ostream& out, const _Vector3<_Scalar_T>& v)
 typedef _Vector3<double> Vector3;
 typedef _Vector3<float> Vector3f;
 
-namespace Vector {
+namespace VectorOp {
     template<typename _Scalar_T>
     _Scalar_T dot(const _Vector3<_Scalar_T>& v, const _Vector3<_Scalar_T>& w)
     {
@@ -189,7 +189,7 @@ namespace Vector {
                               v.x()*w.y() - v.y()*w.x());
         return u;
     }
-} // end namespace Vector
+} // end namespace VectorOp
 
 const double DEG2RAD = M_PI / 180;
 const double RAD2DEG = 180. / M_PI;

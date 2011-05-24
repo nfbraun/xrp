@@ -316,7 +316,7 @@ double Hobbelen::GetHeelClearance(dBodyID footB)
     Vector3 heelpos = Vector3(dBodyGetPosition(footB))
         + (rot.mat() * HobbelenConst::Foot.pbb());
     return HobbelenConst::FLOOR_DIST - HobbelenConst::Foot.r() +
-        Vector::dot(heelpos, HobbelenConst::FloorNormal);
+        VectorOp::dot(heelpos, HobbelenConst::FloorNormal);
 }
 
 double Hobbelen::GetTipClearance(dBodyID footB)
@@ -325,7 +325,7 @@ double Hobbelen::GetTipClearance(dBodyID footB)
     Vector3 tippos = Vector3(dBodyGetPosition(footB))
         + (rot.mat() * HobbelenConst::Foot.pfb());
     return HobbelenConst::FLOOR_DIST - HobbelenConst::Foot.r() +
-        Vector::dot(tippos, HobbelenConst::FloorNormal);
+        VectorOp::dot(tippos, HobbelenConst::FloorNormal);
 }
 
 void Hobbelen::SetKneeLock(const HobJoint& kneeJ, bool lock)

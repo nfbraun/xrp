@@ -11,11 +11,11 @@ class RotMotion
     static RotMotion Shift(Vector3 v)
         { return RotMotion(v, Vector3::Null); }
     static RotMotion Rotation(Vector3 ctr, Vector3 omega)
-        { return RotMotion(-Vector::cross(omega, ctr), omega); }
+        { return RotMotion(-VectorOp::cross(omega, ctr), omega); }
     
     Vector3 omega() const      { return fOmega; }
     Vector3 v0() const         { return fv0; }
-    Vector3 v(Vector3 r) const { return v0() + Vector::cross(omega(), r); }
+    Vector3 v(Vector3 r) const { return v0() + VectorOp::cross(omega(), r); }
     
   private:
     Vector3 fv0, fOmega;

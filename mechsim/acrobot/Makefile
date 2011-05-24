@@ -1,5 +1,5 @@
-CFLAGS = -I../common $(shell ode-config --cflags)
-LDFLAGS = -L../common
+CFLAGS = -I../common/mechsim $(shell ode-config --cflags)
+LDFLAGS = -L../common/mechsim
 LIBS = -lode -lmechsim
 
 .PHONY: all

@@ -138,8 +138,8 @@ ASState AsymSphere::GetCurrentState()
     
     state.fPos = Vector3(dBodyGetPosition(fBody))
             + state.fRot * dGeomGetOffsetPosition(fBodyG);
-    state.fPhi = Vector::dot(state.fPos, par) / AsymSphere::R;
-    state.fHeight = Vector::dot(state.fPos, nor);
+    state.fPhi = VectorOp::dot(state.fPos, par) / AsymSphere::R;
+    state.fHeight = VectorOp::dot(state.fPos, nor);
     
     return state;
 }
