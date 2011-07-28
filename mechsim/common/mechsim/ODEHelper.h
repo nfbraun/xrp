@@ -1,5 +1,5 @@
-#ifndef __ODEHELPER_H__
-#define __ODEHELPER_H__
+#ifndef MSIM_ODEHELPER_H
+#define MSIM_ODEHELPER_H
 
 #include <ode/ode.h>
 

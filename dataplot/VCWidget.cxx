@@ -4,6 +4,7 @@
 #include <iostream>
 #include <sstream>
 #include <cmath>
+#include <algorithm>
 #include <QPainter>
 
 //#define DEBUG_TILE_CACHE
@@ -15,7 +16,11 @@ const double VCWidget::cZoomFudge = 0.1;
 VCWidget::VCWidget(QWidget* parent)
     : QWidget(parent),
       fDragging(false),
-      fTr(cTileWidth/2)
+      fTr(cTileWidth/2),
+      fXLocked(false),
+      fXDoZoomAroundMarker(false),
+      fShowLegend(false),
+      fMarkerPos(-1.)
 {
     fVChannels[0] = VChannel(Qt::yellow);
     fVChannels[1] = VChannel(Qt::cyan);
@@ -79,19 +84,48 @@ void VCWidget::scaleYToFit()
     update();
 }
 
+void VCWidget::setXVisibleRegion(double xv)
+{
+    fTr.setXVisibleRegion(xv);
+    flushTiles();
+    update();
+}
+
+void VCWidget::setYVisibleRegion(double yv)
+{
+    fTr.setYVisibleRegion(yv);
+    flushTiles();
+    update();
+}
+
 void VCWidget::chParamsChanged()
 {
     flushTiles();
     update();
 }
 
+void VCWidget::setBorders(int l, int r, int t, int b)
+{
+    fTr.setBorders(l, r, t, b);
+    flushTiles();
+    update();
+}
+
+void VCWidget::setMarkerUserPos(double pos)
+{
+    fTr.setXUserOffset(-pos + fMarkerPos*fTr.xVisibleRegion());
+    flushTiles();
+    update();
+}
+
+void VCWidget::setMarkerUserPos_Lazy(double pos)
+{
+    fTr.setXUserOffset_Lazy(-pos + fMarkerPos*fTr.xVisibleRegion());
+    update();
+}
+
 void VCWidget::resizeEvent(QResizeEvent* ev)
 {
-/*     fGridPixmap = QPixmap(ev->size());
-    fDisplayPixmap = QPixmap(ev->size());
-    generateGrid();
-    redrawDisplay(); */
-    
     fTr.setSize(ev->size().width(), ev->size().height());
     fTileHeight = fTr.fVPHeight + cTileWidth;
     
@@ -115,10 +149,19 @@ void VCWidget::mouseReleaseEvent(QMouseEvent* ev)
 void VCWidget::wheelEvent(QWheelEvent* ev)
 {
     if(ev->orientation() == Qt::Vertical) {
-        if(ev->modifiers() & Qt::ShiftModifier)
-            zoomAroundCursor(1., exp((double) ev->delta() / 240. * M_LN2));
-        else
-            zoomAroundCursor(exp((double) ev->delta() / 240. * M_LN2), 1.);
+        if(ev->modifiers() & Qt::ShiftModifier) {
+            zoomAround(fCursorPos.x(), fCursorPos.y(),
+                       1., exp((double) ev->delta() / 240. * M_LN2));
+        } else {
+            if(xLocked() || xDoZoomAroundMarker()) {
+                zoomAround(fTr.xBase() + fTr.fVPWidth * fMarkerPos, 0,
+                           exp((double) ev->delta() / 240. * M_LN2), 1.);
+            } else {
+                zoomAround(fCursorPos.x(), fCursorPos.y(),
+                           exp((double) ev->delta() / 240. * M_LN2), 1.);
+                emit xPosChanged(markerUserPos());
+            }
+        }
         
         ev->accept();
     }
@@ -134,23 +177,23 @@ void VCWidget::mouseMoveEvent(QMouseEvent* ev)
     ev->accept();
     
     if(fDragging) {
-        fTr.shiftTileOffset(-dX, -dY);
+        if(xLocked()) {
+            fTr.shiftTileOffset(0, -dY);
+        } else {
+            fTr.shiftTileOffset(-dX, -dY);
+            emit xPosChanged(markerUserPos());
+        }
         update();
     }
 }
 
-void VCWidget::zoomAroundCursor(double fx, double fy)
+void VCWidget::zoomAround(double x, double y, double fx, double fy)
 {
-    fTr.zoomAround(fCursorPos.x(), fCursorPos.y(), fx, fy);
+    fTr.zoomAround(x, y, fx, fy);
     
     flushTiles();
     update();
 }
-
-/* float VCWidget::func(float x)
-{
-    return sin(x) * exp(-(x/20)*(x/20));
-} */
 
 void VCWidget::flushTiles()
 {
@@ -224,29 +267,7 @@ QPixmap VCWidget::renderTile(int xoff, int yoff)
         QRect(xoff*cTileWidth, yoff*fTileHeight, cTileWidth, fTileHeight),
         QColor(50, 50, 50), QColor(20, 20, 20));
     
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    
-    for(int vch=0; vch < N_VCHANNELS; vch++) {
-        if(vchannel(vch)->enabled()) {
-            Channel ch(vchannel(vch)->channel());
-            double gain = ch.gain();
-            double offset = ch.offset();
-            Data::const_iterator_t d =
-                ch.data().getFirst(fTr.xTileToUsr(xoff*cTileWidth-1));
-            Data::const_iterator_t last =
-                ch.data().getLast(fTr.xTileToUsr((xoff+1)*cTileWidth));
-            
-            painter.setPen(QPen(vchannel(vch)->color(), 1));
-            
-            QPolygonF polyline;
-            for(; d != last; d++) {
-                float x = fTr.xUsrToTile(d->first) - cTileWidth*xoff;
-                float y = -fTr.yUsrToTile(d->second*gain + offset) - fTileHeight*yoff;
-                polyline.append(QPointF(x+.5, y+.5));
-            }
-            painter.drawPolyline(polyline);
-        }
-    }
+    renderCurves(painter, xoff, yoff);
     
     #ifdef DEBUG_MARK_TILES
     painter.setPen(QPen(Qt::white, 1));
@@ -256,6 +277,60 @@ QPixmap VCWidget::renderTile(int xoff, int yoff)
     #endif
     
     return pixmap;
+}
+
+void VCWidget::renderCurves(QPainter& painter, int xoff, int yoff, double xmin, double xmax)
+{
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    
+    for(int vch=0; vch < N_VCHANNELS; vch++) {
+        if(vchannel(vch)->enabled()) {
+            Channel ch(vchannel(vch)->channel());
+            double gain = ch.gain();
+            double offset = ch.offset();
+            Data::const_iterator_t d =
+                ch.data().getFirst(std::max(fTr.xTileToUsr(xoff*cTileWidth-1),
+                                            xmin));
+            Data::const_iterator_t last =
+                ch.data().getLast(std::min(fTr.xTileToUsr((xoff+1)*cTileWidth),
+                                           xmax));
+            
+            QPen pen(vchannel(vch)->color(), 0);
+            pen.setCapStyle(Qt::FlatCap);
+            painter.setPen(pen);
+            
+            QPolygonF polyline;
+            for(; d != last; d++) {
+                float x = fTr.xUsrToTile(d->first) - cTileWidth*xoff;
+                float y = -fTr.yUsrToTile(d->second*gain + offset) - fTileHeight*yoff;
+                polyline.append(QPointF(x+.5, y+.5));
+                //std::cout << d->first << "," << d->second << " ";
+            }
+            //std::cout << std::endl;
+            painter.drawPolyline(polyline);
+            //if(polyline.size() < 2)
+            //    std::cout << "*****    " << xmin << " " << xmax << std::endl;
+        }
+    }
+}
+
+void VCWidget::addNewData(double xmin, double xmax)
+{
+    std::map<uint32_t,QPixmap>::iterator iter, elem;
+    
+    iter = fTiles.begin();
+    while(iter != fTiles.end()) {
+        elem = iter;
+        iter++;
+        int16_t x = elem->first & 0xFFFF;
+        int16_t y = elem->first >> 16;
+        if(fTr.xTileToUsr((x+1)*cTileWidth) >= xmin &&
+           fTr.xTileToUsr(x*cTileWidth) <= xmax) {
+            QPainter painter(&elem->second);
+            renderCurves(painter, x, y, xmin, xmax);
+        }
+    }
+    update();
 }
 
 int VCWidget::getTileXId(int pos)
@@ -268,45 +343,53 @@ int VCWidget::getTileYId(int pos)
     return pos < 0 ? (pos / fTileHeight) - 1 : pos / fTileHeight;
 }
 
-/* void ScopeWidget::redrawDisplay()
+void VCWidget::drawMarker(QPainter& painter)
 {
-    int head = fReader.head();
+    if(markerPos() >= 0. && markerPos() <= 1.) {
+        int xp = std::ceil(fTr.xBase() + fTr.fVPWidth * fMarkerPos - 0.5);
+        painter.setPen(QPen(Qt::white));
+        painter.drawLine(xp, fTr.yBase() - fTr.fVPHeight, xp, fTr.yBase() - 1);
+    }
+}
+
+void VCWidget::drawLegend(QPainter& painter)
+{
+    // Parameters
+    const int INFOBOX_BORDER = 3;
+    const int INFOBOX_DIST = 10;
     
-    QPainter painter(&fDisplayPixmap);
-    painter.drawPixmap(QPoint(0, 0), fGridPixmap);
-    
-    if(head < 0) return;
-    
-    painter.setRenderHint(QPainter::Antialiasing, true);
-    
-    int t1 = (head/(ticsPerScreen()))*ticsPerScreen();
-    int t2 = head;
-    int t3 = head - 9*ticsPerDiv();
-    int t4 = t1 - 1;
-    
-    if(t3 < 0) {
-        drawRegion(painter, t1, t2);
-    } else if((t3 % ticsPerScreen()) < (t2 % ticsPerScreen())) {
-        drawRegion(painter, t3, t2);
-    } else {
-        drawRegion(painter, t1, t2);
-        drawRegion(painter, t3, t4);
+    QFontMetrics fm = painter.fontMetrics();
+    int text_width = 0;
+    for(int vch=0; vch<N_VCHANNELS; vch++) {
+        text_width = std::max(text_width,
+            fm.width(vchannel(vch)->channel().name().c_str()));
     }
     
-    fLastHead = head;
-} */
+    int text_ascent = fm.ascent();
+    int text_height = fm.height();
+    int x = width() - fTr.fRightBorder - text_width - INFOBOX_DIST;
+    int y = fTr.fTopBorder + INFOBOX_DIST;
+    painter.fillRect(x-INFOBOX_BORDER, y-INFOBOX_BORDER,
+                     text_width+2*INFOBOX_BORDER,
+                     N_VCHANNELS*text_height + 2*INFOBOX_BORDER,
+                     QColor(0, 0, 0, 200));
+    for(int vch=0; vch<N_VCHANNELS; vch++) {
+        if(vchannel(vch)->enabled()) {
+            painter.setPen(vchannel(vch)->color());
+            painter.drawText(x, y+text_ascent+vch*text_height,
+                vchannel(vch)->channel().name().c_str());
+        }
+    }
+}
 
 void VCWidget::paintEvent(QPaintEvent*)
 {
     // std::cout << "paintEvent()" << std::endl;
     
     QPainter painter(this);
-//    updateDisplay();
-//     painter.drawPixmap(QPoint(0, 0), fTestPixmap);
     
     int x, y;
     int x1, y1, x2, y2;
-    // bool cv = fCursorVisible;
     QPixmap tile;
     unsigned int NTiles;
     int src_x, src_y, p_width, p_height, dest_x, dest_y;
@@ -315,8 +398,6 @@ void VCWidget::paintEvent(QPaintEvent*)
     x2 = getTileXId(fTr.fLeftBorder + fTr.fVPWidth - fTr.fXTileOffset - 1);
     y1 = getTileYId(fTr.fTopBorder - fTr.fYTileOffset);
     y2 = getTileYId(fTr.fTopBorder + fTr.fVPHeight - fTr.fYTileOffset - 1);
-    
-    // if(cv) DrawCursor();
     
     for(x=x1; x<=x2; x++) {
         for(y=y1; y<=y2; y++) {
@@ -354,7 +435,9 @@ void VCWidget::paintEvent(QPaintEvent*)
     ScalePainter::drawXScale(painter, fTr);
     ScalePainter::drawYScale(painter, fTr);
     
-    // if(cv) DrawCursor();
+    drawMarker(painter);
+    if(showLegend())
+        drawLegend(painter);
     
     NTiles = 2*(fTr.fVPWidth/cTileWidth + 4);
     if(fTiles.size() > NTiles)

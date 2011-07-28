@@ -1,5 +1,5 @@
-#ifndef __SIMULATIONVIEWER_H__
-#define __SIMULATIONVIEWER_H__
+#ifndef MSIM_SIMULATIONVIEWER_H
+#define MSIM_SIMULATIONVIEWER_H
 
 #include "Simulation.h"
 

@@ -1,5 +1,5 @@
-#ifndef __MATRIX_H__
-#define __MATRIX_H__
+#ifndef MSIM_MATRIX_H
+#define MSIM_MATRIX_H
 
 #include "Vector.h"
 #include <limits>

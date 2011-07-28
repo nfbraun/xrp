@@ -35,15 +35,15 @@ DoublePendulum::DoublePendulum()
     dBodySetMass(fBall2, &m);
     dBodySetPosition(fBall2, 2., 0., 2.);
 
-    dJointID j1 = dJointCreateHinge(fWorld, 0);
-    dJointAttach(j1, fBall1, 0);
-    dJointSetHingeAnchor(j1, 0.,0.,0.);
-    dJointSetHingeAxis(j1, 0.,1.,0.);
+    fJoint1 = dJointCreateHinge(fWorld, 0);
+    dJointAttach(fJoint1, fBall1, 0);
+    dJointSetHingeAnchor(fJoint1, 0.,0.,0.);
+    dJointSetHingeAxis(fJoint1, 0.,1.,0.);
     
-    dJointID j2 = dJointCreateHinge(fWorld, 0);
-    dJointAttach(j2, fBall1, fBall2);
-    dJointSetHingeAnchor(j2, 1., 0., 1.);
-    dJointSetHingeAxis(j2, 0.,1.,0.);
+    fJoint2 = dJointCreateHinge(fWorld, 0);
+    dJointAttach(fJoint2, fBall1, fBall2);
+    dJointSetHingeAnchor(fJoint2, 1., 0., 1.);
+    dJointSetHingeAxis(fJoint2, 0.,1.,0.);
     
     fCurStep = 0;
 }
@@ -73,6 +73,9 @@ DPState DoublePendulum::GetCurrentState()
     
     pos = dBodyGetPosition(fBall2);
     state.fB2_pos = Vector3(pos);
+    
+    state.fOmega1 = dJointGetHingeAngleRate(fJoint1);
+    state.fOmega2 = dJointGetHingeAngleRate(fJoint2);
     
     return state;
 }

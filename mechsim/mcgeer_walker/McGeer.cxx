@@ -94,6 +94,16 @@ double LegState::footClearance() const
     return VectorOp::dot(footCtr(), normal) + McGeer::FLOOR_DIST - McGeer::R;
 }
 
+double MGState::GetData(int ch) const
+{
+    switch(ch) {
+        case 0:  return fILeg.thighAng() - McGeer::EPS_T;
+        case 1:  return fILeg.shankAng() - McGeer::EPS_T;
+        case 2:  return fOLeg.thighAng() - McGeer::EPS_T;
+        case 3:  return fOLeg.shankAng() - McGeer::EPS_T;
+        default: return std::numeric_limits<double>::quiet_NaN();
+    }
+}
 
 void MGState::Draw() const
 {

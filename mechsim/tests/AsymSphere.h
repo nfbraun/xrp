@@ -1,9 +1,9 @@
-#ifndef __TEST_H__
-#define __TEST_H__
+#ifndef MSIM_ASYMSPHERE_H
+#define MSIM_ASYMSPHERE_H
 
 #include "Vector.h"
 #include "Rotation.h"
-#include "CachedSimulation.h"
+#include "SyncSimulation.h"
 #include <ode/ode.h>
 
 class ASState: public SimulationState {
@@ -24,7 +24,7 @@ class ASState: public SimulationState {
     static const int DISP_SLIDELEN2;
 };
 
-class AsymSphere: public CachedSimulation<ASState> {
+class AsymSphere: public SyncSimulation<ASState> {
   public:
     AsymSphere();
     ~AsymSphere();

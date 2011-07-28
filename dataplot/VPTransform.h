@@ -35,7 +35,7 @@ class VPTransform
         { return yTileToUsr(yScrToTile(y)); }
     
     void setSize(int width, int height);
-    void zoomAround(int x, int y, double fx, double fy);
+    void zoomAround(double x, double y, double fx, double fy);
     
     void setBorders(int l, int r, int t, int b);
     
@@ -43,6 +43,7 @@ class VPTransform
         { fXTileOffset += dx; fYTileOffset += dy; }
     
     void setXUserOffset(double xo);
+    void setXUserOffset_Lazy(double xo);
     void setYUserOffset(double yo);
     
     inline int xBase() const { return fLeftBorder; }
@@ -55,9 +56,9 @@ class VPTransform
     void setXVisibleRegion(double xv);
     void setYVisibleRegion(double yv);
     
-    inline double getXOffsetDelta(int x, double f) const
+    inline double getXOffsetDelta(double x, double f) const
         { return (1.0 - 1.0/f) * (double)(x - xBase()) / xZoom(); }
-    inline double getYOffsetDelta(int y, double f) const
+    inline double getYOffsetDelta(double y, double f) const
         { return (1.0 - 1.0/f) * (double)(yBase() - y) / yZoom(); }
     
     static inline int round(double x) { return (int) ceil(x - 0.5); }
@@ -71,6 +72,7 @@ class VPTransform
     
     int fXTileOffset, fYTileOffset;
     double fXUOffset, fYUOffset;
+    double fXUOffset_error;
     
     double fXVisibleRegion, fYVisibleRegion;
     

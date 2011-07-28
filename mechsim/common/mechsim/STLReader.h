@@ -1,5 +1,5 @@
-#ifndef __STLREADER_H__
-#define __STLREADER_H__
+#ifndef MSIM_STLREADER_H
+#define MSIM_STLREADER_H
 
 #include <sys/types.h>
 #include <sys/stat.h>

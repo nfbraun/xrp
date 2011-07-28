@@ -38,6 +38,7 @@ class ChannelWidget : public QWidget
     ChannelWidget(VCWidget* vcWidget, QWidget* parent=0);
     
     QAction* toggleGOAction();
+    void addChannel(const Channel& ch);
     void addFile(const File& file);
     void removeFile(const File& file);
     void removeAllFiles();

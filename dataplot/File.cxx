@@ -33,14 +33,11 @@ File::reload_result_t File::reload()
     }
     
     for(unsigned int n=0; n<(file.nval()-1); n++) {
-        MutableData data;
+        Data data;
         for(CSVFile::data_t::const_iterator i = file.data().begin();
             i != file.data().end(); i++) {
             data.data()[(*i)[0]] = (*i)[n+1];
         }
-        
-        Data tdata;
-        tdata.adopt(data);
         
         std::string name = file.valName(n+1);
         if(name.empty()) {
@@ -49,7 +46,7 @@ File::reload_result_t File::reload()
             name = str.str();
         }
         
-        fChannels[n].setData(tdata);
+        fChannels[n].setData(data);
         fChannels[n].setName(name);
     }
     

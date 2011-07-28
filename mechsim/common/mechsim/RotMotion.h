@@ -1,5 +1,6 @@
-#ifndef __ROTMOTION_H__
-#define __ROTMOTION_H__
+#ifndef MSIM_ROTMOTION_H
+#define MSIM_ROTMOTION_H
+
 #include "Vector.h"
 
 // Velocity field: v(r) = v0 + omega x r

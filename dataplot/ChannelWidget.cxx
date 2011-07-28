@@ -79,6 +79,25 @@ QAction* ChannelWidget::toggleGOAction()
     return act;
 }
 
+void ChannelWidget::addChannel(const Channel& ch)
+{
+    for(int vch=0; vch < VCWidget::N_VCHANNELS; vch++) {
+        std::string name = ch.name();
+        fChannelWidgets[vch]->addItem(name.c_str(), ch);
+    }
+    
+    // Find an ``empty'' vchannel and use it for channel ch
+    int vch = 0;
+    for(; vch < VCWidget::N_VCHANNELS; vch++) {
+        if(fChannelWidgets[vch]->currentIndex() == 0) break;
+    }
+    if(vch < VCWidget::N_VCHANNELS) {
+        int index = fChannelWidgets[vch]->findData(ch);
+        fChannelWidgets[vch]->setCurrentIndex(index);
+        fEnableWidgets[vch]->setChecked(true);
+    }
+}
+
 void ChannelWidget::addFile(const File& file)
 {
     File::ch_iterator_t tch = file.channels().begin();

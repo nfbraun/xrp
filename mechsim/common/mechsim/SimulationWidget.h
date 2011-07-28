@@ -1,18 +1,22 @@
-#ifndef __SIMULATIONWIDGET_H__
-#define __SIMULATIONWIDGET_H__
+#ifndef MSIM_SIMULATIONWIDGET_H
+#define MSIM_SIMULATIONWIDGET_H
 
-#include <QWidget>
+#include <QMainWindow>
 #include <QKeyEvent>
 #include <QGridLayout>
 #include <QString>
 #include <QLineEdit>
 #include <QPushButton>
 #include <QValidator>
+#include <QSocketNotifier>
 #include "GLWidget.h"
+#include "Simulation.h"
+#include "DataViewWidget.h"
+#include "CamCtrlWidget.h"
 
 class QSlider;
 
-class SimulationWidget : public QWidget
+class SimulationWidget : public QMainWindow
 {
     Q_OBJECT
     
@@ -21,28 +25,25 @@ class SimulationWidget : public QWidget
         
     public slots:
         void toggleSimulationRunning();
-        void updateCamInfo();
-        void setCamPos();
-        void setCamDist();
-        void setCamTheta();
-        void setCamPhi();
-        void setCamRoll();
-        void setCenterOffset();
-        void setTrackObject(int state);
-        void setEnableRoll(int state);
+        void simDataReady();
+    
+    signals:
+        void simHasNewData();
 
     protected:
         void keyPressEvent(QKeyEvent* ev);
         
     private:
-        QLineEdit* makeInput(QGridLayout* l, const QString& text, int row, const char* slot = NULL);
-    
+        void initDataView(Simulation* sim);
+        
         GLWidget *fGLWidget;
         QSlider *fTimeSlide;
-        QPushButton *fStartPauseButton, *fHomeButton;
-        QLineEdit *feX, *feY, *feZ;
-        QLineEdit *fePhi, *feTheta, *feRoll, *feDist;
-        QLineEdit *fecx, *fecy, *fecz;
+        DataViewWidget *fDataView;
+        CamCtrlWidget *fCamCtrlWidget;
+        QPushButton *fStartPauseButton;
+        
+        Simulation* fSimulation;
+        QSocketNotifier* fSockNotifier;
         
         static const char START[];
         static const char PAUSE[];

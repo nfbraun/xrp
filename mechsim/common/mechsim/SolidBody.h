@@ -1,5 +1,5 @@
-#ifndef __SOLIDBODY_H__
-#define __SOLIDBODY_H__
+#ifndef MSIM_SOLIDBODY_H
+#define MSIM_SOLIDBODY_H
 
 #include "Vector.h"
 #include "Matrix.h"

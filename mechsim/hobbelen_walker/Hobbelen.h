@@ -1,12 +1,12 @@
-#ifndef __HOBBELEN_H__
-#define __HOBBELEN_H__
+#ifndef MSIM_HOBBELEN_H
+#define MSIM_HOBBELEN_H
 
 #include "Vector.h"
 #include "Rotation.h"
 #include "BodyConf.h"
 #include "ChainSegment.h"
 #include "FootSegment.h"
-#include "CachedSimulation.h"
+#include "AsyncSimulation.h"
 #include "Spline.h"
 #include <ode/ode.h>
 
@@ -130,7 +130,7 @@ struct HobLeg {
 enum LegType { LeftLeg, RightLeg };
 enum StepState { Pushoff, Swing, Touchdown, Stance };
 
-class Hobbelen: public CachedSimulation<HobState> {
+class Hobbelen: public AsyncSimulation<HobState> {
   public:
     Hobbelen();
     ~Hobbelen();

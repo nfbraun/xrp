@@ -1,5 +1,5 @@
-#ifndef __GLHELPER_H__
-#define __GLHELPER_H__
+#ifndef MSIM_GLHELPER_H
+#define MSIM_GLHELPER_H
 
 #include "Vector.h"
 #include "Rotation.h"

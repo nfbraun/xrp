@@ -91,6 +91,8 @@ void BallSlide::Advance()
         dWorldStep(fWorld, 1./(STEP_PER_SEC * INT_PER_STEP));
         dJointGroupEmpty(fContactGroup);
     }
+    // Waste time
+    usleep(20000);
 }
 
 BSState BallSlide::GetCurrentState()

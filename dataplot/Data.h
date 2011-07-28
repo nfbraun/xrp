@@ -6,12 +6,10 @@
 
 typedef std::map<double, double> data_t;
 
-class MutableData;
 class _Data;
 
 class DataStorage
 {
-  friend class MutableData;
   friend class _Data;
   public:
     DataStorage() : fRefcount(0) { }
@@ -25,23 +23,6 @@ class DataStorage
     int fRefcount;
 };
 
-class MutableData
-{
-  friend class _Data;
-  public:
-    MutableData()  { fStorage = new DataStorage; fStorage->fRefcount++; }
-    ~MutableData() { delete fStorage; }
-    
-    data_t& data()             { return fStorage->fRawData; }
-    const data_t& data() const { return fStorage->fRawData; }
-  private:
-    // Copying is not supported
-    MutableData(const MutableData&) { }
-    MutableData& operator=(const MutableData&) { return *this; }
-    
-    DataStorage* fStorage;
-};
-
 class _Data
 {
   public:
@@ -50,8 +31,7 @@ class _Data
     _Data& operator=(const _Data& src);
     ~_Data();
     
-    void adopt(MutableData& src);
-    
+    data_t& data()             { return fStorage->fRawData; }
     const data_t& data() const { return fStorage->fRawData; }
     
   private:

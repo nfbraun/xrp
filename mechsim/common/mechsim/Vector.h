@@ -1,5 +1,6 @@
-#ifndef __VECTOR_H__
-#define __VECTOR_H__
+#ifndef MSIM_VECTOR_H
+#define MSIM_VECTOR_H
+
 #include <limits>
 #include <cmath>
 #include <iostream>

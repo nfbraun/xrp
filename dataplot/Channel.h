@@ -51,6 +51,7 @@ class Channel: public _Channel
     inline bool operator==(const Channel& other) { return (fObj == other.fObj); }
     inline bool operator!=(const Channel& other) { return !(*this == other); }
     
+    inline       Data& data()       { return fObj->fData; }
     inline const Data& data() const { return fObj->fData; }
     inline void setData(const Data& data) { fObj->fData = data; }
     const std::string& name() const { return fObj->fName; }

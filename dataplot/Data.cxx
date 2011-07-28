@@ -36,13 +36,6 @@ _Data::~_Data()
         delete fStorage;
 }
 
-void _Data::adopt(MutableData& src)
-{
-    fStorage = src.fStorage;
-    src.fStorage = new DataStorage;
-    src.fStorage->fRefcount++;
-}
-
 double Data::minX() const
 {
     if(data().begin() == data().end()) return 0.;

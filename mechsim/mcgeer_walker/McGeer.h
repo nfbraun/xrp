@@ -1,9 +1,9 @@
-#ifndef __MCGEER_H__
-#define __MCGEER_H__
+#ifndef MSIM_MCGEER_H
+#define MSIM_MCGEER_H
 
 #include "Vector.h"
 #include "Rotation.h"
-#include "CachedSimulation.h"
+#include "SyncSimulation.h"
 #include <ode/ode.h>
 
 class McGeer;
@@ -38,7 +38,8 @@ class MGState: public SimulationState {
     double fT;
     void Draw() const;
     Vector3 GetCenter() const { return fILeg.fHPos; }
-
+    double GetData(int ch) const;
+    
     LegState fILeg, fOLeg;
 
   private:
@@ -50,7 +51,7 @@ class MGState: public SimulationState {
     static const double DISP_SLIDEWIDTH;
 };
 
-class McGeer: public CachedSimulation<MGState> {
+class McGeer: public SyncSimulation<MGState> {
   public:
     McGeer();
     ~McGeer();
@@ -59,6 +60,7 @@ class McGeer: public CachedSimulation<MGState> {
     int GetDefaultEndTime() { return 15 * STEP_PER_SEC; }
     
     const char* GetTitle() { return TITLE; }
+    int GetNDataCh() const { return 4; }
     
     void Advance();
     MGState GetCurrentState();

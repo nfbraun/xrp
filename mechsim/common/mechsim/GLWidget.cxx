@@ -161,8 +161,11 @@ void GLWidget::timestep()
 
 void GLWidget::setTime(int t)
 {
+    if(t < 0) t = 0;
+    if(fT == t) return;
     fT = t;
     updateGL();
+    emit timeChanged(fT);
 }
 
 void GLWidget::wheelEvent(QWheelEvent* ev)
@@ -415,11 +418,15 @@ void GLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    fCenter = fSimulation->GetState(fT)->GetCenter() + fCenterOffset;
+    const SimulationState* state = fSimulation->GetState(fT);
+    
+    if(state)
+        fCenter = fSimulation->GetState(fT)->GetCenter() + fCenterOffset;
     
     _updateCam();
     
-    fSimulation->GetState(fT)->Draw();
+    if(state)
+        state->Draw();
     drawCenter();
     drawStatusText();
 }

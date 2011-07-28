@@ -1,5 +1,5 @@
-#ifndef __ROTATION_H__
-#define __ROTATION_H__
+#ifndef MSIM_ROTATION_H
+#define MSIM_ROTATION_H
 
 #include "Vector.h"
 #include "Matrix.h"

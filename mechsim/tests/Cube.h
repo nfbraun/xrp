@@ -1,7 +1,7 @@
-#ifndef __CUBE_H__
-#define __CUBE_H__
+#ifndef MSIM_CUBE_H
+#define MSIM_CUBE_H
 
-#include "CachedSimulation.h"
+#include "SyncSimulation.h"
 #include <GL/gl.h>
 
 class Cube;
@@ -17,7 +17,7 @@ class CubeState: public SimulationState {
     Cube* fParent;
 };
 
-class Cube: public CachedSimulation<CubeState> {
+class Cube: public SyncSimulation<CubeState> {
   friend class CubeState;
   public:
     Cube();

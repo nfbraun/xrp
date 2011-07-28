@@ -1,5 +1,5 @@
-#ifndef __GLWIDGET_H__
-#define __GLWIDGET_H__
+#ifndef MSIM_GLWIDGET_H
+#define MSIM_GLWIDGET_H
 
 #include <QTimer>
 #include <QGLWidget>

@@ -1,8 +1,8 @@
-#ifndef __BALLSLIDE_H__
-#define __BALLSLIDE_H__
+#ifndef MSIM_BALLSLIDE_H
+#define MSIM_BALLSLIDE_H
 
 #include "Vector.h"
-#include "CachedSimulation.h"
+#include "AsyncSimulation.h"
 #include <ode/ode.h>
 
 class BSState: public SimulationState {
@@ -11,11 +11,24 @@ class BSState: public SimulationState {
     Vector3 fBPos;
     void Draw() const;
     Vector3 GetObjectPos() const { return fBPos; }
+    
+    Vector3 GetCenter() const
+        { return Vector3(0., 0., 5.); }
+    
+    virtual double GetData(int ch) const
+    {
+        switch(ch) {
+            case 0: return fBPos.x();
+            case 1: return fBPos.y();
+            case 2: return fBPos.z();
+            default: return std::numeric_limits<double>::quiet_NaN();
+        }
+    }
 };
 
 void near_callback(void* data, dGeomID g1, dGeomID g2);
 
-class BallSlide: public CachedSimulation<BSState> {
+class BallSlide: public AsyncSimulation<BSState> {
   friend void near_callback(void* data, dGeomID g1, dGeomID g2);
 
   public:
@@ -26,6 +39,7 @@ class BallSlide: public CachedSimulation<BSState> {
     int GetDefaultEndTime() { return 10 * STEP_PER_SEC; }
     
     const char* GetTitle() { return TITLE; }
+    int GetNDataCh() const { return 3; }
     
     void Advance();
     BSState GetCurrentState();

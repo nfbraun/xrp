@@ -1,8 +1,8 @@
-#ifndef __ACROBOT_H__
-#define __ACROBOT_H__
+#ifndef MSIM_ACROBOT_H
+#define MSIM_ACROBOT_H
 
 #include "Vector.h"
-#include "CachedSimulation.h"
+#include "SyncSimulation.h"
 #include <ode/ode.h>
 
 class AcroState: public SimulationState {
@@ -12,7 +12,7 @@ class AcroState: public SimulationState {
     void Draw() const;
 };
 
-class Acrobot: public CachedSimulation<AcroState> {
+class Acrobot: public SyncSimulation<AcroState> {
   public:
     Acrobot();
     ~Acrobot();
