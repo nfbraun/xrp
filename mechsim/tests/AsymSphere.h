@@ -9,7 +9,7 @@
 class ASState: public SimulationState {
   public:
     double fT;
-    void Draw() const;
+    void Draw(int) const;
 //    Vector3 GetObjectPos() const { return fBPos; }
 
     Vector3  fCoG, fPos;

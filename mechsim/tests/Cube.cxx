@@ -8,7 +8,7 @@ const int Cube::STEP_PER_SEC = 16;
 const int Cube::INT_PER_STEP = 16;
 const char Cube::TITLE[] = "Shadow test";
 
-void CubeState::Draw() const
+void CubeState::Draw(int) const
 {
     glColor3f(.7, .7, .7);
     glPushMatrix();

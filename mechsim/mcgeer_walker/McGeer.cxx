@@ -105,7 +105,7 @@ double MGState::GetData(int ch) const
     }
 }
 
-void MGState::Draw() const
+void MGState::Draw(int) const
 {
     glMatrixMode(GL_MODELVIEW);
     

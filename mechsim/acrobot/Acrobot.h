@@ -9,7 +9,7 @@ class AcroState: public SimulationState {
   public:
     double fT;
     Vector3 fB1_pos, fB2_pos;
-    void Draw() const;
+    void Draw(int) const;
 };
 
 class Acrobot: public SyncSimulation<AcroState> {

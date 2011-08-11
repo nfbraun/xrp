@@ -97,6 +97,28 @@ SimulationWidget::SimulationWidget(Simulation* sim)
         SLOT(showChannelDialog()));
     viewMenu->addAction(dataConfigAct);
     
+    viewMenu->addSeparator();
+    
+    QActionGroup* drawModeGroup = new QActionGroup(this);
+    QSignalMapper* drawModeMapper = new QSignalMapper(this);
+    
+    for(int i=0; i<sim->GetNDrawModes(); i++) {
+        QString title = QString("%1: %2").arg(i+1).arg(sim->GetDrawModeName(i));
+        QAction* drawModeAct = new QAction(title, this);
+        drawModeAct->setCheckable(true);
+        if(i < 9)
+            drawModeAct->setShortcut(QString("Ctrl+%1").arg(i+1));
+        drawModeGroup->addAction(drawModeAct);
+        viewMenu->addAction(drawModeAct);
+        if(i == 0)
+            drawModeAct->setChecked(true);
+        
+        drawModeMapper->setMapping(drawModeAct, i);
+        connect(drawModeAct, SIGNAL(triggered()), drawModeMapper, SLOT(map()));
+    }
+    
+    connect(drawModeMapper, SIGNAL(mapped(int)), this, SLOT(setDrawMode(int)));
+    
     connect(this, SIGNAL(simHasNewData()), fDataView, SLOT(addNewData()));
     
     setWindowTitle(sim->GetTitle());
@@ -112,6 +134,11 @@ SimulationWidget::SimulationWidget(Simulation* sim)
     } else {
         emit simHasNewData();
     }
+}
+
+void SimulationWidget::setDrawMode(int mode)
+{
+    fGLWidget->setDrawMode(mode);
 }
 
 void SimulationWidget::simDataReady()

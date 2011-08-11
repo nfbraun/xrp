@@ -36,7 +36,7 @@ class MGState: public SimulationState {
   public:
     McGeer* fParent;
     double fT;
-    void Draw() const;
+    void Draw(int) const;
     Vector3 GetCenter() const { return fILeg.fHPos; }
     double GetData(int ch) const;
     

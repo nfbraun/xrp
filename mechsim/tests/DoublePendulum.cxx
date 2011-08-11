@@ -7,7 +7,7 @@ const int DoublePendulum::STEP_PER_SEC = 16;
 const int DoublePendulum::INT_PER_STEP = 16;
 const char DoublePendulum::TITLE[] = "Double pendulum";
 
-void DPState::Draw() const
+void DPState::Draw(int) const
 {
     GL::drawSphere(.2, fB1_pos);
     GL::drawSphere(.2, fB2_pos);

@@ -27,7 +27,7 @@ void near_callback(void* data, dGeomID g1, dGeomID g2)
     }
 }
 
-void BSState::Draw() const
+void BSState::Draw(int) const
 {
     glColor3f(1., 1., 0.);
     GL::drawSphere(.3, fBPos);

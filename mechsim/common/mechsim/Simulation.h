@@ -5,7 +5,7 @@
 
 class SimulationState {
   public:
-    virtual void Draw() const = 0;
+    virtual void Draw(int mode) const = 0;
     virtual Vector3 GetCenter() const { return Vector3::Null; }
     
     // Interface for data display
@@ -23,6 +23,10 @@ class Simulation {
     
     virtual const SimulationState* GetState(int t) = 0;  // t in units of TIMESTEPs
     virtual const char* GetTitle() = 0;
+    
+    // Interface for draw modes
+    virtual int GetNDrawModes() const { return 1; }
+    virtual const char* GetDrawModeName(int) { return "<Default>"; }
     
     // Interface for data display
     virtual int GetNDataCh() const { return 0; }

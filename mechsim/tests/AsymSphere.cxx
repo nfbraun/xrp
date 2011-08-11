@@ -17,7 +17,7 @@ const double ASState::DISP_SLIDEWIDTH = 1.0;
 // Half-length of slide
 const int ASState::DISP_SLIDELEN2 = 3;
 
-void ASState::Draw() const
+void ASState::Draw(int) const
 {
     glMatrixMode(GL_MODELVIEW);
     

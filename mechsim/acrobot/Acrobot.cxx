@@ -8,7 +8,7 @@ const int Acrobot::STEP_PER_SEC = 16;
 const int Acrobot::INT_PER_STEP = 160;
 const char Acrobot::TITLE[] = "Acrobot";
 
-void AcroState::Draw() const
+void AcroState::Draw(int) const
 {
     GL::drawSphere(.1, fB1_pos);
     GL::drawSphere(.1, fB2_pos);

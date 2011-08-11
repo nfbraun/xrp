@@ -10,7 +10,7 @@ class DPState: public SimulationState {
     double fT;
     Vector3 fB1_pos, fB2_pos;
     double fOmega1, fOmega2;
-    void Draw() const;
+    void Draw(int) const;
     
     virtual double GetData(int ch) const
     {

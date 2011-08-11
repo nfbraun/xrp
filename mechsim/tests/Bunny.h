@@ -9,7 +9,7 @@ class Bunny;
 class BunnyState: public SimulationState {
   public:
     double fT;
-    void Draw() const;
+    void Draw(int) const;
     
     // calculated with vtk
     Vector3 GetCenter() const

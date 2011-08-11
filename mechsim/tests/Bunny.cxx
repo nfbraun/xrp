@@ -9,7 +9,7 @@ const int Bunny::STEP_PER_SEC = 16;
 const int Bunny::INT_PER_STEP = 16;
 const char Bunny::TITLE[] = "Stanford Bunny";
 
-void BunnyState::Draw() const
+void BunnyState::Draw(int) const
 {
     glColor3f(1., 0., 1.);
     glPushMatrix();

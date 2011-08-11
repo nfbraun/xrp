@@ -25,6 +25,7 @@ class SimulationWidget : public QMainWindow
         
     public slots:
         void toggleSimulationRunning();
+        void setDrawMode(int mode);
         void simDataReady();
     
     signals:

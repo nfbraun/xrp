@@ -100,7 +100,7 @@ class HobState: public SimulationState {
     
     int fLLegState, fRLegState;
     
-    void Draw() const;
+    void Draw(int) const;
     void DrawRobot(bool shadowmode) const;
     void DrawLeg(const BodyQ& upperLegQ, const BodyQ& lowerLegQ,
                        const BodyQ& footQ) const;

@@ -92,6 +92,7 @@ class GLWidget : public QGLWidget
   public slots:
     void timestep();
     void setTime(int t);
+    void setDrawMode(int mode);
     void resetCamPos();
     
   signals:
@@ -154,6 +155,7 @@ class GLWidget : public QGLWidget
     static const float Z_AXIS_COLOR[];
     
     Simulation* fSimulation;
+    int fDrawMode;
 };
 
 #endif

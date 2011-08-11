@@ -38,7 +38,7 @@ GLWidget::GLWidget(Simulation* sim, QWidget* parent, bool paused)
       fT(0),
       fPaused(paused),
       fTrackObject(true), fEnableRoll(false),
-      fSimulation(sim)
+      fSimulation(sim), fDrawMode(0)
 {
     fTimer = new QTimer(this);
     fTimer->setInterval(sim->GetTimestep()*1000.);
@@ -166,6 +166,13 @@ void GLWidget::setTime(int t)
     fT = t;
     updateGL();
     emit timeChanged(fT);
+}
+
+void GLWidget::setDrawMode(int mode)
+{
+    if(mode == fDrawMode) return;
+    fDrawMode = mode;
+    updateGL();
 }
 
 void GLWidget::wheelEvent(QWheelEvent* ev)
@@ -426,7 +433,7 @@ void GLWidget::paintGL()
     _updateCam();
     
     if(state)
-        state->Draw();
+        state->Draw(fDrawMode);
     drawCenter();
     drawStatusText();
 }

@@ -9,7 +9,7 @@ class BSState: public SimulationState {
   public:
     double fT;
     Vector3 fBPos;
-    void Draw() const;
+    void Draw(int) const;
     Vector3 GetObjectPos() const { return fBPos; }
     
     Vector3 GetCenter() const

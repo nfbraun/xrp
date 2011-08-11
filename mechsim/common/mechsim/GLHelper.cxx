@@ -113,6 +113,21 @@ void drawCheckerboardFloor()
     glEnd();
 }
 
+void drawCheckerboardFloorOutline()
+{
+    glBegin(GL_LINES);
+        for(int x=-6; x <= 5; ++x) {
+            glVertex3f(x*10., -60., 0.);
+            glVertex3f(x*10,   50., 0.);
+        }
+        
+        for(int y=-6; y <=5; ++y) {
+            glVertex3f(-60., y*10., 0.);
+            glVertex3f( 50., y*10., 0.);
+        }
+    glEnd();
+}
+
 void drawTube(double r, Vector3 p1, Vector3 p2)
 {
     Vector3 d = p2 - p1;

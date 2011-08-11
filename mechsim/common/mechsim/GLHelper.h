@@ -12,6 +12,7 @@ namespace GL {
 void drawSphere(double r, Vector3 p);
 void drawDiscSegment(double r, double h, double alpha);
 void drawCheckerboardFloor();
+void drawCheckerboardFloorOutline();
 void drawTube(double r, Vector3 p1, Vector3 p2);
 void drawODEBox(dGeomID id, double lx, double ly, double lz);
 void drawBox(Vector3 p1, Vector3 p2);
@@ -27,6 +28,11 @@ inline void Translate(const Vector3& v)
     { glTranslated(v.x(), v.y(), v.z()); }
 inline void Translate(const Vector3f& v)
     { glTranslatef(v.x(), v.y(), v.z()); }
+
+inline void Vertex(const Vector3& v)
+    { glVertex3d(v.x(), v.y(), v.z()); }
+inline void Vertex(const Vector3f& v)
+    { glVertex3f(v.x(), v.y(), v.z()); }
 
 void Rotate(const Rotation& r);
 

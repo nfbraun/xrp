@@ -38,7 +38,7 @@ void BodyQ::TransformGL() const
     GL::Rotate(fRot.conj());
 }
 
-void HobState::Draw() const
+void HobState::Draw(int) const
 {
     using namespace HobbelenConst;
     

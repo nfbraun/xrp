@@ -9,7 +9,7 @@ class Cube;
 class CubeState: public SimulationState {
   public:
     double fT;
-    void Draw() const;
+    void Draw(int) const;
     
     Vector3 GetCenter() const
      { return Vector3(0.,0.,1.); }
