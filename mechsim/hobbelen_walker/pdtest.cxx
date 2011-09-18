@@ -1,5 +1,6 @@
 #include <iostream>
-#include "Vector.h"
+#include <Eigen/Dense>
+#include "ODEHelper.h"
 #include <ode/ode.h>
 
 const int STEPS_PER_SEC = 1000;
@@ -13,7 +14,8 @@ double K1;
 
 void TorqueControl(dBodyID body, dJointID joint)
 {
-    Vector3 pos(dBodyGetPosition(body)), avel(dBodyGetAngularVel(body));
+    Eigen::Vector3d pos = ODE::BodyGetPosition(body);
+    Eigen::Vector3d avel = ODE::BodyGetAngularVel(body);
     double ang = atan2(pos.x(), pos.z());
     double torque;
     torque = -K0 * ang - K1 * avel.y();
@@ -44,7 +46,7 @@ int main()
     
     for(int step=0; step<60*STEPS_PER_SEC; ++step) {
         if(step % 16 == 0) {
-            Vector3 pos(dBodyGetPosition(fBody));
+            Eigen::Vector3d pos = ODE::BodyGetPosition(fBody);
             
             printf("%.6f %.6f\n", (double)step/STEPS_PER_SEC, pos.x());
         }

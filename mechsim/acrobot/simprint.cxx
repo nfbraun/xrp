@@ -1,7 +1,7 @@
 #include <iostream>
 #include "Acrobot.h"
 
-double angle(Vector3 r)
+double angle(const Eigen::Vector3d& r)
 {
     return atan2(r.x(), r.z());
 }

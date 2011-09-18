@@ -1,47 +1,52 @@
 #include <iostream>
 #include <cmath>
+#include "ODEHelper.h"
 #include "SolidBody.h"
 #include "McGeer.h"
 
 // Alternate computation of right foot center; does not require leg to be intact
-Vector3 GetFootCtr(const MGState* state)
+Eigen::Vector3d GetFootCtr(const MGState* state)
 {
     return state->fOLeg.fSPos + state->fOLeg.fSRot *
-                Vector3(dGeomGetOffsetPosition(state->fParent->fOuterFootG));
+             ODE::VectorFromArray(dGeomGetOffsetPosition(state->fParent->fOuterFootG));
 }
 
 // Function for comparing single leg rolloff to Lagrangian solution
 int main(int argc, char**)
 {
+    using Eigen::Vector3d;
+    
     McGeer sim;
     
-    const Vector3 par(cos(McGeer::GAMMA), 0., -sin(McGeer::GAMMA));
-    const Vector3 nor(sin(McGeer::GAMMA), 0.,  cos(McGeer::GAMMA));
+    const Vector3d par(cos(McGeer::GAMMA), 0., -sin(McGeer::GAMMA));
+    const Vector3d nor(sin(McGeer::GAMMA), 0.,  cos(McGeer::GAMMA));
     
     const MGState* state0 = sim.GetState(0);
+    
+    typedef Eigen::DiagonalMatrix<double, 3> Diag;
     
     SolidBody hip = SolidBody::SphereTotal(McGeer::M_H, .01, 
         state0->fOLeg.hipCoG());
     SolidBody thigh(McGeer::M_T, state0->fOLeg.thighCoG(),
-        Matrix33::Diag(1., McGeer::M_T*McGeer::R_GYR_T, 1.));
+        Diag(1., McGeer::M_T*McGeer::R_GYR_T, 1.));
     SolidBody shank(McGeer::M_S, state0->fOLeg.shankCoG(),
-        Matrix33::Diag(1., McGeer::M_S*McGeer::R_GYR_S, 1.));
+        Diag(1., McGeer::M_S*McGeer::R_GYR_S, 1.));
     
     SolidBody leg = combine(combine(hip, thigh), shank);
     
-    Vector3 d = leg.cog() - GetFootCtr(state0);
+    Vector3d d = leg.cog() - GetFootCtr(state0);
     const double phi0 = atan2(d.x(), d.z());
     
     if(argc != 2) {
         std::cout << "m     = " << leg.m() << std::endl;
         std::cout << "R     = " << McGeer::R << std::endl;
-        std::cout << "d     = " << d.mag() << std::endl;
+        std::cout << "d     = " << d.norm() << std::endl;
         std::cout << "I     = " << leg.I()(1,1) << std::endl;
         std::cout << "gamma = " << McGeer::GAMMA << std::endl;
         std::cout << "phi0  = " << phi0 << std::endl;
     }
     
-    const double d0 = VectorOp::dot(GetFootCtr(state0), par);
+    const double d0 = GetFootCtr(state0).dot(par);
     
     if(argc == 2) {
         for(int t=0; t<sim.GetDefaultEndTime()/2; t++) {
@@ -64,9 +69,9 @@ int main(int argc, char**)
             double Tp = .5 * (McGeer::M_T + McGeer::M_S) * vcog.mag2()
                        + .5 * leg.I()(1,1) * phiDot * phiDot; */
             
-            Vector3 center = GetFootCtr(state);
-            double height = VectorOp::dot(center, nor);
-            double dist = VectorOp::dot(center, par);
+            Vector3d center = GetFootCtr(state);
+            double height = center.dot(nor);
+            double dist = center.dot(par);
             std::cout << t*sim.GetTimestep() << " ";
             // std::cout << T << " " << Tp;
             // std::cout << T + V << " ";

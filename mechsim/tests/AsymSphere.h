@@ -1,8 +1,7 @@
 #ifndef MSIM_ASYMSPHERE_H
 #define MSIM_ASYMSPHERE_H
 
-#include "Vector.h"
-#include "Rotation.h"
+#include <Eigen/Dense>
 #include "SyncSimulation.h"
 #include <ode/ode.h>
 
@@ -12,9 +11,9 @@ class ASState: public SimulationState {
     void Draw(int) const;
 //    Vector3 GetObjectPos() const { return fBPos; }
 
-    Vector3  fCoG, fPos;
-    Vector3  fVel, fOmega;
-    Rotation fRot;
+    Eigen::Vector3d  fCoG, fPos;
+    Eigen::Vector3d  fVel, fOmega;
+    Eigen::Quaterniond fRot;
     double fPhi, fHeight;
 
   private:

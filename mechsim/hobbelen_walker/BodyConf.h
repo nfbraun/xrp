@@ -1,8 +1,8 @@
-#ifndef __BODYCONF_H__
-#define __BODYCONF_H__
+#ifndef HOB_BODYCONF_H
+#define HOB_BODYCONF_H
 
-#include "Vector.h"
-#include "Rotation.h"
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 
 class BodyConf
 {
@@ -13,8 +13,8 @@ class BodyConf
     double m() const { return fm; }
     double I() const { return fI; }
     
-    virtual Vector3 CoG() const = 0;
-    virtual Rotation Rot() const = 0;
+    virtual Eigen::Vector3d CoG() const = 0;
+    virtual Eigen::Quaterniond Rot() const = 0;
   
   protected:
     double fm, fI;

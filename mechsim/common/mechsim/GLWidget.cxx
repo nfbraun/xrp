@@ -29,12 +29,14 @@ const float GLWidget::Z_AXIS_COLOR[] = { 0.0, 1.0, 0.0 };
 
 const int GLWidget::DEFAULT_CAM_DIST = 5.;
 
+using Eigen::Vector3d;
+
 GLWidget::GLWidget(Simulation* sim, QWidget* parent, bool paused)
     : QGLWidget(parent),
       fCamPos(0., 0., 0.),
       fTheta(PI_UNITS/2), fPhi(3*PI_UNITS/2), fRoll(0.),
       fX(0.), fY(0.), fDist(DEFAULT_CAM_DIST),
-      fCenterOffset(Vector3::Null),
+      fCenterOffset(Eigen::Vector3d::Zero()),
       fT(0),
       fPaused(paused),
       fTrackObject(true), fEnableRoll(false),
@@ -65,10 +67,10 @@ QSize GLWidget::sizeHint() const
     return QSize(640, 480);
 }
 
-void GLWidget::setCamPos(Vector3 pos)
+void GLWidget::setCamPos(Vector3d pos)
 {
     if(fTrackObject) {
-        Vector3 d = pos - fCenter;
+        Spherical d(pos - fCenter);
         fDist = d.r();
         fPhi =   (int) ceil((d.phi()/ANG_UNIT)-0.5);
         fTheta = (int) ceil((d.theta()/ANG_UNIT)-0.5);
@@ -106,7 +108,7 @@ void GLWidget::setCamRollDeg(double roll)
     updateCam();
 }
 
-void GLWidget::setCenterOffset(Vector3 offset)
+void GLWidget::setCenterOffset(Vector3d offset)
 {
     fCenterOffset = offset;
     fCenter = fSimulation->GetState(fT)->GetCenter() + fCenterOffset;
@@ -118,7 +120,7 @@ void GLWidget::setTrackObject(bool track)
     fTrackObject = track;
     
     if(fTrackObject) {
-        Vector3 d = fCamPos - fCenter;
+        Spherical d(fCamPos - fCenter);
         fDist = d.r();
         fPhi =   (int) ceil((d.phi()/ANG_UNIT)-0.5);
         fTheta = (int) ceil((d.theta()/ANG_UNIT)-0.5);
@@ -258,8 +260,8 @@ void GLWidget::zoomMotion(QMouseEvent* ev)
     if(fTrackObject) {
         fDist *= exp(-dist * DIST_STEP);
     } else {
-        fCamPos += -dist * WALK_STEP * Vector3::Spherical(1., getCamTheta(),
-                                                          getCamPhi());
+        fCamPos += -dist * WALK_STEP * Spherical(1., getCamTheta(),
+                                                 getCamPhi());
     }
     fLastPos = ev->pos();
 }
@@ -360,15 +362,15 @@ void GLWidget::_updateCam()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
-    Vector3 up = getUpDir();
+    Vector3d up = getUpDir();
     if(fTrackObject) {
         glTranslated(fX, fY, 0.);
-        Vector3 campos = getCamPos();
+        Vector3d campos = getCamPos();
         gluLookAt(campos.x(), campos.y(), campos.z(),
                   fCenter.x(), fCenter.y(), fCenter.z(),
                   up.x(), up.y(), up.z());
     } else {
-        Vector3 lookat = fCamPos - getCamDir();
+        Eigen::Vector3d lookat = fCamPos - getCamDir();
         gluLookAt(fCamPos.x(), fCamPos.y(), fCamPos.z(),
                   lookat.x(), lookat.y(), lookat.z(),
                   up.x(), up.y(), up.z());
@@ -462,16 +464,16 @@ void GLWidget::drawCenter()
     
     glBegin(GL_LINES);
     glColor3fv(X_AXIS_COLOR);
-    glVertex3dv(fCenter - AXIS_LENGTH * Vector3::eX);
-    glVertex3dv(fCenter + AXIS_LENGTH * Vector3::eX);
+    GL::Vertex3(fCenter - AXIS_LENGTH * Vector3d::UnitX());
+    GL::Vertex3(fCenter + AXIS_LENGTH * Vector3d::UnitX());
 
     glColor3fv(Y_AXIS_COLOR);
-    glVertex3dv(fCenter - AXIS_LENGTH * Vector3::eY);
-    glVertex3dv(fCenter + AXIS_LENGTH * Vector3::eY);
+    GL::Vertex3(fCenter - AXIS_LENGTH * Vector3d::UnitY());
+    GL::Vertex3(fCenter + AXIS_LENGTH * Vector3d::UnitY());
 
     glColor3fv(Z_AXIS_COLOR);
-    glVertex3dv(fCenter - AXIS_LENGTH * Vector3::eZ);
-    glVertex3dv(fCenter + AXIS_LENGTH * Vector3::eZ);
+    GL::Vertex3(fCenter - AXIS_LENGTH * Vector3d::UnitZ());
+    GL::Vertex3(fCenter + AXIS_LENGTH * Vector3d::UnitZ());
     glEnd();
     
     glEnable(GL_LIGHTING);

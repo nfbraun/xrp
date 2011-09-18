@@ -1,5 +1,6 @@
 #include "Acrobot.h"
 #include "GLHelper.h"
+#include "ODEHelper.h"
 #include <cmath>
 #include <iostream>
 
@@ -13,7 +14,7 @@ void AcroState::Draw(int) const
     GL::drawSphere(.1, fB1_pos);
     GL::drawSphere(.1, fB2_pos);
     
-    GL::drawTube(.05, Vector3::Null, fB1_pos);
+    GL::drawTube(.05, Eigen::Vector3d::Zero(), fB1_pos);
     GL::drawTube(.05, fB1_pos, fB2_pos);
 }
 
@@ -78,15 +79,11 @@ void Acrobot::Advance()
 AcroState Acrobot::GetCurrentState()
 {
     AcroState state;
-    const dReal* pos;
     
     state.fT = fCurStep / STEP_PER_SEC;
     
-    pos = dBodyGetPosition(fBall1);
-    state.fB1_pos = Vector3(pos);
-    
-    pos = dBodyGetPosition(fBall2);
-    state.fB2_pos = Vector3(pos);
+    state.fB1_pos = ODE::BodyGetPosition(fBall1);
+    state.fB2_pos = ODE::BodyGetPosition(fBall2);
     
     return state;
 }

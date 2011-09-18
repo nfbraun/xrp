@@ -1,8 +1,7 @@
 #ifndef MSIM_MCGEER_H
 #define MSIM_MCGEER_H
 
-#include "Vector.h"
-#include "Rotation.h"
+#include <Eigen/Dense>
 #include "SyncSimulation.h"
 #include <ode/ode.h>
 
@@ -10,26 +9,26 @@ class McGeer;
 
 class LegState {
   public:
-    Vector3  fHPos;
-    Vector3  fTPos, fSPos;
-    Rotation fTRot, fSRot;
-    Vector3  fTVel, fSVel;
-    Vector3  fTOme, fSOme;
+    Eigen::Vector3d    fHPos;
+    Eigen::Vector3d    fTPos, fSPos;
+    Eigen::Quaterniond fTRot, fSRot;
+    Eigen::Vector3d    fTVel, fSVel;
+    Eigen::Vector3d    fTOme, fSOme;
     
-    inline Vector3  hipCoG()   const   { return fHPos; }
-    inline Vector3  thighCoG() const   { return fTPos; }
-    inline Rotation thighRot() const   { return fTRot; }
-    inline Vector3  shankCoG() const   { return fSPos; }
-    inline Rotation shankRot() const   { return fSRot; }
+    inline Eigen::Vector3d    hipCoG()   const   { return fHPos; }
+    inline Eigen::Vector3d    thighCoG() const   { return fTPos; }
+    inline Eigen::Quaterniond thighRot() const   { return fTRot; }
+    inline Eigen::Vector3d    shankCoG() const   { return fSPos; }
+    inline Eigen::Quaterniond shankRot() const   { return fSRot; }
     
     inline double omegaT()     const   { return fTOme.y(); }
     inline double omegaS()     const   { return fSOme.y(); }
     
-    double thighAng()      const;
-    Vector3 kneePos()      const;
-    double shankAng()      const;
-    Vector3 footCtr()      const;
-    double footClearance() const;
+    double thighAng()              const;
+    Eigen::Vector3d kneePos()      const;
+    double shankAng()              const;
+    Eigen::Vector3d footCtr()      const;
+    double footClearance()         const;
 };
 
 class MGState: public SimulationState {
@@ -37,14 +36,15 @@ class MGState: public SimulationState {
     McGeer* fParent;
     double fT;
     void Draw(int) const;
-    Vector3 GetCenter() const { return fILeg.fHPos; }
+    Eigen::Vector3d GetCenter() const { return fILeg.fHPos; }
     double GetData(int ch) const;
     
     LegState fILeg, fOLeg;
 
   private:
     void DrawRobot(bool shadowmode) const;
-    void DrawLeg(Vector3 thighPos, Rotation thighRot, Vector3 shankPos, Rotation shankRot) const;
+    void DrawLeg(Eigen::Vector3d thighPos, Eigen::Quaterniond thighRot,
+                 Eigen::Vector3d shankPos, Eigen::Quaterniond shankRot) const;
     void DrawSlide(double dist, double s0, double s1) const;
     
     static const double DISP_LEGWIDTH;
@@ -65,7 +65,7 @@ class McGeer: public SyncSimulation<MGState> {
     void Advance();
     MGState GetCurrentState();
     
-    void InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, Vector3 hipPos, double iniPhiT, double iniPhiS, double legDist);
+    void InitLeg(dBodyID& thigh, dBodyID& shank, dGeomID& footG, Eigen::Vector3d hipPos, double iniPhiT, double iniPhiS, double legDist);
     void Collide(dGeomID g1, dGeomID g2);
     
     dWorldID fWorld;

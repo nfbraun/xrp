@@ -1,14 +1,14 @@
 #ifndef MSIM_ACROBOT_H
 #define MSIM_ACROBOT_H
 
-#include "Vector.h"
+#include <Eigen/Dense>
 #include "SyncSimulation.h"
 #include <ode/ode.h>
 
 class AcroState: public SimulationState {
   public:
     double fT;
-    Vector3 fB1_pos, fB2_pos;
+    Eigen::Vector3d fB1_pos, fB2_pos;
     void Draw(int) const;
 };
 

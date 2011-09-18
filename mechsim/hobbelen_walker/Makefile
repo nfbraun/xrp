@@ -1,7 +1,7 @@
 SOURCES = ChainSegment.cxx FootSegment.cxx Hobbelen.cxx Spline.cxx
 HEADERS = BodyConf.h ChainSegment.h FootSegment.h Hobbelen.h
 OBJS = $(SOURCES:.cxx=.o)
-CFLAGS = -Wall -I../common/mechsim $(shell ode-config --cflags)
+CFLAGS = -O3 -Wall -I../common/mechsim -I../../eigen-eigen-3.0.1 $(shell ode-config --cflags) -g
 LDFLAGS = -L../common/mechsim
 LIBS = -lode -lmechsim -lgsl -lblas
 

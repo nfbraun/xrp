@@ -1,8 +1,8 @@
 #include "Bunny.h"
 #include "GLHelper.h"
 #include "STLReader.h"
-#include "Vector.h"
 #include <iostream>
+#include <Eigen/Dense>
 
 const int Bunny::STEP_PER_SEC = 16;
 // Integration intervals per timestep
@@ -20,7 +20,7 @@ void BunnyState::Draw(int) const
     
     GL::shadowsBeginFloor();
     GL::drawCheckerboardFloor();
-    GL::shadowsBeginObjects(Vector3(0., 0., 1.), 0.);
+    GL::shadowsBeginObjects(Eigen::Vector3d::UnitZ(), 0.);
     glPushMatrix();
     glTranslatef(2.*sin(fT/8.), 0., 0.);
     glScalef(10., 10., 10.);
@@ -51,7 +51,7 @@ GLuint Bunny::GetBunnyList()
     }
     
     glNewList(fGLList, GL_COMPILE);
-    Vector3f c(-0.095+0.156/2., 0.033, -0.062+0.121/2.);
+    Eigen::Vector3f c(-0.095+0.156/2., 0.033, -0.062+0.121/2.);
     
     glRotatef(90., 1., 0., 0.);
     //glRotatef(180., 0., 1., 0.);
@@ -63,12 +63,15 @@ GLuint Bunny::GetBunnyList()
             std::cerr << __func__ << ": failed to read triangle " << i << std::endl;
             break;
         }
-        Vector3f v1(tri->v1), v2(tri->v2), v3(tri->v3);
-        Vector3f normal = -VectorOp::cross(v1-v2, v1-v3).norm();
-        glNormal3fv(normal);
-        glVertex3fv(v1-c);
-        glVertex3fv(v2-c);
-        glVertex3fv(v3-c);
+        Eigen::Vector3f v1(Eigen::Map<Eigen::Vector3f>(tri->v1));
+        Eigen::Vector3f v2(Eigen::Map<Eigen::Vector3f>(tri->v2));
+        Eigen::Vector3f v3(Eigen::Map<Eigen::Vector3f>(tri->v3));
+        
+        Eigen::Vector3f normal = -((v1-v2).cross(v1-v3)).normalized();
+        GL::Normal3(normal);
+        GL::Vertex3(v1-c);
+        GL::Vertex3(v2-c);
+        GL::Vertex3(v3-c);
     }
     glEnd();
     

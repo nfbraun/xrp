@@ -1,5 +1,6 @@
 #include "AsymSphere.h"
 #include "GLHelper.h"
+#include "ODEHelper.h"
 #include <GL/gl.h>
 
 // ** Simulation parameters **
@@ -26,7 +27,7 @@ void ASState::Draw(int) const
     glPushMatrix();
     GL::Translate(fPos);
     GL::Rotate(fRot);
-    GL::drawSphere(AsymSphere::R, Vector3::Null);
+    GL::drawSphere(AsymSphere::R, Eigen::Vector3d::Zero());
     glPopMatrix();
 }
 
@@ -128,18 +129,18 @@ void AsymSphere::Advance()
 ASState AsymSphere::GetCurrentState()
 {
     ASState state;
-    const Vector3 par(cos(AsymSphere::GAMMA), 0., -sin(AsymSphere::GAMMA));
-    const Vector3 nor(sin(AsymSphere::GAMMA), 0.,  cos(AsymSphere::GAMMA));
+    const Eigen::Vector3d par(cos(AsymSphere::GAMMA), 0., -sin(AsymSphere::GAMMA));
+    const Eigen::Vector3d nor(sin(AsymSphere::GAMMA), 0.,  cos(AsymSphere::GAMMA));
     
-    state.fRot = Rotation::FromQuatArray(dBodyGetQuaternion(fBody));
-    state.fCoG = Vector3(dBodyGetPosition(fBody));
-    state.fVel = Vector3(dBodyGetLinearVel(fBody));
-    state.fOmega = Vector3(dBodyGetAngularVel(fBody));
+    state.fRot = ODE::BodyGetQuaternion(fBody);
+    state.fCoG = ODE::BodyGetPosition(fBody);
+    state.fVel = ODE::BodyGetLinearVel(fBody);
+    state.fOmega = ODE::BodyGetAngularVel(fBody);
     
-    state.fPos = Vector3(dBodyGetPosition(fBody))
-            + state.fRot * dGeomGetOffsetPosition(fBodyG);
-    state.fPhi = VectorOp::dot(state.fPos, par) / AsymSphere::R;
-    state.fHeight = VectorOp::dot(state.fPos, nor);
+    state.fPos = ODE::BodyGetPosition(fBody)
+            + state.fRot * Eigen::Matrix<dReal, 3, 1>(dGeomGetOffsetPosition(fBodyG));
+    state.fPhi = state.fPos.dot(par) / AsymSphere::R;
+    state.fHeight = state.fPos.dot(nor);
     
     return state;
 }

@@ -4,34 +4,7 @@
 
 namespace GL {
 
-void Rotate(const Rotation& r)
-{
-    double mat[4][4];
-    double a = r.a(), b = r.b(), c = r.c(), d = r.d();
-    
-    // see http://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation
-    mat[0][0] = 1. - 2.*c*c - 2.*d*d;
-    mat[0][1] = 2.*b*c - 2.*a*d;
-    mat[0][2] = 2.*b*d + 2.*a*c;
-    mat[0][3] = 0.;
-    
-    mat[1][0] = 2.*b*c + 2.*a*d;
-    mat[1][1] = 1. - 2.*b*b - 2.*d*d;
-    mat[1][2] = 2.*c*d - 2.*a*b;
-    mat[1][3] = 0.;
-    
-    mat[2][0] = 2.*b*d - 2.*a*c;
-    mat[2][1] = 2.*c*d + 2.*a*b;
-    mat[2][2] = 1. - 2.*b*b - 2.*c*c;
-    mat[2][3] = 0.;
-    
-    mat[3][0] = 0.;
-    mat[3][1] = 0.;
-    mat[3][2] = 0.;
-    mat[3][3] = 1.;
-    
-    glMultMatrixd(&mat[0][0]);
-}
+using Eigen::Vector3d;
 
 void drawDiscSegment(const double r, double h, const double alpha)
 {
@@ -128,10 +101,10 @@ void drawCheckerboardFloorOutline()
     glEnd();
 }
 
-void drawTube(double r, Vector3 p1, Vector3 p2)
+void drawTube(double r, Vector3d p1, Vector3d p2)
 {
-    Vector3 d = p2 - p1;
-    double angle = asin(sqrt(d.x()*d.x() + d.y()*d.y()) / d.mag()) * RAD_TO_DEG;
+    Vector3d d = p2 - p1;
+    double angle = asin(sqrt(d.x()*d.x() + d.y()*d.y()) / d.norm()) * RAD_TO_DEG;
     if(d.z() < 0) angle = 180. - angle;
     
     glMatrixMode(GL_MODELVIEW);
@@ -140,13 +113,13 @@ void drawTube(double r, Vector3 p1, Vector3 p2)
     glRotatef(angle, -d.y(), d.x(), 0.);
 
     GLUquadric *quad = gluNewQuadric();
-    gluCylinder(quad, r, r, d.mag(), 8, 4);
+    gluCylinder(quad, r, r, d.norm(), 8, 4);
     gluDeleteQuadric(quad);
     
     glPopMatrix();
 }
 
-void drawSphere(double r, Vector3 p)
+void drawSphere(double r, Vector3d p)
 {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
@@ -180,14 +153,14 @@ void drawODEBox(dGeomID id, double lx, double ly, double lz)
     glPopMatrix();
 }
 
-void drawBox(Vector3 p1, Vector3 p2)
+void drawBox(Vector3d p1, Vector3d p2)
 {
     glMatrixMode(GL_MODELVIEW);
     glPushMatrix();
     
-    Vector3 p = .5 * (p1 + p2);
+    Eigen::Vector3d p = .5 * (p1 + p2);
     glTranslatef(p.x(), p.y(), p.z());
-    Vector3 d = p2 - p1;
+    Eigen::Vector3d d = p2 - p1;
     glScalef(d.x(), d.y(), d.z());
     
     drawUnitCube();
@@ -247,7 +220,7 @@ void shadowsBeginFloor()
     glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 }
 
-void shadowsBeginObjects(Vector3 floor_n, double floor_d)
+void shadowsBeginObjects(Vector3d floor_n, double floor_d)
 // Floor is plane with n_x*x + n_y*y + n_z*z = d
 {
     GLfloat mod[16];

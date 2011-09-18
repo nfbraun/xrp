@@ -4,8 +4,8 @@
 #include <QTimer>
 #include <QGLWidget>
 #include "Simulation.h"
-#include "Vector.h"
-#include "Rotation.h"
+#include "Spherical.h"
+#include "GLHelper.h"
 
 class GLWidget : public QGLWidget
 {
@@ -20,10 +20,10 @@ class GLWidget : public QGLWidget
     
     inline double getCamX()     { return fX; }
     inline double getCamY()     { return fY; }
-    inline Vector3 getCamPos() {
+    inline Eigen::Vector3d getCamPos() {
         if(fTrackObject)
-            return fCenter + Vector3::Spherical(fDist, getCamTheta(),
-                                                getCamPhi());
+            return fCenter + Spherical(fDist, getCamTheta(),
+                                       getCamPhi());
         else
             return fCamPos;
     }
@@ -32,7 +32,7 @@ class GLWidget : public QGLWidget
         if(fTrackObject)
             return fDist;
         else
-            return (fCamPos-getCenter()).r();
+            return Spherical(fCamPos-getCenter()).r();
     }
     
     inline double getCamTheta()     { return fTheta*ANG_UNIT; }
@@ -43,26 +43,26 @@ class GLWidget : public QGLWidget
     inline double getCamPhiDeg()    { return getCamPhi()*RAD_TO_DEG; }
     inline double getCamRollDeg()   { return getCamRoll()*RAD_TO_DEG; }
     
-    inline Vector3 getCenterOffset()  { return fCenterOffset; }
-    inline Vector3 getCenter()        { return fCenter; }
+    inline Eigen::Vector3d getCenterOffset()  { return fCenterOffset; }
+    inline Eigen::Vector3d getCenter()        { return fCenter; }
     
-    inline Vector3 getCamDir()
-        { return Vector3::Spherical(1., ANG_UNIT*fTheta, ANG_UNIT*fPhi); }
-    inline Vector3 getHorizDir()
-        { return Vector3::Spherical(1., M_PI/2., ANG_UNIT*(fPhi - PI_UNITS/2)); }
-    inline Vector3 getVertDir() {
+    inline Eigen::Vector3d getCamDir()
+        { return Spherical(1., ANG_UNIT*fTheta, ANG_UNIT*fPhi); }
+    inline Eigen::Vector3d getHorizDir()
+        { return Spherical(1., M_PI/2., ANG_UNIT*(fPhi - PI_UNITS/2)); }
+    inline Eigen::Vector3d getVertDir() {
         if(fTheta < PI_UNITS/2) {
-            return Vector3::Spherical(1.,
-                                      ANG_UNIT*(PI_UNITS/2 - fTheta),
-                                      ANG_UNIT*(fPhi+PI_UNITS));
+            return Spherical(1.,
+                             ANG_UNIT*(PI_UNITS/2 - fTheta),
+                             ANG_UNIT*(fPhi+PI_UNITS));
         } else {
-            return Vector3::Spherical(1.,
-                                      ANG_UNIT*(fTheta - PI_UNITS/2),
-                                      ANG_UNIT*fPhi);
+            return Spherical(1.,
+                             ANG_UNIT*(fTheta - PI_UNITS/2),
+                             ANG_UNIT*fPhi);
         }
     }
     
-    inline Vector3 getUpDir() {
+    inline Eigen::Vector3d getUpDir() {
         if(fEnableRoll) {
             return getVertDir()*cos(fRoll) + getHorizDir()*sin(fRoll);
         } else {
@@ -70,12 +70,12 @@ class GLWidget : public QGLWidget
         }
     }
     
-    void setCamPos(Vector3 pos);
+    void setCamPos(Eigen::Vector3d pos);
     void setCamDist(double dist);
     void setCamThetaDeg(double theta);
     void setCamPhiDeg(double phi);
     void setCamRollDeg(double roll);
-    void setCenterOffset(Vector3 offset);
+    void setCenterOffset(Eigen::Vector3d offset);
     void setTrackObject(bool track);
     void setEnableRoll(bool enable);
     
@@ -123,15 +123,15 @@ class GLWidget : public QGLWidget
     enum MotionMode { MODE_NONE, MODE_ROTATE, MODE_ZOOM, MODE_ROLL, MODE_PAN };
     
     MotionMode fMotionMode;
-    Vector3 fLastVec;
+    Eigen::Vector3d fLastVec;
     double fLastRoll;
     QPoint fLastPos;
     QTimer* fTimer;
-    Vector3 fCamPos;
+    Eigen::Vector3d fCamPos;
     int fTheta, fPhi;
     double fRoll;
     double fX, fY, fDist;
-    Vector3 fCenter, fCenterOffset;
+    Eigen::Vector3d fCenter, fCenterOffset;
     int fCenterX, fCenterY;
     int fT;  // in units of Simulation::TIMESTEPs
     bool fPaused;

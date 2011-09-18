@@ -1,14 +1,14 @@
 #ifndef MSIM_DOUBLEPENDULUM_H
 #define MSIM_DOUBLEPENDULUM_H
 
-#include "Vector.h"
+#include <Eigen/Dense>
 #include "SyncSimulation.h"
 #include <ode/ode.h>
 
 class DPState: public SimulationState {
   public:
     double fT;
-    Vector3 fB1_pos, fB2_pos;
+    Eigen::Vector3d fB1_pos, fB2_pos;
     double fOmega1, fOmega2;
     void Draw(int) const;
     
@@ -17,7 +17,7 @@ class DPState: public SimulationState {
         switch(ch) {
             case 0: return atan2(fB1_pos.z(), fB1_pos.x());
             case 1: {
-                Vector3 delta = fB2_pos - fB1_pos;
+                Eigen::Vector3d delta = fB2_pos - fB1_pos;
                 return atan2(delta.z(), delta.x());
             }
             case 2: return fOmega1;

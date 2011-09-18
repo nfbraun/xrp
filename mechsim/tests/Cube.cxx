@@ -1,6 +1,5 @@
 #include "Cube.h"
 #include "GLHelper.h"
-#include "Vector.h"
 #include <iostream>
 
 const int Cube::STEP_PER_SEC = 16;
@@ -22,7 +21,7 @@ void CubeState::Draw(int) const
     glTranslatef(0., 0., -10.);
     GL::drawCheckerboardFloor();
     glPopMatrix();
-    GL::shadowsBeginObjects(Vector3(0., 0., 1.), -10.);
+    GL::shadowsBeginObjects(Eigen::Vector3d::UnitZ(), -10.);
     glPushMatrix();
     glTranslatef(0.,0.,1.);
     GL::drawUnitCube();

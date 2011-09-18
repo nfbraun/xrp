@@ -2,6 +2,7 @@
 #define MSIM_CUBE_H
 
 #include "SyncSimulation.h"
+#include <Eigen/Dense>
 #include <GL/gl.h>
 
 class Cube;
@@ -11,8 +12,8 @@ class CubeState: public SimulationState {
     double fT;
     void Draw(int) const;
     
-    Vector3 GetCenter() const
-     { return Vector3(0.,0.,1.); }
+    Eigen::Vector3d GetCenter() const
+     { return Eigen::Vector3d(0.,0.,1.); }
     
     Cube* fParent;
 };

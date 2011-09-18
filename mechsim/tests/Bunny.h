@@ -12,8 +12,8 @@ class BunnyState: public SimulationState {
     void Draw(int) const;
     
     // calculated with vtk
-    Vector3 GetCenter() const
-     { return 10.*Vector3(.2 * sin(fT / 8.), 0., 0.154/2.); }
+    Eigen::Vector3d GetCenter() const
+     { return 10.*Eigen::Vector3d(.2 * sin(fT / 8.), 0., 0.154/2.); }
     
     Bunny* fParent;
 };

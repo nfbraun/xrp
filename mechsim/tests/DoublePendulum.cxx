@@ -1,5 +1,6 @@
 #include "DoublePendulum.h"
 #include "GLHelper.h"
+#include "ODEHelper.h"
 #include <iostream>
 
 const int DoublePendulum::STEP_PER_SEC = 16;
@@ -12,7 +13,7 @@ void DPState::Draw(int) const
     GL::drawSphere(.2, fB1_pos);
     GL::drawSphere(.2, fB2_pos);
     
-    GL::drawTube(.1, Vector3::Null, fB1_pos);
+    GL::drawTube(.1, Eigen::Vector3d::Zero(), fB1_pos);
     GL::drawTube(.1, fB1_pos, fB2_pos);
 }
 
@@ -64,15 +65,11 @@ void DoublePendulum::Advance()
 DPState DoublePendulum::GetCurrentState()
 {
     DPState state;
-    const dReal* pos;
     
     state.fT = fCurStep / STEP_PER_SEC;
     
-    pos = dBodyGetPosition(fBall1);
-    state.fB1_pos = Vector3(pos);
-    
-    pos = dBodyGetPosition(fBall2);
-    state.fB2_pos = Vector3(pos);
+    state.fB1_pos = ODE::BodyGetPosition(fBall1);
+    state.fB2_pos = ODE::BodyGetPosition(fBall2);
     
     state.fOmega1 = dJointGetHingeAngleRate(fJoint1);
     state.fOmega2 = dJointGetHingeAngleRate(fJoint2);

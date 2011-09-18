@@ -1,19 +1,19 @@
 #ifndef MSIM_BALLSLIDE_H
 #define MSIM_BALLSLIDE_H
 
-#include "Vector.h"
+#include <Eigen/Dense>
 #include "AsyncSimulation.h"
 #include <ode/ode.h>
 
 class BSState: public SimulationState {
   public:
     double fT;
-    Vector3 fBPos;
+    Eigen::Vector3d fBPos;
     void Draw(int) const;
-    Vector3 GetObjectPos() const { return fBPos; }
+    Eigen::Vector3d GetObjectPos() const { return fBPos; }
     
-    Vector3 GetCenter() const
-        { return Vector3(0., 0., 5.); }
+    Eigen::Vector3d GetCenter() const
+        { return Eigen::Vector3d(0., 0., 5.); }
     
     virtual double GetData(int ch) const
     {

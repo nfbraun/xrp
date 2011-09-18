@@ -1,4 +1,4 @@
-CFLAGS = -I../common/mechsim $(shell ode-config --cflags)
+CFLAGS = -I../common/mechsim -I../../eigen-eigen-3.0.1 -O3 $(shell ode-config --cflags)
 LDFLAGS = -L../common/mechsim
 LIBS = -lode -lmechsim
 

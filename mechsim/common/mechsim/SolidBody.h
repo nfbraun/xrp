@@ -1,25 +1,24 @@
 #ifndef MSIM_SOLIDBODY_H
 #define MSIM_SOLIDBODY_H
 
-#include "Vector.h"
-#include "Matrix.h"
+#include <Eigen/Dense>
 
 class SolidBody
 {
   public:
-    SolidBody(double m, const Vector3& CoG, const Matrix33& I)
+    SolidBody(double m, const Eigen::Vector3d& CoG, const Eigen::Matrix3d& I)
         : fm(m), fCoG(CoG), fI(I) {}
-    static SolidBody Sphere(double density, double r, Vector3 cog);
-    static SolidBody SphereTotal(double m, double r, Vector3 cog);
+    static SolidBody Sphere(double density, double r, Eigen::Vector3d cog);
+    static SolidBody SphereTotal(double m, double r, Eigen::Vector3d cog);
     
-    double    m() const  { return fm; }
-    Vector3 cog() const  { return fCoG; }
-    Matrix33  I() const  { return fI; }
+    double            m() const  { return fm; }
+    Eigen::Vector3d cog() const  { return fCoG; }
+    Eigen::Matrix3d   I() const  { return fI; }
 
   private:
     double fm;
-    Vector3 fCoG;
-    Matrix33 fI;
+    Eigen::Vector3d fCoG;
+    Eigen::Matrix3d fI;
 };
 
 SolidBody combine(const SolidBody& a, const SolidBody& b);

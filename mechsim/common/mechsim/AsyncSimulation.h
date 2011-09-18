@@ -2,6 +2,7 @@
 #define MSIM_ASYNCSIMULATION_H
 
 #include "Simulation.h"
+#include <Eigen/StdVector>
 #include <vector>
 #include <iostream>
 
@@ -126,11 +127,11 @@ class AsyncSimulation: public Simulation
     int f_pipefd[2];
     
     static const int BUF_SIZE = 16 * sizeof(State_T);
-    char fBuf[BUF_SIZE];
+    char fBuf[BUF_SIZE] __attribute__((aligned(16)));
     unsigned int fBufIdx;
     bool fFinished;
     
-    std::vector<State_T> fData;
+    std::vector<State_T, Eigen::aligned_allocator<State_T> > fData;
 };
 
 #endif

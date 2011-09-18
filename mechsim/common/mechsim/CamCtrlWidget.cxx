@@ -85,9 +85,9 @@ void CamCtrlWidget::updateCamInfo()
 
 void CamCtrlWidget::setCamPos()
 {
-    fGLWidget->setCamPos(Vector3(feX->text().toDouble(),
-                                 feY->text().toDouble(),
-                                 feZ->text().toDouble()));
+    fGLWidget->setCamPos(Eigen::Vector3d(feX->text().toDouble(),
+                                         feY->text().toDouble(),
+                                         feZ->text().toDouble()));
     updateCamInfo();
 }
 
@@ -116,9 +116,9 @@ void CamCtrlWidget::setCamRoll()
 
 void CamCtrlWidget::setCenterOffset()
 {
-    fGLWidget->setCenterOffset(Vector3(fecx->text().toDouble(),
-                                       fecy->text().toDouble(),
-                                       fecz->text().toDouble()));
+    fGLWidget->setCenterOffset(Eigen::Vector3d(fecx->text().toDouble(),
+                                               fecy->text().toDouble(),
+                                               fecz->text().toDouble()));
 }
 
 void CamCtrlWidget::setTrackObject(int state)

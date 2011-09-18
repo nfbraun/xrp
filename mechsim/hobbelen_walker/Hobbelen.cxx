@@ -25,17 +25,17 @@ const int HobState::DISP_SLIDELEN2 = 30;
 
 BodyQ BodyQ::FromODE(dBodyID id)
 {
-    return BodyQ(Vector3(dBodyGetPosition(id)),
-                 Rotation::FromQuatArray(dBodyGetQuaternion(id)),
-                 Vector3(dBodyGetLinearVel(id)),
-                 Vector3(dBodyGetAngularVel(id)));
+    return BodyQ(ODE::BodyGetPosition(id),
+                 ODE::BodyGetQuaternion(id),
+                 ODE::BodyGetLinearVel(id),
+                 ODE::BodyGetAngularVel(id));
 }
 
 void BodyQ::TransformGL() const
 {
     glPushMatrix();
     GL::Translate(fPos);
-    GL::Rotate(fRot.conj());
+    GL::Rotate(fRot);
 }
 
 void HobState::Draw(int) const
@@ -48,7 +48,7 @@ void HobState::Draw(int) const
     
     GL::shadowsBeginFloor();
     DrawSlide();
-    GL::shadowsBeginObjects(Vector3(sin(GAMMA), 0., cos(GAMMA)), -FLOOR_DIST);
+    GL::shadowsBeginObjects(Eigen::Vector3d(sin(GAMMA), 0., cos(GAMMA)), -FLOOR_DIST);
     DrawRobot(true);
     GL::shadowsEnd();
 }
@@ -79,6 +79,7 @@ void HobState::DrawLeg(const BodyQ& upperLegQ, const BodyQ& lowerLegQ,
                        const BodyQ& footQ) const
 {
     using namespace HobbelenConst;
+    const Eigen::Vector3d eY = Eigen::Vector3d::UnitY();
     
     upperLegQ.TransformGL();
     GL::Translate(UpperLeg.cb());
@@ -94,10 +95,10 @@ void HobState::DrawLeg(const BodyQ& upperLegQ, const BodyQ& lowerLegQ,
     
     footQ.TransformGL();
     
-    GL::drawTube(Foot.r(), HobbelenConst::Foot.pfb() - HobbelenConst::FOOT_WIDTH/2.*Vector3::eY,
-                           HobbelenConst::Foot.pfb() + HobbelenConst::FOOT_WIDTH/2.*Vector3::eY);
-    GL::drawTube(Foot.r(), HobbelenConst::Foot.pbb() - HobbelenConst::FOOT_WIDTH/2.*Vector3::eY,
-                           HobbelenConst::Foot.pbb() + HobbelenConst::FOOT_WIDTH/2.*Vector3::eY);
+    GL::drawTube(Foot.r(), HobbelenConst::Foot.pfb() - HobbelenConst::FOOT_WIDTH/2.*eY,
+                           HobbelenConst::Foot.pfb() + HobbelenConst::FOOT_WIDTH/2.*eY);
+    GL::drawTube(Foot.r(), HobbelenConst::Foot.pbb() - HobbelenConst::FOOT_WIDTH/2.*eY,
+                           HobbelenConst::Foot.pbb() + HobbelenConst::FOOT_WIDTH/2.*eY);
     glPopMatrix();
 }
 
@@ -144,6 +145,8 @@ Hobbelen::Hobbelen()
                     HobbelenConst::SWING_KNEE_X, HobbelenConst::SWING_KNEE_Y)
 {
     using namespace HobbelenConst;
+    const Eigen::Vector3d eX = Eigen::Vector3d::UnitX();
+    const Eigen::Vector3d eY = Eigen::Vector3d::UnitY();
     
     const double THETA_C = 0.27;
     const double OMEGA_C = 1.0; //1.48;
@@ -178,12 +181,12 @@ Hobbelen::Hobbelen()
     ChainSegment LLLegC(HobbelenConst::LowerLeg);
     FootSegment  LFootC(HobbelenConst::Foot);
     
-    RFootC.SetPB((-FLOOR_DIST + RFootC.r()) * FloorNormal - LEG_DIST/2.*Vector3::eY,
+    RFootC.SetPB((-FLOOR_DIST + RFootC.r()) * FloorNormal - LEG_DIST/2.*eY,
                  GAMMA);
     RLLegC.SetP2(RFootC.p1(), -THETA_C + GAMMA);
     RULegC.SetP2(RLLegC.p1(), -THETA_C + GAMMA);
-    BodyC.SetP2(RULegC.p1() + LEG_DIST/2.*Vector3::eY, 0.);
-    LULegC.SetP1(BodyC.p2() + LEG_DIST/2.*Vector3::eY, THETA_C + GAMMA);
+    BodyC.SetP2(RULegC.p1() + LEG_DIST/2.*eY, 0.);
+    LULegC.SetP1(BodyC.p2() + LEG_DIST/2.*eY, THETA_C + GAMMA);
     LLLegC.SetP1(LULegC.p2(), THETA_C + GAMMA);
     LFootC.SetP1(LLLegC.p2(), GAMMA);
     
@@ -195,8 +198,8 @@ Hobbelen::Hobbelen()
     fLLeg.HipJ.off = THETA_C - GAMMA;
     dJointAttach(fLLeg.HipJ.id, fLLeg.ULegB, fBodyB);
     ODE::JointSetUniversalAnchor(fLLeg.HipJ.id, LULegC.p1());
-    ODE::JointSetUniversalAxis1(fLLeg.HipJ.id, Vector3::eX);
-    ODE::JointSetUniversalAxis2(fLLeg.HipJ.id, Vector3::eY);
+    ODE::JointSetUniversalAxis1(fLLeg.HipJ.id, eX);
+    ODE::JointSetUniversalAxis2(fLLeg.HipJ.id, eY);
     
     #ifndef WALKER_3D
     dJointSetUniversalParam(fLLeg.HipJ.id, dParamVel, 0.);
@@ -207,8 +210,8 @@ Hobbelen::Hobbelen()
     fRLeg.HipJ.off = -THETA_C + GAMMA;
     dJointAttach(fRLeg.HipJ.id, fRLeg.ULegB, fBodyB);
     ODE::JointSetUniversalAnchor(fRLeg.HipJ.id, RULegC.p1());
-    ODE::JointSetUniversalAxis1(fRLeg.HipJ.id, Vector3::eX);
-    ODE::JointSetUniversalAxis2(fRLeg.HipJ.id, Vector3::eY);
+    ODE::JointSetUniversalAxis1(fRLeg.HipJ.id, eX);
+    ODE::JointSetUniversalAxis2(fRLeg.HipJ.id, eY);
     dJointSetUniversalParam(fRLeg.HipJ.id, dParamVel, 0.);
     dJointSetUniversalParam(fRLeg.HipJ.id, dParamFMax, 100.);
     
@@ -219,7 +222,7 @@ Hobbelen::Hobbelen()
     dJointSetAMotorParam(jm, dParamFMax, 100.);
     dJointSetAMotorParam(jm, dParamVel, 0.);
     
-    RotMotion mot = RotMotion::Rotation(RFootC.p1(), OMEGA_C * Vector3::eY);
+    RotMotion mot = RotMotion::Rotation(RFootC.p1(), OMEGA_C * eY);
     
     ODE::BodySetLinearVel(fRLeg.LLegB, mot.v(RLLegC.CoG()));
     ODE::BodySetAngularVel(fRLeg.LLegB, mot.omega());
@@ -227,7 +230,7 @@ Hobbelen::Hobbelen()
     ODE::BodySetAngularVel(fRLeg.ULegB, mot.omega());
     
     ODE::BodySetLinearVel(fBodyB, mot.v(BodyC.p2()));
-    ODE::BodySetAngularVel(fBodyB, Vector3::Null);
+    ODE::BodySetAngularVel(fBodyB, Eigen::Vector3d::Zero());
     
     /* mot = combine(mot, RotMotion::Rotation(IULegC.p1(),
         (OMEGA_FT - OMEGA_C)*Vector3::eY));
@@ -256,8 +259,8 @@ dBodyID Hobbelen::BodyFromConfig(const BodyConf& conf)
     dMass mass;
     
     body = dBodyCreate(fWorld);
-    dBodySetPosition(body, conf.CoG().x(), conf.CoG().y(), conf.CoG().z());
-    dBodySetQuaternion(body, conf.Rot().quatarray());
+    ODE::BodySetPosition(body, conf.CoG());
+    ODE::BodySetQuaternion(body, conf.Rot());
     dMassSetParameters(&mass, conf.m(), 0., 0., 0.,
                        conf.I(), conf.I(), conf.I(),
                        0., 0., 0.);
@@ -269,6 +272,9 @@ dBodyID Hobbelen::BodyFromConfig(const BodyConf& conf)
 void Hobbelen::InitLeg(HobLeg& leg, ChainSegment upperLegC, ChainSegment lowerLegC,
              FootSegment footC)
 {
+    const Eigen::Vector3d eX = Eigen::Vector3d::UnitX();
+    const Eigen::Vector3d eY = Eigen::Vector3d::UnitY();
+    
     leg.ULegB = BodyFromConfig(upperLegC);
     
     leg.LLegB = BodyFromConfig(lowerLegC);
@@ -277,7 +283,7 @@ void Hobbelen::InitLeg(HobLeg& leg, ChainSegment upperLegC, ChainSegment lowerLe
     leg.KneeJ.off = upperLegC.theta() - lowerLegC.theta();
     dJointAttach(leg.KneeJ.id, leg.ULegB, leg.LLegB);
     ODE::JointSetHingeAnchor(leg.KneeJ.id, upperLegC.p2());
-    ODE::JointSetHingeAxis(leg.KneeJ.id, Vector3::eY);
+    ODE::JointSetHingeAxis(leg.KneeJ.id, eY);
     dJointSetHingeParam(leg.KneeJ.id, dParamHiStop, -leg.KneeJ.off);
     
     leg.FootB = BodyFromConfig(footC);
@@ -285,18 +291,20 @@ void Hobbelen::InitLeg(HobLeg& leg, ChainSegment upperLegC, ChainSegment lowerLe
     leg.FFootG = dCreateCapsule(0, footC.r(), HobbelenConst::FOOT_WIDTH);
     dGeomSetBody(leg.FFootG, leg.FootB);
     ODE::GeomSetOffsetPosition(leg.FFootG, footC.pfb());
-    dGeomSetOffsetQuaternion(leg.FFootG, Rotation(M_PI/2., Vector3::eX).quatarray());
+    Eigen::Quaterniond FFootGOffset(Eigen::AngleAxis<double>(M_PI/2., eX));
+    ODE::GeomSetOffsetQuaternion(leg.FFootG, FFootGOffset);
     
     leg.BFootG = dCreateCapsule(0, footC.r(), HobbelenConst::FOOT_WIDTH);
     dGeomSetBody(leg.BFootG, leg.FootB);
     ODE::GeomSetOffsetPosition(leg.BFootG, footC.pbb());
-    dGeomSetOffsetQuaternion(leg.BFootG, Rotation(M_PI/2., Vector3::eX).quatarray());
+    Eigen::Quaterniond BFootGOffset(Eigen::AngleAxis<double>(M_PI/2., eX));
+    ODE::GeomSetOffsetQuaternion(leg.BFootG, BFootGOffset);
     
     leg.AnkleJ.id = dJointCreateUniversal(fWorld, 0);
     dJointAttach(leg.AnkleJ.id, leg.LLegB, leg.FootB);
     ODE::JointSetUniversalAnchor(leg.AnkleJ.id, lowerLegC.p2());
-    ODE::JointSetUniversalAxis1(leg.AnkleJ.id, Vector3::eX);
-    ODE::JointSetUniversalAxis2(leg.AnkleJ.id, Vector3::eY);
+    ODE::JointSetUniversalAxis1(leg.AnkleJ.id, eX);
+    ODE::JointSetUniversalAxis2(leg.AnkleJ.id, eY);
     
     dJointSetUniversalParam(leg.AnkleJ.id, dParamVel, 0.);
     dJointSetUniversalParam(leg.AnkleJ.id, dParamFMax, 100.);
@@ -312,20 +320,20 @@ Hobbelen::~Hobbelen()
 
 double Hobbelen::GetHeelClearance(dBodyID footB)
 {
-    Rotation rot = Rotation::FromQuatArray(dBodyGetQuaternion(footB));
-    Vector3 heelpos = Vector3(dBodyGetPosition(footB))
-        + (rot.mat() * HobbelenConst::Foot.pbb());
+    Eigen::Quaterniond rot = ODE::BodyGetQuaternion(footB);
+    Eigen::Vector3d heelpos = ODE::BodyGetPosition(footB)
+        + (rot * HobbelenConst::Foot.pbb());
     return HobbelenConst::FLOOR_DIST - HobbelenConst::Foot.r() +
-        VectorOp::dot(heelpos, HobbelenConst::FloorNormal);
+        heelpos.dot(HobbelenConst::FloorNormal);
 }
 
 double Hobbelen::GetTipClearance(dBodyID footB)
 {
-    Rotation rot = Rotation::FromQuatArray(dBodyGetQuaternion(footB));
-    Vector3 tippos = Vector3(dBodyGetPosition(footB))
-        + (rot.mat() * HobbelenConst::Foot.pfb());
+    Eigen::Quaterniond rot = ODE::BodyGetQuaternion(footB);
+    Eigen::Vector3d tippos = ODE::BodyGetPosition(footB)
+        + (rot * HobbelenConst::Foot.pfb());
     return HobbelenConst::FLOOR_DIST - HobbelenConst::Foot.r() +
-        VectorOp::dot(tippos, HobbelenConst::FloorNormal);
+        tippos.dot(HobbelenConst::FloorNormal);
 }
 
 void Hobbelen::SetKneeLock(const HobJoint& kneeJ, bool lock)

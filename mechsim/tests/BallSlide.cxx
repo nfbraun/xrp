@@ -1,5 +1,6 @@
 #include "BallSlide.h"
 #include "GLHelper.h"
+#include "ODEHelper.h"
 #include <GL/gl.h>
 
 const int BallSlide::STEP_PER_SEC = 16;
@@ -35,14 +36,14 @@ void BSState::Draw(int) const
     GL::shadowsBeginFloor();
     glColor3f(0., 1., 0.);
     GL::drawODEBox(gSlideG, 3., 1., .2);
-    Vector3 n(sin(.2), 0., cos(.2));
-    GL::shadowsBeginObjects(n, VectorOp::dot(n, Vector3(0., 0., 9.) + .1 * n));
+    Eigen::Vector3d n(sin(.2), 0., cos(.2));
+    GL::shadowsBeginObjects(n, n.dot(Eigen::Vector3d(0., 0., 9.) + .1 * n));
     GL::drawSphere(.3, fBPos);
     GL::shadowsEnd();
     
     GL::shadowsBeginFloor();
     GL::drawCheckerboardFloor();
-    GL::shadowsBeginObjects(Vector3(0., 0., 1.), 0.);
+    GL::shadowsBeginObjects(Eigen::Vector3d::UnitZ(), 0.);
     GL::drawSphere(.3, fBPos);
     GL::shadowsEnd();
 }
@@ -99,7 +100,7 @@ BSState BallSlide::GetCurrentState()
 {
     BSState state;
     
-    state.fBPos = Vector3(dBodyGetPosition(fBall));
+    state.fBPos = ODE::BodyGetPosition(fBall);
     
     return state;
 }

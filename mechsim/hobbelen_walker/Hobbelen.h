@@ -1,11 +1,12 @@
-#ifndef MSIM_HOBBELEN_H
-#define MSIM_HOBBELEN_H
+#ifndef HOB_HOBBELEN_H
+#define HOB_HOBBELEN_H
 
-#include "Vector.h"
-#include "Rotation.h"
+#include <Eigen/Core>
+#include <Eigen/Geometry>
 #include "BodyConf.h"
 #include "ChainSegment.h"
 #include "FootSegment.h"
+#include "SyncSimulation.h"
 #include "AsyncSimulation.h"
 #include "Spline.h"
 #include <ode/ode.h>
@@ -15,7 +16,7 @@ namespace HobbelenConst {
 const double GAMMA      = 0.0; //0.0456;   // Floor slope
 const double FLOOR_DIST = 1.0;   // shortest distance floor to origin
 
-const Vector3 FloorNormal(sin(GAMMA), 0., cos(GAMMA));
+const Eigen::Vector3d FloorNormal(sin(GAMMA), 0., cos(GAMMA));
 
 //                          m,   I,      l,   c,         w   [SI units]
 const ChainSegment Body    (8.5, 0.11,   0.4, 0.4 - 0.2, 0.);
@@ -60,28 +61,33 @@ const double DISP_BODYWIDTH = 0.3;
 
 class BodyQ {
   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    
     BodyQ() {}
-    BodyQ(Vector3 pos, Rotation rot, Vector3 vel, Vector3 avel)
+    BodyQ(Eigen::Vector3d pos, Eigen::Quaterniond rot,
+          Eigen::Vector3d vel, Eigen::Vector3d avel)
         : fPos(pos), fRot(rot), fVel(vel), fAVel(avel) {}
     static BodyQ FromODE(dBodyID id);
     void TransformGL() const;
     
-    inline Vector3 pos() const { return fPos; }
-    inline Rotation rot() const { return fRot; }
-    inline Vector3 vel() const { return fVel; }
-    inline Vector3 avel() const { return fAVel; }
+    inline Eigen::Vector3d    pos()  const { return fPos; }
+    inline Eigen::Quaterniond rot()  const { return fRot; }
+    inline Eigen::Vector3d    vel()  const { return fVel; }
+    inline Eigen::Vector3d    avel() const { return fAVel; }
     
   private:
-    Vector3 fPos;
-    Rotation fRot;
-    Vector3 fVel;
-    Vector3 fAVel;
+    Eigen::Vector3d fPos;
+    Eigen::Quaterniond fRot;
+    Eigen::Vector3d fVel;
+    Eigen::Vector3d fAVel;
 };
 
 class Hobbelen;
 
 class HobState: public SimulationState {
   public:
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+    
     Hobbelen* fParent;
     double fT;
     
@@ -105,8 +111,8 @@ class HobState: public SimulationState {
     void DrawLeg(const BodyQ& upperLegQ, const BodyQ& lowerLegQ,
                        const BodyQ& footQ) const;
     
-    Vector3 GetCenter() const
-        { return Vector3(fBodyQ.pos().x(), 0., 0.); }
+    Eigen::Vector3d GetCenter() const
+        { return Eigen::Vector3d(fBodyQ.pos().x(), 0., 0.); }
 
   private:
     void DrawSlide() const;

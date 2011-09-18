@@ -1,12 +1,12 @@
 #ifndef MSIM_SIMULATION_H
 #define MSIM_SIMULATION_H
 
-#include "Vector.h"
+#include <Eigen/Dense>
 
 class SimulationState {
   public:
     virtual void Draw(int mode) const = 0;
-    virtual Vector3 GetCenter() const { return Vector3::Null; }
+    virtual Eigen::Vector3d GetCenter() const { return Eigen::Vector3d::Zero(); }
     
     // Interface for data display
     virtual double GetData(int) const

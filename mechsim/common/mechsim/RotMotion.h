@@ -1,25 +1,25 @@
 #ifndef MSIM_ROTMOTION_H
 #define MSIM_ROTMOTION_H
 
-#include "Vector.h"
+#include <Eigen/Dense>
 
 // Velocity field: v(r) = v0 + omega x r
 class RotMotion
 {
   public:
-    RotMotion(Vector3 v0, Vector3 omega)
+    RotMotion(Eigen::Vector3d v0, Eigen::Vector3d omega)
         : fv0(v0), fOmega(omega) { }
-    static RotMotion Shift(Vector3 v)
-        { return RotMotion(v, Vector3::Null); }
-    static RotMotion Rotation(Vector3 ctr, Vector3 omega)
-        { return RotMotion(-VectorOp::cross(omega, ctr), omega); }
+    static RotMotion Shift(Eigen::Vector3d v)
+        { return RotMotion(v, Eigen::Vector3d::Zero()); }
+    static RotMotion Rotation(Eigen::Vector3d ctr, Eigen::Vector3d omega)
+        { return RotMotion(-omega.cross(ctr), omega); }
     
-    Vector3 omega() const      { return fOmega; }
-    Vector3 v0() const         { return fv0; }
-    Vector3 v(Vector3 r) const { return v0() + VectorOp::cross(omega(), r); }
+    Eigen::Vector3d omega() const      { return fOmega; }
+    Eigen::Vector3d v0() const         { return fv0; }
+    Eigen::Vector3d v(Eigen::Vector3d r) const { return v0() + omega().cross(r); }
     
   private:
-    Vector3 fv0, fOmega;
+    Eigen::Vector3d fv0, fOmega;
 };
 
 RotMotion combine(const RotMotion& r1, const RotMotion& r2)

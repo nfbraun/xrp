@@ -2,9 +2,9 @@
 #include <cmath>
 #include "Hobbelen.h"
 
-double GetAngle(const Rotation& rot)
+double GetAngle(const Eigen::Quaterniond& rot)
 {
-    Vector3 zp = rot * Vector3::eZ;
+    Eigen::Vector3d zp = rot * Eigen::Vector3d::UnitZ();
     return atan2(zp.x(), zp.z());
 }
 
