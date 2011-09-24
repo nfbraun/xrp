@@ -2,6 +2,7 @@
 from __future__ import division
 import struct
 import serdecode
+import math
 
 outfile = open("softscope.fifo", "w")
 
@@ -33,40 +34,31 @@ class Delay:
 
 phi_dot_avg = MovingAverage(10)
 omega_avg = MovingAverage(10)
-gx_avg = MovingAverage(20)
+gx_avg = MovingAverage(10)
 gy_avg = MovingAverage(20)
 
-v_delay = Delay(40)
+v_delay = Delay(20)
+
+omega_sum = 0.
+offset = 0.
 
 while True:
     s = serdecode.read_frame()
-    # (target_speed, phi_dot, x, phi, speed_0, speed_1, omega, idle_cnt, error_int_0, error_int_1) = \
-    #     struct.unpack("=ihihhhhhhh", s)
-    # (target_speed, speed_0, speed_1, error_int_0, error_int_1, motor_0, motor_1) = \
-    #     struct.unpack("=ihhhhhh", s)
-    #(set_speed_0, error_int_0, motor_0, speed_0, \
-    # set_speed_1, error_int_1, motor_1, speed_1) = struct.unpack("=hihhhihh", s)
-    # (phi, omega) = struct.unpack("=hh", s)
-    # (phi, omega, speed, gx, gy, gz) = struct.unpack("=hhhhhh", s)
     
-    # fifo.append(phi)
-    # fifo2.append(omega)
+    # (phi, omega, speed_0, gx, gy, gz, omega_int) = struct.unpack("=hhhhhhi", s)
     # gx_avg.add(gx)
-    # gy_avg.add(gy)
-    # v_delay.add(speed)
+    # v_delay.add(speed_0)
+    # omega_sum += omega
+    # omega_sum -= 0.001 * omega_sum
     
-    # phi_dot_avg.add(phi_dot)
-    # omega_avg.add(omega)
+    # phi_1 = gx_iavg/(136*32)*180./math.pi*67.6  # slow estimate
+    # phi_1 = gx_iavg*0.88  # slow estimate
+    # phi_2 = omega_int            # fast estimate
     
-    # outfile.write(struct.pack("=ffff", phi, 4000*fifo2[0], 299*(phi - fifo[0])/10., 0.))
-    # outfile.write(struct.pack("=ffff", phi, gy_avg.value(), gx_avg.value(), speed - v_delay.value()))
-    # outfile.flush()
-    
-    #del fifo[0]
-    #del fifo2[0]
-    
-    (dummy, avel, gx, gy, gz) = struct.unpack("=hhhhh", s)
-    outfile.write(struct.pack("=ffff", avel, gx, gy, gz))
+    # offset = 0.99*offset + 0.01*(phi_1 - phi_2)
+    # phi_est = phi_2 + offset
+    (speed, user_speed, pos, user_pos) = struct.unpack("=hhii", s)
+    outfile.write(struct.pack("=ffff", speed, user_speed, pos, user_pos))
     outfile.flush()
 
 outfile.close()

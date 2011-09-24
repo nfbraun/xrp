@@ -1,0 +1,48 @@
+ATMEGA8a
+
+   +---------+
+   | 15   14 |
+   |         |
+   |         |
+   |         |
+   | 28    1 o
+   +----^----+
+
+1   PC6            RESET
+2   PD0            RXD
+3   PD1            TXD
+4   PD2/INT0       IR DATA
+5   PD3/INT1       SSI_CS0n
+6   PD4            SSI_CS1n
+7   VCC
+8   GND
+9   PB6            MOTOR
+10  PB7            MOTOR
+11  PD5
+12  PD6            SSI_DI
+13  PD7            SSI_CLK
+14  PB0            SHUTDOWN_INDICATOR
+
+15  PB1            MOTOR
+16  PB2            MOTOR
+17  PB3            SAFETY_SWITCH
+18  PB4            MOTOR
+19  PB5            MOTOR
+20  AVCC
+21  AREF
+22  GND
+23  PC0/ADC0       DISTANCE
+24  PC1/ADC1       GYRO
+25  PC2/ADC2       ACCEL
+26  PC3/ADC3       ACCEL
+27  PC4/ADC4/SDA   ACCEL
+28  PC5/ADC5/SCL   N/C
+
+
+AS5040 breakout
+
+1   VDD_5
+2   DO
+3   CLK
+4   CSn
+5   GND

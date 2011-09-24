@@ -23,6 +23,9 @@
   If the user software handles ESC (0x1B) correctly, RESET is not needed on
   subsequent programmings.
 
+makefile:
+  BOOTSIZE=512 (for atmega8), BOOTSIZE=1024 (for atmega328p)
+
 NOTES for ATmega328P:
 * Default fuse settings result in 1 MHz clock at startup (internal oscillator
   at 8MHz and CKDIV8 fuse set). With this setting, a precise baud rate of 38.4

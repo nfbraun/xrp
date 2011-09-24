@@ -49,12 +49,21 @@ int16_t get_angle(void)
 //#define A4   1
 //#define A5 324
 
-// #define A1 299
-#define A1 3151 //4000
-#define A2 13
-#define A3 6097
-#define A4 1
-#define A5 -5772
+// *** CURRENT ***
+//// #define A1 299
+//#define A1 3151 //4000
+////#define A2 13
+//#define A2 137
+//#define A3 6097
+//#define A4 1
+//#define A5 -5772
+
+#define A1 5048
+#define A2 211
+#define A3 9807
+#define A4 21
+#define A5 -7126
+
 
 int32_t get_accel(int32_t phi_dot, int32_t phi, int32_t x_dot, int32_t x, int32_t x_dot_s)
 {
@@ -92,8 +101,11 @@ void reset_controller(void)
 #define PHI_MIN (PHI_0 - 20550)
 #define PHI_MAX (PHI_0 + 20550)
 
-// Zero level for angular rate sensor
-#define OMEGA_0 325
+// Approx. zero level for angular rate sensor
+#define OMEGA_0 324
+
+// Zero level for accelerometer
+#define GX_0 354
 
 ISR(TIMER2_COMP_vect)
 {
@@ -119,6 +131,8 @@ int main()
     
     int8_t user_speed = 0;
     int8_t bad_cnt = 0;
+    
+    int32_t omega_int = 0;
     
     twi_init();
     ssi_init();
@@ -170,12 +184,13 @@ int main()
             
             target_speed += get_accel(//phi - old_phi,
                                       omega - OMEGA_0,
-                                      phi - PHI_0,
-                                      speed_0,
-                                      GET_WHEEL_POS(wheel_pos_0),
+                                      //phi - PHI_0,
+                                      omega_int >> 8,
+                                      speed_0 - user_speed,
+                                      GET_WHEEL_POS(wheel_pos_0) - user_pos,
                                       target_speed >> 16);
             
-            // user_pos += user_speed;
+            user_pos += user_speed;
             
             motor_0 = sp_ctrl_step(target_speed >> 16,
                                    speed_0,
@@ -215,14 +230,22 @@ int main()
         //se_puti32(target_speed);
         //se_puti16(phi - old_phi);
         //se_puti32(GET_WHEEL_POS(wheel_pos_0));
-        se_puti16(phi - PHI_0);
-        se_puti16(omega - OMEGA_0);
+        //se_puti16(phi - PHI_0);
+        //se_puti16(omega - OMEGA_0);
         se_puti16(speed_0);
-        se_puti16(adc_read(2));
-        se_puti16(adc_read(3));
-        se_puti16(adc_read(4));
+        se_puti16(user_speed);
+        se_puti32(GET_WHEEL_POS(wheel_pos_0));
+        se_puti32(user_pos);
+        
+        //se_puti16(adc_read(2) - GX_0);
+        //se_puti16(adc_read(3));
+        //se_puti16(adc_read(4));
+        //se_puti32(omega_int);
         
         old_phi = phi;
+        omega_int += (omega - OMEGA_0) << 8;
+        omega_int += (7209*((int32_t)adc_read(2) - GX_0) - omega_int) >> 8;
+        //omega_int = adc_read(2) - GX_0;
         
         if(phi > PHI_MIN && phi < PHI_MAX && SWITCH_PIN) {
             enable_count++;

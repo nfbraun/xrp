@@ -2,14 +2,18 @@
 #include <avr/io.h>
 #include <util/delay.h>
 
-#define SSI_DI   6
-#define SSI_CLK  7
+#define SSI_PORT  PORTD
+#define SSI_PIN   PIND
+#define SSI_DDR   DDRD
+
+#define SSI_DI    6
+#define SSI_CLK   7
 
 void ssi_init(void)
 {
-    DDRD |= _UV(SSI_CLK);
-    DDRD &= ~_UV(SSI_DI);
-    PORTD |= _UV(SSI_CLK);
+    _SETBIT(SSI_DDR, SSI_CLK);
+    _CLRBIT(SSI_DDR, SSI_DI);
+    _SETBIT(SSI_PORT, SSI_CLK);
 }
 
 uint16_t ssi_read(void)
@@ -19,17 +23,17 @@ uint16_t ssi_read(void)
     
     _delay_us(10);
     
-    PORTD &= ~_UV(SSI_CLK);
+    _CLRBIT(SSI_PORT, SSI_CLK);
     _delay_us(10);
-    PORTD |= _UV(SSI_CLK);
+    _SETBIT(SSI_PORT, SSI_CLK);
     _delay_us(10);
     
     for(i=0; i<16; ++i) {
-        PORTD &= ~_UV(SSI_CLK);
+        _CLRBIT(SSI_PORT, SSI_CLK);
         _delay_us(10);
         data <<= 1;
-        data |= ((PIND & _UV(SSI_DI)) >> SSI_DI);
-        PORTD |= _UV(SSI_CLK);
+        data |= ((SSI_PIN & _UV(SSI_DI)) >> SSI_DI);
+        _SETBIT(SSI_PORT, SSI_CLK);
         _delay_us(10);
     }
     
