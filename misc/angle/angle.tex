@@ -1,0 +1,22 @@
+\documentclass[a4paper]{article}
+\usepackage{tikz}
+\pagestyle{empty}
+\begin{document}
+\begin{tikzpicture}
+\draw (-6,0) -- (6,0);
+\draw (0,-6) -- (0,6);
+\draw(0,0) circle(5cm);
+\foreach \angle in {0, 30, ..., 360 }
+{
+    \draw (\angle:4) -- (\angle:5);
+}
+\foreach \angle in {0, 6, ..., 360 }
+{
+    \draw (\angle:4.5) -- (\angle:5);
+}
+\foreach \angle in {0, 1, ..., 360 }
+{
+    \draw (\angle:4.8) -- (\angle:5);
+}
+\end{tikzpicture}
+\end{document}
