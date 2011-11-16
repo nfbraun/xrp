@@ -1,0 +1,153 @@
+\documentclass[a4paper]{article}
+\begin{document}
+\title{The Brachistochrone problem}
+\author{Norbert Braun}
+\maketitle
+The problem is to find a curve, $y(x)$, with the constraints
+\begin{equation}
+y(0) = 0\mbox{ and }y(X) = H
+\end{equation}
+such that the time for a free particle, constrained to move on the curve under only the influence of gravity, to travel from $(0,0)$ to $(X,H)$ becomes minimal. Note that $y(x) > 0$ for all $x \in (0,X)$, otherwise, the particle will never reach the end of the curve.
+
+\begin{equation}
+E_\mathrm{pot} = -mgy
+\end{equation}
+\begin{eqnarray}
+E_\mathrm{kin} &=& \frac{1}{2} m v^2 \\
+&=& \frac{1}{2} m \left( \left(\frac{\mathrm{d}x}{\mathrm{d}t}\right)^2
++ \left(\frac{\mathrm{d}y}{\mathrm{d}x}\frac{\mathrm{d}x}{\mathrm{d}t}\right)^2 \right)\\
+&=& \frac{1}{2} m \left(\frac{\mathrm{d}x}{\mathrm{d}t}\right)^2
+\left(1 + \left(\frac{\mathrm{d}y}{\mathrm{d}x}\right)^2\right)
+\end{eqnarray}
+Conservation of energy:
+\begin{equation}
+E_\mathrm{kin} + E_\mathrm{pot} = 0
+\end{equation}
+\begin{equation}
+\frac{1}{2} m \left(\frac{\mathrm{d}x}{\mathrm{d}t}\right)^2
+\left(1 + \left(\frac{\mathrm{d}y}{\mathrm{d}x}\right)^2\right) - mgy = 0
+\end{equation}
+\begin{equation}
+\left(\frac{\mathrm{d}x}{\mathrm{d}t}\right)^2
+\left(1 + \left(\frac{\mathrm{d}y}{\mathrm{d}x}\right)^2\right) = 2gy
+\end{equation}
+\begin{equation}
+\frac{\mathrm{d}x}{\mathrm{d}t} = \sqrt{\frac{2gy}{1+\left(\frac{\mathrm{d}y}{\mathrm{d}x}\right)^2}}
+\end{equation}
+\begin{equation}
+T = \int_0^X \mathrm{d}x\;\frac{\mathrm{d}t}{\mathrm{d}x}
+= \int_0^X \mathrm{d}x\;\sqrt{\frac{1+\left(\frac{\mathrm{d}y}{\mathrm{d}x}\right)^2}{2gy}}
+\end{equation}
+Consider line segment from $(x_-, y_-)$ to $(x_+, y_+)$,
+\begin{equation}
+y(x) = y_- + \frac{y_+ - y_-}{x_+ - x_-}\cdot(x-x_-)
+=: y_- + a(x - x_-)
+\end{equation}
+Time for line segment:
+\begin{eqnarray}
+t(y_-, y_+) &=& \int_{x_-}^{x_+} \mathrm{d}x\; \frac{\mathrm{d}t}{\mathrm{d}x}\\
+&=& \int_{x_-}^{x_+} \mathrm{d}x\;\sqrt{\frac{1+a^2}{2g(y_- + a(x - x_-))}}\\
+&=& \sqrt{\frac{1+a^2}{2g}} \int_{x_-}^{x_+} \mathrm{d}x\; \sqrt{\frac{1}{y_- + a(x - x_-)}}\\
+&=& \sqrt{\frac{1+a^2}{2g}} \frac{2}{a} \left[\sqrt{y_- + a(x - x_-)}\right]_{x_-}^{x_+}\\
+&=& 2\sqrt{\frac{1+a^2}{2g}} \frac{\sqrt{y_+} - \sqrt{y_-}}{a}
+\end{eqnarray}
+This is ill-defined for $y_- = y_+$, so we rewrite it a little:
+\begin{eqnarray}
+t(y_-, y_+) &=& 2\sqrt{\frac{1+a^2}{2g}} \frac{\sqrt{y_+} - \sqrt{y_-}}{a} \frac{\sqrt{y_+} + \sqrt{y_-}}{\sqrt{y_+} + \sqrt{y_-}}\\
+&=& \sqrt{\frac{1+a^2}{2g}} \frac{y_+ - y_-}{a} \frac{2}{\sqrt{y_+} + \sqrt{y_-}}\\
+&=& \sqrt{\frac{1+a^2}{2g}} \frac{2}{\sqrt{y_+} + \sqrt{y_-}} (x_+ - x_-)\\
+&=& \frac{\sqrt{(x_+ - x_-)^2 + (y_+ - y_-)^2}}{\sqrt{2 g}(\sqrt{y_+} + \sqrt{y_-})/2}
+\end{eqnarray}
+This is the time to travel the length of the line segment with a velocity that is the average of the velocity $v_- = \sqrt{2 g y_-}$ at the beginning and the velocity $v_+ = \sqrt{2 g y_+}$ at the end. Note the symmetry between $y_-$ and $y_+$, i.e.
+\begin{equation}
+t(y_-, y_+) = t(y_+, y_-)
+\end{equation}
+
+Now, let the curve $y(x)$ be approximated by $N+1$ line segments. Let $x_+ - x_- =: \Delta$ be equal for all line segments. The time $T$ is then given by
+\begin{equation}
+T = \sum_{k=0}^{N} t(y_k, y_{k+1})
+\end{equation}
+where $t$ is the time for a line segment, as above. The constraints force $y_0 = 0$ and $y_{N+1} = H$, so the $N$ free variables are $y_1, \ldots, y_N$. Thus
+\begin{equation}
+T = t(0, y_1) + \sum_{k=1}^{N-1} t(y_k, y_{k+1}) + t(y_N, H)
+\end{equation}
+
+We need to calculate the first and second derivatives of $T$ with respect to the free variables $y_1, \ldots, y_N$. They are given by
+\begin{eqnarray}
+\frac{\partial T}{\partial y_i} &=&
+\left. \frac{\partial t}{\partial y_+} \right|_{(y_{i-1}, y_i)}
++ \left. \frac{\partial t}{\partial y_-} \right|_{(y_i, y_{i+1})}\\
+\frac{\partial^2 T}{\partial y_i^2} &=&
+\left. \frac{\partial^2 t}{\partial y_+^2} \right|_{(y_{i-1}, y_i)}
++ \left. \frac{\partial^2 t}{\partial y_-^2} \right|_{(y_i, y_{i+1})}\\
+\frac{\partial^2 T}{\partial y_i \partial y_{i-1}} &=&
+\left. \frac{\partial^2 t}{\partial y_+ \partial y_-} \right|_{(y_{i-1}, y_i)}\\
+\frac{\partial^2 T}{\partial y_i \partial y_{i+1}} &=&
+\left. \frac{\partial^2 t}{\partial y_- \partial y_+} \right|_{(y_i, y_{i+1})}\\
+\frac{\partial^2 T}{\partial y_i \partial y_j} &=&
+0 \; \mbox{, otherwise}
+\end{eqnarray}
+The sparsity structure of the $N \times N$ Hessian is thus
+\begin{equation}
+\left(\frac{\partial^2 t}{\partial y_i \partial y_j}\right) =
+\left(\begin{array}{*{10}{c}}
+  * & * & 0 & 0 & 0 & \ldots & 0 & 0 & 0 & 0\\
+{}* & * & * & 0 & 0 & \ldots & 0 & 0 & 0 & 0\\
+  0 & * & * & * & 0 & \ldots & 0 & 0 & 0 & 0\\
+  0 & 0 & * & * & * & \ldots & 0 & 0 & 0 & 0\\
+  0 & 0 & 0 & * & * & \ldots & 0 & 0 & 0 & 0\\
+\vdots & \vdots & \vdots & \vdots & \vdots & \ddots & \vdots
+& \vdots & \vdots & \vdots\\
+  0 & 0 & 0 & 0 & 0 & \ldots & * & * & 0 & 0\\
+  0 & 0 & 0 & 0 & 0 & \ldots & * & * & * & 0\\
+  0 & 0 & 0 & 0 & 0 & \ldots & 0 & * & * & *\\
+  0 & 0 & 0 & 0 & 0 & \ldots & 0 & 0 & * & *\\
+\end{array}\right)
+\end{equation}
+
+To calculate the derivatives of $t$, we first define
+\begin{equation}
+l := l(y_-, y_+) := \sqrt{(x_+ - x_-)^2 + (y_+ - y_-)^2}
+\end{equation}
+and
+\begin{equation}
+v := v(y_-, y_+) := \sqrt{2g} (\sqrt{y_+} + \sqrt{y_-})/2
+\end{equation}
+so that
+\begin{equation}
+t(y_-, y_+) = \frac{l(y_-, y_+)}{v(y_-, y_+)}
+\end{equation}
+$l$ and $v$ are again both symmetric in $y_-$ and $y_+$. Their derivatives are
+\begin{equation}
+\frac{\partial l}{\partial y_+} = \frac{y_+ - y_-}{l}
+\end{equation}
+and
+\begin{equation}
+\frac{\partial v}{\partial y_+} = \frac{\sqrt{2g}}{4} \frac{1}{\sqrt{y_+}}
+\end{equation}
+
+From this, we find the derivatives of $t$
+\begin{eqnarray}
+\frac{\partial t}{\partial y_+}
+&=& \frac{y_+ - y_-}{vl} - \frac{1}{4} \frac{\sqrt{2g}}{\sqrt{y_+}} \frac{l}{v^2}\\
+\frac{\partial^2 t}{\partial y_+^2} &=&
+\frac{1}{vl} - \left(\frac{y_+ - y_-}{v l^3} + 
+    \frac{1}{4}\frac{\sqrt{2g}}{\sqrt{y_+}}\frac{1}{v^2l}\right)(y_+ - y_-)\\
+\nonumber&&- \frac{1}{4} \sqrt{2g} \left(- \frac{l}{2v^2(\sqrt{y_+})^3} +
+    \frac{1}{\sqrt{y_+}}\left(\frac{y_+ - y_-}{l v^2} - \frac{1}{2 v^3}
+    \sqrt{2g}\frac{l}{\sqrt{y_+}}\right)\right)\\
+\frac{\partial t}{\partial y_+ \partial y_-} &=&
+-\frac{1}{vl} - \left(\frac{y_- - y_+}{v l^3} +
+    \frac{1}{4} \frac{\sqrt{2g}}{\sqrt{y_-}}\frac{1}{v^2 l}\right)
+    (y_+ - y_-)\\
+\nonumber&& - \frac{1}{4}\frac{\sqrt{2g}}{\sqrt{y_+}}
+    \left(\frac{y_- - y_+}{l v^2} - \frac{1}{2 v^3} \sqrt{2g}
+    \frac{l}{\sqrt{y_-}}\right)
+\end{eqnarray}
+The remaining derivatives follow from symmetry:
+\begin{equation}
+\frac{\partial t}{\partial y_-} = \frac{\partial t}{\partial y_+}
+\mbox{ and }
+\frac{\partial^2 t}{\partial y_-^2} = \frac{\partial^2 t}{\partial y_+^2}
+\end{equation}
+\end{document}
