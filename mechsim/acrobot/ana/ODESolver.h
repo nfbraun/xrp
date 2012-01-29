@@ -46,15 +46,15 @@ class AutODESolver: public ODESolver
 class ODE2Solver: public ODESolver {
   public:
     ODE2Solver(int ndim, const GiNaC::ex& function, const GiNaC::symbol& t,
-              const std::vector<GiNaC::symbol>& qdot_vec,
               const std::vector<GiNaC::symbol>& q_vec,
-              const double qdot_ini[], const double q_ini[],
+              const std::vector<GiNaC::symbol>& qdot_vec,
+              const double q_ini[], const double qdot_ini[],
               const gsl_odeiv_step_type* stype = gsl_odeiv_step_rkf45)
       : ODESolver(2*ndim, getEx(ndim, function, qdot_vec),
-                  t, combineSymVect(qdot_vec, q_vec),
-                  combineIniVect(ndim, qdot_ini, q_ini), stype) {}
-    const double* qdot() const { return y(); }
-    const double* q() const { return y() + ndim()/2; }
+                  t, combineSymVect(q_vec, qdot_vec),
+                  combineIniVect(ndim, q_ini, qdot_ini), stype) {}
+    const double* q() const { return y(); }
+    const double* qdot() const { return y() + ndim()/2; }
     
   private:
     static GiNaC::ex getEx(int ndim, const GiNaC::ex& function,
@@ -69,12 +69,12 @@ class ODE2Solver: public ODESolver {
 class AutODE2Solver: public ODE2Solver {
   public:
     AutODE2Solver(int ndim, const GiNaC::ex& function,
-              const std::vector<GiNaC::symbol>& qdot_vec,
               const std::vector<GiNaC::symbol>& q_vec,
-              const double qdot_ini[], const double q_ini[],
+              const std::vector<GiNaC::symbol>& qdot_vec,
+              const double q_ini[], const double qdot_ini[],
               const gsl_odeiv_step_type* stype = gsl_odeiv_step_rkf45)
-        : ODE2Solver(ndim, function, GiNaC::symbol(), qdot_vec, q_vec,
-                     qdot_ini, q_ini, stype) {}
+        : ODE2Solver(ndim, function, GiNaC::symbol(), q_vec, qdot_vec,
+                     q_ini, qdot_ini, stype) {}
 };
 
 #endif

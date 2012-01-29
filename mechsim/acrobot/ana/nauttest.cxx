@@ -12,26 +12,29 @@
 
 int main()
 {
-    const double qdot_ini[] = { 0.0 };
     const double q_ini[] = { 0.0 };
+    const double qdot_ini[] = { 0.0 };
     const double tstep = 1./16.;
     int i;
     
     using namespace GiNaC;
-    symbol t("t"), qdot0("qdot0"), q0("q0");
+    symbol t("t"), q0("q0"), qdot0("qdot0");
     ex qdotdot = cos(t) - 2*q0;
     
-    std::vector<symbol> qdot, q;
-    qdot.push_back(qdot0);
+    std::vector<symbol> q, qdot;
     q.push_back(q0);
+    qdot.push_back(qdot0);
     
-    ODE2Solver solver(1, qdotdot, t, qdot, q, qdot_ini, q_ini);
+    ODE2Solver solver(1, qdotdot, t, q, qdot, q_ini, qdot_ini);
+    
+    std::cout << "#:1:q0" << std::endl;
+    std::cout << "#:2:qdot0" << std::endl;
     
     std::cout.precision(4);
     for(i=0; i<(16*100); ++i) {
         solver.EvolveFwd(i * tstep);
-        std::cout << solver.t() << " " << solver.qdot()[0];
-        std::cout << " " << solver.q()[0] << std::endl;
+        std::cout << solver.t() << " " << solver.q()[0];
+        std::cout << " " << solver.qdot()[0] << std::endl;
     }
     
     return 0;

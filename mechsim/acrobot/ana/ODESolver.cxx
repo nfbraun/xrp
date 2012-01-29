@@ -71,9 +71,16 @@ GiNaC::ex ODE2Solver::getEx(int ndim, const GiNaC::ex& function,
     using namespace GiNaC;
     lst ex;
     
-    // y[0:ndim] = qdotdot
+    // y[0:ndim] = qdot
+    for(int i=0; i<ndim; i++)
+        ex.append(qdot_vec[i]);
+    
+    // y[ndim:2*ndim] = qdotdot
     if(is_a<lst>(function) && ex_to<lst>(function).nops() == (size_t)ndim) {
-        ex = ex_to<lst>(function);
+        for(lst::const_iterator i = ex_to<lst>(function).begin();
+            i != ex_to<lst>(function).end(); i++) {
+            ex.append(*i);
+        }
     } else if(is_a<matrix>(function)) {
         const matrix& mat = ex_to<matrix>(function);
         if((mat.rows() == (size_t)ndim && mat.cols() == 1) ||
@@ -89,10 +96,6 @@ GiNaC::ex ODE2Solver::getEx(int ndim, const GiNaC::ex& function,
     } else {
         throw std::runtime_error("Function does not have expected form");
     }
-    
-    // y[ndim:2*ndim] = qdot
-    for(int i=0; i<ndim; i++)
-        ex.append(qdot_vec[i]);
     
     return ex;
 }

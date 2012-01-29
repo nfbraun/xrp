@@ -36,25 +36,25 @@ int main()
     //ex qddot0 = (-h0-phi0+M01/M11*(h1+phi1))/(M00-M01*M01/M11);
     //ex qddot1 = (-h1-phi1+M01/M00*(h0+phi0))/(M11-M01*M01/M00);
     
-    const double qdot_ini[] = { 0.2, 0.2 };
     const double q_ini[] = { -M_PI/2., 0. };
+    const double qdot_ini[] = { 0.2, 0.2 };
     const double tstep = 1./16.;
     int i;
     
     typedef GiJIT::CodeGen<GiJIT::Vector, GiJIT::Vector> E_func_t;
-    E_func_t::func_t E_func = E_func_t::compile(E, qdot, q);
+    E_func_t::func_t E_func = E_func_t::compile(E, q, qdot);
     typedef GiJIT::CodeGen<GiJIT::Vector, GiJIT::Vector> ub_func_t;
-    ub_func_t::func_t ub_func = ub_func_t::compile(ubar, qdot, q);
+    ub_func_t::func_t ub_func = ub_func_t::compile(ubar, q, qdot);
     
-    AutODE2Solver solver(2, lst(qddot0, qddot1), qdot, q, qdot_ini, q_ini);
+    AutODE2Solver solver(2, lst(qddot0, qddot1), q, qdot, q_ini, qdot_ini);
     
     std::cout.precision(10);
     for(i=0; i<(16*200); ++i) {
         solver.EvolveFwd(i * tstep);
         std::cout << solver.t() << " " << solver.q()[0] << " " << solver.q()[1];
         std::cout << " " << solver.qdot()[0] << " " << solver.qdot()[1];
-        std::cout << " " << E_func(solver.qdot(), solver.q());
-        std::cout << " " << ub_func(solver.qdot(), solver.q());
+        std::cout << " " << E_func(solver.q(), solver.qdot());
+        std::cout << " " << ub_func(solver.q(), solver.qdot());
         std::cout << std::endl;
     }
     

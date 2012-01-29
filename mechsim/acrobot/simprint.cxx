@@ -16,6 +16,11 @@ int main()
 {
     Acrobot sim;
     
+    //std::cout << "#:1:θ1\n";
+    //std::cout << "#:2:θ2" << std::endl;
+    std::cout << "#:1:theta1\n";
+    std::cout << "#:2:theta2" << std::endl;
+    
     for(int t=0; t<100*Acrobot::STEP_PER_SEC; t++) {
         const AcroState* state = sim.GetState(t);
         

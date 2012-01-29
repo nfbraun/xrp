@@ -12,7 +12,7 @@ class System
     virtual int ndim() const = 0;
     virtual GiNaC::matrix M(const Vector& q) const = 0;
     virtual GiNaC::ex V(const Vector& q) const = 0;
-    virtual GiNaC::ex u(const Vector& qdot, const Vector& q) const
+    virtual GiNaC::ex u(const Vector& q, const Vector& qdot) const
         { return 0; }
 };
 

@@ -10,8 +10,20 @@
 int main()
 {
     using namespace GiNaC;
-    Acrobot a;
-    Lagrange l(a);
+    
+    struct AcrobotParam par;
+    par.G = 10.;
+    par.M1 = 1.;
+    par.M2 = 1.;
+    par.LC = .5;
+    par.L1 = .5;
+    par.L2 = .5;
+    par.I1 = 0.;
+    par.I2 = 0.;
+    par.GAMMA = 0.;
+    
+    Acrobot acrobot(par);
+    Lagrange l(acrobot);
     
     std::vector<symbol> q = l.q(), qdot = l.qdot();
     
@@ -30,30 +42,30 @@ int main()
     ex E = l.E();
     ex Ec = E.subs(qdot[0]==0).subs(qdot[1]==0).subs(q[0]==0).subs(q[1]==0);
     
-    ex ubar = -atan(3.*(E-Ec)/Ec*qdot[0]/sqrt(Acrobot::G/Acrobot::L1));
+    ex ubar = -atan(3.*(E-Ec)/Ec*qdot[0]/sqrt(acrobot.p.G/acrobot.p.L1));
     
     // Partial feedback linearization
     ex qddot1 = ex_to<lst>(l.qdotdot())[1];
-    ex tau1 = (- k1*qdot[1]/sqrt(Acrobot::G/Acrobot::L1) + k0*(ubar-q[1]))
-        * Acrobot::G/Acrobot::L1;
-    ex u1 = lsolve(qddot1 == tau1, a.u1);
+    ex tau1 = (- k1*qdot[1]/sqrt(acrobot.p.G/acrobot.p.L1) + k0*(ubar-q[1]))
+        * acrobot.p.G/acrobot.p.L1;
+    ex u1 = lsolve(qddot1 == tau1, acrobot.u1);
     
-    GiNaC::ex qddot = l.qdotdot().subs(a.u1 == u1);
+    GiNaC::ex qddot = l.qdotdot().subs(acrobot.u1 == u1);
     
-    const double qdot_ini[] = { 0.0, 0.0 };
     const double q_ini[] = { M_PI-1., 0.0 };
+    const double qdot_ini[] = { 0.0, 0.0 };
     const double tstep = 1./16.;
     int i;
     
     typedef GiJIT::CodeGen<GiJIT::Vector, GiJIT::Vector> E_func_t;
-    E_func_t::func_t E_func = E_func_t::compile(E, l.qdot(), l.q());
+    E_func_t::func_t E_func = E_func_t::compile(E, l.q(), l.qdot());
     //typedef GiJIT::CodeGen<GiJIT::Vector, GiJIT::Vector> ub_func_t;
     //ub_func_t::func_t ub_func = ub_func_t::compile(ubar, l.qdot(), l.q());
     //typedef GiJIT::CodeGen<GiJIT::Vector, GiJIT::Vector> qddot1_func_t;
     //qddot1_func_t::func_t qddot1_func = ub_func_t::compile(ex_to<lst>(qddot)[1],
     //    l.qdot(), l.q());
     // qddot = sub_matrix(ex_to<matrix>(qddot),0,2,0,1);
-    AutODE2Solver solver(2, qddot, l.qdot(), l.q(), qdot_ini, q_ini);
+    AutODE2Solver solver(2, qddot, l.q(), l.qdot(), q_ini, qdot_ini);
     
     std::cout << "#:1:q0" << std::endl;
     std::cout << "#:2:q1" << std::endl;
@@ -65,7 +77,7 @@ int main()
     std::cout.precision(10);
     double Ec_val = ex_to<numeric>(Ec).to_double();
     for(i=0; i<(16*200); ++i) {
-        double E_val = E_func(solver.qdot(), solver.q());
+        double E_val = E_func(solver.q(), solver.qdot());
         if(std::abs((E_val - Ec_val)/Ec_val) < .1 &&
            std::abs(solver.q()[0]) < .02 &&
            std::abs(solver.q()[1]) < .02)
@@ -82,20 +94,20 @@ int main()
     }
     
     // LQR control
-    ex u1_lqr = -(LQR::lqrControl(l, a.u1) * l.x_vec()).evalm();
+    ex u1_lqr = -(LQR::lqrControl(l, acrobot.u1) * l.x_vec()).evalm();
     
-    GiNaC::ex qddot2 = l.qdotdot().subs(a.u1 == u1_lqr);
+    GiNaC::ex qddot2 = l.qdotdot().subs(acrobot.u1 == u1_lqr);
     // GiNaC::ex qddot = ((LQR::Sys_A() - LQR::Sys_B() * u) * l.x_vec()).evalm();
     //std::cout << qddot << std::endl;
     
-    const double qdot_ini_2[] = { solver.qdot()[0], solver.qdot()[1] };
     const double q_ini_2[] = { solver.q()[0], solver.q()[1] };
+    const double qdot_ini_2[] = { solver.qdot()[0], solver.qdot()[1] };
     
-    AutODE2Solver solver2(2, qddot2, l.qdot(), l.q(), qdot_ini_2, q_ini_2);
+    AutODE2Solver solver2(2, qddot2, l.q(), l.qdot(), q_ini_2, qdot_ini_2);
     
     const double t0 = solver.t();
     for(; i<(16*200); ++i) {
-        double E_val = E_func(solver2.qdot(), solver2.q());
+        double E_val = E_func(solver2.q(), solver2.qdot());
         solver2.EvolveFwd(i * tstep - t0);
         std::cout << solver2.t() + t0 << " " << solver2.q()[0] << " " << solver2.q()[1];
         std::cout << " " << solver2.qdot()[0] << " " << solver2.qdot()[1];

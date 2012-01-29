@@ -22,34 +22,49 @@ Acrobot::Acrobot()
 {
     const double THETA_1_INI = M_PI/2., THETA_2_INI = 0.0;
     
+    const double G = 9.81;
+    const double M1 = 1.;
+    const double M2 = 1.;
+    const double LC = 1.;
+    const double L1 = 1.;
+    const double L2 = 1.;
+    const double I1 = 1.;
+    const double I2 = 1.;
+    
     fWorld = dWorldCreate();
     
     dWorldSetGravity(fWorld, 0., 0., -9.81);
     
-    fBall1 = dBodyCreate(fWorld);
+    fPart1 = dBodyCreate(fWorld);
     dMass m;
 
-    dMassSetSphereTotal(&m, 1.0, 0.00001);
-    dBodySetMass(fBall1, &m);
-    dBodySetPosition(fBall1, sin(THETA_1_INI), 0., cos(THETA_1_INI));
+    dMassSetParameters(&m, M1,
+                       0.0, 0.0, 0.0,
+                       1.0, I1, 1.0,
+                       0.0, 0.0, 0.0);
+    dBodySetMass(fPart1, &m);
+    dBodySetPosition(fPart1, LC*sin(THETA_1_INI), 0., LC*cos(THETA_1_INI));
     
-    fBall2 = dBodyCreate(fWorld);
+    fPart2 = dBodyCreate(fWorld);
 
-    dMassSetSphereTotal(&m, 1.0, 0.00001);
-    dBodySetMass(fBall2, &m);
-    dBodySetPosition(fBall2, sin(THETA_1_INI) + sin(THETA_1_INI + THETA_2_INI),
+    dMassSetParameters(&m, M2,
+                       0.0, 0.0, 0.0,
+                       1.0, I2, 1.0,
+                       0.0, 0.0, 0.0);
+    dBodySetMass(fPart2, &m);
+    dBodySetPosition(fPart2, L1*sin(THETA_1_INI) + L2*sin(THETA_1_INI + THETA_2_INI),
                              0.,
-                             cos(THETA_1_INI) + cos(THETA_1_INI + THETA_2_INI));
-    dBodySetLinearVel(fBall2, 0., 0., sqrt(4.*9.81));
+                             L1*cos(THETA_1_INI) + L2*cos(THETA_1_INI + THETA_2_INI));
+    //dBodySetLinearVel(fBall2, 0., 0., sqrt(4.*9.81));
 
     fJ1 = dJointCreateHinge(fWorld, 0);
-    dJointAttach(fJ1, fBall1, 0);
+    dJointAttach(fJ1, fPart1, 0);
     dJointSetHingeAnchor(fJ1, 0.,0.,0.);
     dJointSetHingeAxis(fJ1, 0.,1.,0.);
     
     fJ2 = dJointCreateHinge(fWorld, 0);
-    dJointAttach(fJ2, fBall1, fBall2);
-    dJointSetHingeAnchor(fJ2, sin(THETA_1_INI), 0., cos(THETA_1_INI));
+    dJointAttach(fJ2, fPart1, fPart2);
+    dJointSetHingeAnchor(fJ2, L1*sin(THETA_1_INI), 0., L2*cos(THETA_1_INI));
     dJointSetHingeAxis(fJ2, 0.,1.,0.);
     
     fCurStep = 0;
@@ -82,8 +97,8 @@ AcroState Acrobot::GetCurrentState()
     
     state.fT = fCurStep / STEP_PER_SEC;
     
-    state.fB1_pos = ODE::BodyGetPosition(fBall1);
-    state.fB2_pos = ODE::BodyGetPosition(fBall2);
+    state.fB1_pos = ODE::BodyGetPosition(fPart1);
+    state.fB2_pos = ODE::BodyGetPosition(fPart2);
     
     return state;
 }

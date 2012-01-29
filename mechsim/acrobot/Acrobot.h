@@ -28,7 +28,7 @@ class Acrobot: public SyncSimulation<AcroState> {
     void HingeFriction(dJointID j);
     
     dWorldID fWorld;
-    dBodyID fBall1, fBall2;
+    dBodyID fPart1, fPart2;
     dJointID fJ1, fJ2;
     
     int fCurStep;

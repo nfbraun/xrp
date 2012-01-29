@@ -14,12 +14,12 @@ Lagrange::Lagrange(const System& s)
         name.str("");
     }
     
-    fX.insert(fX.end(), fQdot.begin(), fQdot.end());
     fX.insert(fX.end(), fQ.begin(), fQ.end());
+    fX.insert(fX.end(), fQdot.begin(), fQdot.end());
     
     fM = s.M(fQ);
     fV = s.V(fQ);
-    fu = s.u(fQdot, fQ);
+    fu = s.u(fQ, fQdot);
 }
 
 GiNaC::matrix Lagrange::C() const

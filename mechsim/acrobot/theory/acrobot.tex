@@ -49,24 +49,68 @@ T &=&\frac{1}{2} m_1 l_c^2 \dot{\theta}_1^2 + \frac{1}{2} m_2 l_1^2 \dot{\theta}
 + \frac{1}{2} m_2 l_2^2 (\dot{\theta}_1 + \dot{\theta_2})^2\\
 &&+ m_2 l_1 l_2 \dot{\theta}_1(\dot{\theta}_1 + \dot{\theta}_2)
 \left(\sin(\theta_1)\sin(\theta_1+\theta_2) + \cos(\theta_1)\cos(\theta_1+\theta_2)\right)\\
+&&+ \frac{1}{2} I_1 \dot{\theta}_1^2 + \frac{1}{2} I_2 (\dot{\theta_1} + \dot{\theta_2})^2\\
 &=& \frac{1}{2} m_1 l_c^2 \dot{\theta}_1^2 + \frac{1}{2} m_2 l_1^2 \dot{\theta}_1^2
 + \frac{1}{2} m_2 l_2^2 (\dot{\theta}_1 + \dot{\theta_2})^2
-+ m_2 l_1 l_2 \dot{\theta}_1(\dot{\theta}_1 + \dot{\theta}_2) \cos(\theta_2)\\
-&=& \frac{1}{2} (m_1 l_c^2 + m_2 l_1^2 + m_2 l_2^2 + 2 m_2 l_1 l_2 \cos{\theta_2}) \dot{\theta}_1^2
-+ m_2 (l_2^2 + l_1 l_2 \cos{\theta_2}) \dot{\theta}_1 \dot{\theta}_2
-+ \frac{1}{2} m_2 l_2^2 \dot{\theta}_2^2\\
++ m_2 l_1 l_2 \dot{\theta}_1(\dot{\theta}_1 + \dot{\theta}_2) \cos(\theta_2)
++ \frac{1}{2} I_1 \dot{\theta}_1^2 + \frac{1}{2} I_2 (\dot{\theta_1} + \dot{\theta_2})^2\\
+&=& \frac{1}{2} (m_1 l_c^2 + m_2 l_1^2 + m_2 l_2^2 + 2 m_2 l_1 l_2 \cos{\theta_2} + I_1 + I_2) \dot{\theta}_1^2
++ (m_2 (l_2^2 + l_1 l_2 \cos{\theta_2}) + I_2)\dot{\theta}_1 \dot{\theta}_2\\
+&&+ \frac{1}{2} (m_2 l_2^2 + I_2)\dot{\theta}_2^2\\
 &=& \frac{1}{2}
-\begin{pmatrix} \dot{\theta}_1 & \dot{\theta}_2 \end{pmatrix}\
-\begin{pmatrix} m_1 l_c^2 + m_2 l_1^2 + m_2 l_2^2 + 2 m_2 l_1 l_2 \cos{\theta_2} &
-    m_2 (l_2^2 + l_1 l_2 \cos{\theta_2})\\
-    m_2 (l_2^2 + l_1 l_2 \cos{\theta_2}) &
-    m_2 l_2^2 \end{pmatrix}
-\begin{pmatrix} \dot{\theta}_1\\ \dot{\theta}_2 \end{pmatrix}
+\begin{pmatrix} \dot{\theta}_1 & \dot{\theta}_2 \end{pmatrix}
+\begin{pmatrix} m_1 l_c^2 + m_2 l_1^2 + m_2 l_2^2 + 2 m_2 l_1 l_2 \cos{\theta_2} + I_1 + I_2&
+    m_2 (l_2^2 + l_1 l_2 \cos{\theta_2}) + I_2\\
+    m_2 (l_2^2 + l_1 l_2 \cos{\theta_2}) + I_2 &
+    m_2 l_2^2 + I_2\end{pmatrix}
+\begin{pmatrix} \dot{\theta}_1\\ \dot{\theta}_2 \end{pmatrix}\\
+&=:& \frac{1}{2}
+\begin{pmatrix} \dot{\theta}_1 & \dot{\theta}_2 \end{pmatrix}
+M
+\begin{pmatrix} \dot{\theta}_1\\ \dot{\theta}_2 \end{pmatrix}\\
 \end{eqnarray*}
 
 Potential energy
 \begin{eqnarray*}
 V &=& m_1 g y_1 + m_2 g y_2\\
   &=& (m_1 l_c + m_2 l_1) g \cos{\theta_1} + m_2 l_2 g \cos(\theta_1 + \theta_2)
+\end{eqnarray*}
+
+Equations of motion
+\begin{eqnarray*}
+\frac{\partial M}{\partial \theta_1} &=&
+\begin{pmatrix} 0 & 0\\0 & 0\end{pmatrix}\\
+\frac{\partial M}{\partial \theta_2} &=& \begin{pmatrix}
+-2 m_2 l_1 l_2 \sin \theta_2 & -m_2 l_1 l_2 \sin \theta_2\\
+-m_2 l_1 l_2 \sin \theta_2 & 0\end{pmatrix}\\
+C &=& \begin{pmatrix}
+-m_2 l_1 l_2 \sin(\theta_2) \dot{\theta}_2 (2\dot{\theta}_1 + \dot{\theta}_2)\\
+m_2 l_1 l_2 \sin(\theta_2) \dot{\theta}_1^2
+\end{pmatrix}\\
+\frac{\partial V}{\partial \theta_1} &=& -(m_1 l_c + m_2 l_1) g \sin \theta_1 - m_2 l_2 g \sin(\theta_1 + \theta_2)\\
+\frac{\partial V}{\partial \theta_2} &=& -m_2 l_2 g \sin(\theta_1 + \theta_2)
+\end{eqnarray*}
+
+Note: inverse of 2x2 matrix
+\begin{eqnarray*}
+M &=& \begin{pmatrix}m_{11} & m_{12}\\m_{21} & m_{22}\end{pmatrix}\\
+M^{-1} &=& \frac{1}{\det M}
+\begin{pmatrix} m_{22} & -m_{12}\\-m_{21} & m_{11}\end{pmatrix}
+= \frac{1}{m_{11} m_{22} - m_{12} m_{21}}
+\begin{pmatrix} m_{22} & -m_{12}\\-m_{21} & m_{11}\end{pmatrix}\\
+\end{eqnarray*}
+
+Let $m_1 = m_2 = 1$, $l_c = l_1 = l_2 = 1$, $I_1 = I_2 = 0$. Then
+\begin{eqnarray*}
+M &=& \begin{pmatrix} 3 + 2 \cos{\theta_2}&
+    1 + \cos{\theta_2}\\
+    1 + \cos{\theta_2}&
+    1\end{pmatrix}\\
+C &=& \begin{pmatrix}
+-\sin(\theta_2) \dot{\theta}_2 (2\dot{\theta}_1 + \dot{\theta}_2)\\
+\sin(\theta_2) \dot{\theta}_1^2
+\end{pmatrix}\\
+\frac{\partial V}{\partial \theta_1} &=& -2 g \sin \theta_1 - g \sin(\theta_1 + \theta_2)\\
+\frac{\partial V}{\partial \theta_2} &=& -g \sin(\theta_1 + \theta_2)
 \end{eqnarray*}
 \end{document}
