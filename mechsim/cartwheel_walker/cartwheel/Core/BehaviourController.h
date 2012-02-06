@@ -63,8 +63,6 @@ public:
 
 public:
 	BehaviourController(Character* b, IKVMCController* llc, WorldOracle* w = NULL);
-	virtual ~BehaviourController(void);
-
 
 	virtual void adjustStepHeight();
 
@@ -97,7 +95,7 @@ public:
 	/**
 		ask for a heading...
 	*/
-	virtual void requestHeading(double v);
+	//virtual void requestHeading(double v);
 
 	/**
 		sets a bunch of parameters to some default initial value

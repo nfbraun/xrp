@@ -369,7 +369,7 @@ void Cartwheel::Advance()
     const double dt = 1./(STEP_PER_SEC * INT_PER_STEP);
     
     for(int i=0; i<INT_PER_STEP; ++i) {
-        // dBodyAddForce(fRobot->fTorsoB, 20., 0., 0.);
+        //dBodyAddForce(fRobot->fPelvisB, 40.*sin(fT), 40.*cos(fT), 0.);
         
         JointTorques torques = fHighController->performPreTasks(dt, &fContactPoints);
         //fLowController->performPreTasks(dt, &fContactPoints);

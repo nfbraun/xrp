@@ -37,7 +37,17 @@
  * and it must also have two feet (lFoot and rFoot) as rigid bodies in the articulated linkage.
  */
 
-class SimBiController : public PoseController {
+class SimBiController {
+protected:
+	//this is the character that the controller is acting on
+	Character* character;
+	//this is the number of joints of the character - stored here for easy access
+	int jointCount;
+public:
+	Character* getCharacter() const {
+		return character;
+	}
+
 protected:
 /**
 	These are quantities that are set only once
@@ -47,9 +57,6 @@ protected:
 	RigidBody* rFoot;
 	//we will also keep a reference to the root of the figure, to be able to identify the semi-global coordinate frame quickly
 	RigidBody* root;
-	//we also need to keep track of the joint indices in the articulated figure for the two hips, since they are special
-	int lHipIndex;
-	int rHipIndex;
 
 	SimBiConState state;
 	
@@ -181,6 +188,8 @@ protected:
 		foot.
 	*/
 	void computeHipTorques(const Quaternion& qRootD, double stanceHipToSwingHipRatio, Vector3d ffRootTorque, JointTorques& torques);
+	
+	PoseController poseControl;
 
 public:
 	/**
@@ -192,6 +201,10 @@ public:
 		Destructor
 	*/
 	virtual ~SimBiController() {}
+	
+	void addControlParams( int jIndex, const ControlParams& params ) {
+		poseControl.addControlParams(jIndex, params);
+	}
 	
 	SimBiConState* getState() { return &state; }
 	
@@ -229,11 +242,7 @@ public:
 	Point3d getCOMPosition() const { return comPosition; }
 	Vector3d getCOMVelocity() const { return comVelocity; }
 
-	/**
-		This method is used to compute the target orientations using the current FSM
-	*/
-	void evaluateJointTargets(ReducedCharacterState& desiredPose);
-
+	void initControlParams();
 
 	
 	/**

@@ -26,16 +26,12 @@ BehaviourController::BehaviourController(Character* b, IKVMCController* llc, Wor
 	stepHeight = 0;
 }
 
-BehaviourController::~BehaviourController(void){
-
-}
-
 /**
 	ask for a heading...
 */
-void BehaviourController::requestHeading(double v){
+/* void BehaviourController::requestHeading(double v){
 	desiredHeading = v;
-}
+} */
 
 
 void BehaviourController::requestVelocities(double velDS, double velDC){
@@ -123,18 +119,10 @@ void BehaviourController::conTransitionPlan(){
 
 	//now prepare the step information for the following step:
 	lowLCon->swingFootHeightTrajectory.clear();
-	lowLCon->swingFootTrajectoryCoronal.clear();
-	lowLCon->swingFootTrajectorySagittal.clear();
 
 	lowLCon->swingFootHeightTrajectory.addKnot(0, ankleBaseHeight);
 	lowLCon->swingFootHeightTrajectory.addKnot(0.5, ankleBaseHeight + 0.01 + 0.1 + 0 + stepHeight);
 	lowLCon->swingFootHeightTrajectory.addKnot(1, ankleBaseHeight + 0.01);
-
-	lowLCon->swingFootTrajectoryCoronal.addKnot(0,0);
-	lowLCon->swingFootTrajectoryCoronal.addKnot(1,0);
-
-	lowLCon->swingFootTrajectorySagittal.addKnot(0,0);
-	lowLCon->swingFootTrajectorySagittal.addKnot(1,0);
 }
 
 /**
@@ -364,22 +352,14 @@ Vector3d BehaviourController::computeSwingFootLocationEstimate(const Point3d& co
 /**
 	determines the desired swing foot location
 */
-void BehaviourController::setDesiredSwingFootLocation(){
-	Vector3d step = computeSwingFootLocationEstimate(lowLCon->getCOMPosition(), lowLCon->getPhase());
-	lowLCon->swingFootTrajectoryCoronal.setKnotValue(0, step.x);
-	lowLCon->swingFootTrajectorySagittal.setKnotValue(0, step.z);
-
+void BehaviourController::setDesiredSwingFootLocation()
+{
+	Vector3d step0 = computeSwingFootLocationEstimate(lowLCon->getCOMPosition(), lowLCon->getPhase());
+	
 	double dt = 0.001;
-	step = computeSwingFootLocationEstimate(lowLCon->getCOMPosition() + lowLCon->getCOMVelocity() * dt, lowLCon->getPhase()+dt);
-	lowLCon->swingFootTrajectoryCoronal.setKnotValue(1, step.x);
-	lowLCon->swingFootTrajectorySagittal.setKnotValue(1, step.z);
-	//to give some gradient information, here's what the position will be a short time later...
-
-	lowLCon->swingFootTrajectorySagittal.setKnotPosition(0, lowLCon->getPhase());
-	lowLCon->swingFootTrajectorySagittal.setKnotPosition(1, lowLCon->getPhase()+dt);
-
-	lowLCon->swingFootTrajectoryCoronal.setKnotPosition(0, lowLCon->getPhase());
-	lowLCon->swingFootTrajectoryCoronal.setKnotPosition(1, lowLCon->getPhase()+dt);
+	Vector3d step1 = computeSwingFootLocationEstimate(lowLCon->getCOMPosition() + lowLCon->getCOMVelocity() * dt, lowLCon->getPhase()+dt);
+	
+	lowLCon->setDesiredSwingFootTrajectory(step0, (step1-step0)/dt);
 }
 
 

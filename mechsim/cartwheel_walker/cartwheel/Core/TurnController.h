@@ -32,7 +32,6 @@ protected:
 
 public:
 	TurnController(Character* b, IKVMCController* llc, WorldOracle* w = NULL);
-	virtual ~TurnController() {}
 
 	/**
 		sets a bunch of parameters to some default initial value

@@ -2,14 +2,8 @@
 #include <MathLib/Quaternion.h>
 #include <algorithm>
 
-PoseController::PoseController(Character* ch)
-    : Controller(ch)
+PoseController::PoseController()
 {
-
-	//copy the current state of the character into the desired pose - makes sure that it's the correct size
-	// ch->getState(&desiredPose);
-
-	
 	for (int i=0;i<J_MAX;i++){
 		controlParams.push_back(ControlParams());
 	}
@@ -97,10 +91,11 @@ void PoseController::scaleAndLimitTorque(Vector3d* torque, const ControlParams* 
 /**
 	This method is used to compute the torques that are to be applied at the next step.
 */
-void PoseController::computePDTorques(Character* character,
-    ReducedCharacterState& desiredPose, JointTorques& torques,
-    const std::vector<ControlParams>& controlParams)
+JointTorques PoseController::computePDTorques(Character* character,
+    ReducedCharacterState& desiredPose)
 {
+    JointTorques torques;
+
 	Quaternion qRelD;
 	Vector3d relAngVelD;
 
@@ -159,10 +154,11 @@ void PoseController::computePDTorques(Character* character,
 */
 
 		}else{
-			torques.at(i).setValues(0,0,0);
+			torques.at(i) = Vector3d(0,0,0);
 		} 
 	}
 
+    return torques;
 }
 
 /**

@@ -4,6 +4,7 @@
 
 #include <math.h>
 #include <float.h>
+#include <iostream>
 
 /**
 	The epsilon value is used for all kinds of numerical computations. For instance, when checking to see if two points are equal, we will check to
@@ -81,11 +82,27 @@ inline double safeACOS(double val){
 	return acos(val);
 }
 
-inline void boundToRange(double* v, double min, double max){
-	if (*v < min)
+inline void boundToRange_warn(double* v, double min, double max,
+    const std::string& ref = std::string("none"))
+{
+	if (*v < min) {
 		*v = min;
-	if (*v > max)
+		std::cout << "WARNING: boundToRange(" << ref << "): lower limit reached" << std::endl;
+	}
+	if (*v > max) {
 		*v = max;
+		std::cout << "WARNING: boundToRange(" << ref << "): upper limit reached" << std::endl;
+	}
+}
+
+inline void boundToRange(double* v, double min, double max)
+{
+	if (*v < min) {
+		*v = min;
+	}
+	if (*v > max) {
+		*v = max;
+	}
 }
 
 //this method returns the index of the current value in the range min-min+range that has been discretized in dim parts.

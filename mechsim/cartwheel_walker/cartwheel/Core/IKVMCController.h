@@ -47,13 +47,11 @@
 			- maybe com J'?
 */
 
-class BehaviourController;
 class IKVMCController: public SimBiController {
 private:
 	//keep track of the swing knee and swing hip
 	int swingKneeIndex;
 	KTJoint *swingKnee, *swingHip;
-	int lKneeIndex, rKneeIndex, lAnkleIndex, rAnkleIndex;
 	//keep track of the stance ankle, stance knee and stance hip
 	int stanceAnkleIndex, stanceKneeIndex, swingAnkleIndex;
 	//this is a controller that we will be using to compute gravity-cancelling torques
@@ -73,12 +71,13 @@ public:
 	double velDCoronal;
 	//this is a desired foot trajectory that we may wish to follow, expressed separately, for the 3 components,
 	//and relative to the current location of the CM
-	Trajectory1d swingFootTrajectorySagittal;
-	Trajectory1d swingFootTrajectoryCoronal;
 	Trajectory1d swingFootHeightTrajectory;
-	Trajectory1d swingFootTrajectoryDeltaSagittal;
+	
+	Vector3d swingFootPos, swingFootVel;
+	// unused for now (NB)
+	/* Trajectory1d swingFootTrajectoryDeltaSagittal;
 	Trajectory1d swingFootTrajectoryDeltaCoronal;
-	Trajectory1d swingFootTrajectoryDeltaHeight;
+	Trajectory1d swingFootTrajectoryDeltaHeight; */
 	//this is the vector that specifies the plane of rotation for the swing leg, relative to the root...
 	Vector3d swingLegPlaneOfRotation;
 	//if the controller is in double-stance mode, then the swing foot won't have an IK target
@@ -104,7 +103,8 @@ public:
 	
 	inline int getSwingAnkleIndex() const { return swingAnkleIndex; }
 
-	inline void setSwingFootTrajectoryDeltaSagittal( const Trajectory1d& traj ) {
+	// unused for now (NB)
+	/* inline void setSwingFootTrajectoryDeltaSagittal( const Trajectory1d& traj ) {
 		swingFootTrajectoryDeltaSagittal.copy( traj );
 	}
 	inline const Trajectory1d& getSwingFootTrajectoryDeltaSagittal() const {
@@ -123,25 +123,12 @@ public:
 	}
 	inline const Trajectory1d& getSwingFootTrajectoryDeltaHeight() const {
 		return swingFootTrajectoryDeltaHeight;
-	}
+	} */
+	
+	void setDesiredSwingFootTrajectory(Vector3d desiredPos, Vector3d desiredVel)
+	    { swingFootPos = desiredPos; swingFootVel = desiredVel; }
 
-	inline Vector3d computeSwingFootDelta( double phiToUse = -1, int stanceToUse = -1 ) {
-
-		if( phiToUse < 0 )
-			phiToUse = phi;
-		if( phiToUse > 1 )
-			phiToUse = 1;
-		if( stanceToUse < 0 )
-			stanceToUse = stance;
-		if( stanceToUse > 1 )
-			stanceToUse = 1;
-
-		double sign = (stanceToUse==LEFT_STANCE)?1.0:-1.0;
-		return Vector3d(
-			swingFootTrajectoryDeltaCoronal.evaluate_catmull_rom(phiToUse) * sign,
-			swingFootTrajectoryDeltaHeight.evaluate_catmull_rom(phiToUse),
-			swingFootTrajectoryDeltaSagittal.evaluate_catmull_rom(phiToUse) );
-	}
+	Vector3d computeSwingFootDelta( double phiToUse = -1, int stanceToUse = -1 );
 
 	/**
 		returns the required stepping location, as predicted by the inverted pendulum model. The prediction is made
@@ -154,7 +141,7 @@ public:
 		This method is used to compute the target angles for the swing hip and swing knee that help 
 		to ensure (approximately) precise foot-placement control.
 	*/
-	void computeIKSwingLegTargets(double dt, ReducedCharacterState& desiredPose);
+	ReducedCharacterState computeIKSwingLegTargets();
 
 	/**
 		This method computes the desired target location for the swing ankle. It also returns an estimate of the desired
@@ -165,20 +152,20 @@ public:
 	/**
 		This method is used to compute the torques
 	*/
-	void computeTorques(std::vector<ContactPoint> *cfs, JointTorques& torques);
+	JointTorques computeTorques(std::vector<ContactPoint> *cfs);
 
 	/**
 		This method returns a target for the location of the swing foot, based on some state information. It is assumed that the velocity v
 		is expressed in character-relative coordinates (i.e. the sagittal component is the z-component), while the com position, and the
 		initial swing foot position is expressed in world coordinates. The resulting desired foot position is also expressed in world coordinates.
 	*/
-	Point3d getSwingFootTargetLocation(double t, const Point3d& com, const Quaternion& charFrameToWorld);
+    Vector3d transformSwingFootTarget(double t, Vector3d step, const Point3d& com, const Quaternion& charFrameToWorld);
 
 	/**
 		This method computes the torques that cancel out the effects of gravity, 
 		for better tracking purposes
 	*/
-	void computeGravityCompensationTorques(Character* character, JointTorques& torques);
+	JointTorques computeGravityCompensationTorques(Character* character);
 
 	/**
 		updates the indexes of the swing and stance hip, knees and ankles
@@ -228,12 +215,7 @@ public:
 	void preprocessAnkleVTorque(int ankleJointIndex, std::vector<ContactPoint> *cfs, Vector3d *ankleVTorque);
 	
 	JointTorques performPreTasks(double dt, std::vector<ContactPoint> *cfs) {
-	    //Vector3d torques[J_MAX];
-	    JointTorques torques;
-		computeTorques(cfs, torques);
-		//applyTorques(torques);
-		
-		return torques;
+		return computeTorques(cfs);
 	}
 
 	// Returns true if it transitioned to a new state, false otherwise

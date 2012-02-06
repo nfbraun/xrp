@@ -93,6 +93,8 @@ public:
 	~GenericTrajectory(void){
 		clear();
 	}
+	
+	int size() { return tValues.size(); }
 
 	/**
 		This method performs linear interpolation to evaluate the trajectory at the point t

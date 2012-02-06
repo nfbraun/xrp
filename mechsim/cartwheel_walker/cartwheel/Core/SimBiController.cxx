@@ -25,22 +25,28 @@
 #include <iostream>
 #include <stdexcept>
 
-SimBiController::SimBiController(Character* b) : PoseController(b){
+SimBiController::SimBiController(Character* b)
+{
 	if (b == NULL)
 		throw std::runtime_error("Cannot create a SIMBICON controller if there is no associated biped!!");
+
+	this->character = b;
+	jointCount = b->getJointCount();
+
+	for (int i=0;i<jointCount;i++){
+		character->getJoints()[i]->id = i;
+	}
+
 	//characters controlled by a simbicon controller are assumed to have: 2 feet
-	lFoot = b->getARB(R_L_FOOT); //b->getARBByName("lFoot");
-	rFoot = b->getARB(R_R_FOOT); //b->getARBByName("rFoot");
+	lFoot = b->getARB(R_L_FOOT);
+	rFoot = b->getARB(R_R_FOOT);
 
 	if (rFoot == NULL || lFoot == NULL)
 		throw std::runtime_error("The biped must have the rigid bodies lFoot and rFoot!");
 	
 	//and two hips connected to the root
-	KTJoint* lHip = b->getJoint(J_L_HIP); //b->getJointByName("lHip");
-	KTJoint* rHip = b->getJoint(J_R_HIP); //b->getJointByName("rHip");
-
-	lHipIndex = J_L_HIP; //b->getJointIndex("lHip");
-	rHipIndex = J_R_HIP; //b->getJointIndex("rHip");
+	KTJoint* lHip = b->getJoint(J_L_HIP);
+	KTJoint* rHip = b->getJoint(J_R_HIP);
 
 	if (rFoot == NULL || lFoot == NULL)
 		throw std::runtime_error("The biped must have the joints lHip and rHip!");
@@ -70,13 +76,13 @@ void SimBiController::setStance(int newStance)
 	if (stance == LEFT_STANCE){
 		stanceFoot = lFoot;
 		swingFoot = rFoot;
-		swingHipIndex = rHipIndex;
-		stanceHipIndex = lHipIndex;
+		swingHipIndex = J_R_HIP;
+		stanceHipIndex = J_L_HIP;
 	}else{
 		stanceFoot = rFoot;
 		swingFoot = lFoot;
-		swingHipIndex = lHipIndex;
-		stanceHipIndex = rHipIndex;
+		swingHipIndex = J_L_HIP;
+		stanceHipIndex = J_R_HIP;
 	}
 }
 
@@ -317,60 +323,34 @@ void SimBiController::computeToeAndHeelForces(std::vector<ContactPoint> *cfs){
 		heelSwingPos /= swingHeelCount;
 }
 
-void SimBiController::evaluateJointTargets(ReducedCharacterState& desiredPose)
+void SimBiController::initControlParams()
 {
-	// ReducedCharacterState poseRS(&desiredPose);
-
-	//d and v are specified in the rotation (heading) invariant coordinate frame
-	updateDAndV();
-
 	//there are two stages here. First we will compute the pose (i.e. relative orientations), using the joint trajectories for the current state
 	//and then we will compute the PD torques that are needed to drive the links towards their orientations - here the special case of the
 	//swing and stance hips will need to be considered
 
 	//always start from a neutral desired pose, and build from there...
-	for (int i=0;i<jointCount;i++){
-		//if (controlParams[i].qRelExternallyComputed == false){
-			desiredPose.setJointRelativeOrientation(Quaternion(1, 0, 0, 0), i);
-			desiredPose.setJointRelativeAngVelocity(Vector3d(), i);
-		//}
-		controlParams[i].controlled = true;
-		controlParams[i].relToFrame = false;
+	for(int jIndex=0; jIndex < J_MAX; jIndex++) {
+		poseControl.controlParams[jIndex].controlled = true;
+		poseControl.controlParams[jIndex].relToFrame = false;
+		poseControl.controlParams[jIndex].strength = 1.0;
 	}
+	
+	poseControl.controlParams[J_L_ANKLE].relToFrame = true;
+	poseControl.controlParams[J_L_ANKLE].frame = characterFrame;
+	poseControl.controlParams[J_L_ANKLE].frameAngularVelocityInWorld = Vector3d(0,0,0);
+	
+	poseControl.controlParams[J_R_ANKLE].relToFrame = true;
+	poseControl.controlParams[J_R_ANKLE].frame = characterFrame;
+	poseControl.controlParams[J_R_ANKLE].frameAngularVelocityInWorld = Vector3d(0,0,0);
+	
+	poseControl.controlParams[swingHipIndex].relToFrame = true;
+	poseControl.controlParams[swingHipIndex].frame = characterFrame;
+	poseControl.controlParams[swingHipIndex].frameAngularVelocityInWorld = Vector3d(0,0,0);
 
 	//and this is the desired orientation for the root
 	qRootD = Quaternion(1, 0, 0, 0);
 	rootControlParams.strength = 1.0;
-
-	SimBiConState* curState = &state;
-	Quaternion newOrientation;
-	Vector3d force, torque;
-
-
-	//for (int i=0;i<curState->getTrajectoryCount();i++){
-	for(int jIndex=0; jIndex < J_MAX; jIndex++) {
-		//now we have the desired rotation angle and axis, so we need to see which joint this is intended for
-		//int jIndex = curState->sTraj[i]->getJointIndex(stance);
-
-		if (jIndex > -1 && controlParams[jIndex].qRelExternallyComputed)
-			continue;
-
-		//get the desired joint orientation to track - include the feedback if necessary/applicable
-
-		//if the index is -1, it must mean it's the root's trajectory. Otherwise we should give an error
-		if (jIndex == -1){
-			//qRootD = Quaternion(1, 0, 0, 0);
-			//rootControlParams.strength = 1.0; //curState->sTraj[i]->evaluateStrength(phiToUse);
-		}else{
-			if (jIndex == J_L_ANKLE || jIndex == J_R_ANKLE || jIndex == swingHipIndex){
-				controlParams[jIndex].relToFrame = true;
-				controlParams[jIndex].frame = characterFrame;
-				controlParams[jIndex].frameAngularVelocityInWorld = Vector3d(0,0,0);
-			}
-			desiredPose.setJointRelativeOrientation(Quaternion(1, 0, 0, 0), jIndex);
-			controlParams[jIndex].strength = 1.0; //curState->sTraj[i]->evaluateStrength(phiToUse);
-		}
-	}
 }
 
 /**
@@ -406,7 +386,7 @@ void SimBiController::computeHipTorques(const Quaternion& qRootD, double stanceH
 	rootControlParams.strength = 1;
 
 	//so this is the net torque that the root wants to see, in world coordinates
-	rootTorque = computePDTorque(root->getOrientation(), qRootDW, root->getAngularVelocity(), Vector3d(0,0,0), &rootControlParams);
+	rootTorque = poseControl.computePDTorque(root->getOrientation(), qRootDW, root->getAngularVelocity(), Vector3d(0,0,0), &rootControlParams);
 
 	rootTorque += ffRootTorque;
 
@@ -444,12 +424,12 @@ void SimBiController::computeHipTorques(const Quaternion& qRootD, double stanceH
 	//now transform the torque to child coordinates, apply torque limits and then change it back to world coordinates
 	Quaternion qStanceHip = character->getJoint(stanceHipIndex)->getChild()->getOrientation();
 	stanceHipTorque = qStanceHip.getComplexConjugate().rotate(stanceHipTorque);
-	limitTorque(&stanceHipTorque, &controlParams[stanceHipIndex]);
+	poseControl.limitTorque(&stanceHipTorque, &poseControl.controlParams[stanceHipIndex]);
 	stanceHipTorque = qStanceHip.rotate(stanceHipTorque);
 
 	Quaternion qSwingHip = character->getJoint(swingHipIndex)->getChild()->getOrientation();
 	swingHipTorque = qSwingHip.getComplexConjugate().rotate(swingHipTorque);
-	limitTorque(&swingHipTorque, &controlParams[swingHipIndex]);
+	poseControl.limitTorque(&swingHipTorque, &poseControl.controlParams[swingHipIndex]);
 	swingHipTorque = qSwingHip.rotate(swingHipTorque);
 
 	//and done...

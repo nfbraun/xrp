@@ -58,14 +58,7 @@ namespace CharacterConst {
     const double pelvisPosY = hipPosY + pelvisSizeY/2.;
     
     const double legPosX_L = pelvisSizeX/2.0*legRelativeAnchorX;
-    //const double kneePosY_L = anklePosY + (hipPosY - anklePosY) * kneeRelativePosY;
-    
     const double legPosX_R = -pelvisSizeX/2.0*legRelativeAnchorX;
-    //const double kneePosY_R = anklePosY + (hipPosY - anklePosY) * kneeRelativePosY;
-    
-    //const double pelvisBottomPos = -pelvisSizeY/2.0-legSizeY*0.1;
-    //const double pelvisTopPos = pelvisSizeY/2.0;
-    //const double rootPosY = hipPosY + pelvisSizeY/2.0 + 0.007;
 } // end namespace CharacterConst
 
 #endif

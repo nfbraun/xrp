@@ -11,7 +11,6 @@ cartwheel/Physics/PhysicsGlobals.cxx \
 cartwheel/Physics/RigidBody.cxx \
 cartwheel/Core/BehaviourController.cxx \
 cartwheel/Core/Character.cxx \
-cartwheel/Core/Controller.cxx \
 cartwheel/Core/IKVMCController.cxx \
 cartwheel/Core/PoseController.cxx \
 cartwheel/Core/SimBiController.cxx \

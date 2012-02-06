@@ -20,8 +20,6 @@ public:
 	//the torques about the about the x, y and z axis will be scaled differently to account for the potentially different principal moments of inertia
 	//of the child
 	Vector3d scale;
-	//if this variable is set to true, it means that the PD targets are computed elsewhere, so we should skip them...
-	bool qRelExternallyComputed;
 
 	double strength;
 
@@ -37,15 +35,10 @@ public:
 	/**
 		This constructor initializes the variables to some safe, default values
 	*/
-	ControlParams( ){
-		controlled = false;
-		kp = kd = 0;
-		maxAbsTorque = 0;
-		scale = Vector3d();
-		strength = 1;
-		relToFrame = false;
-		qRelExternallyComputed = false;
-	}
+	ControlParams( )
+	    : controlled(false), kp(0.), kd(0.), maxAbsTorque(0.),
+	        scale(0., 0., 0.), strength(1.), relToFrame(false)
+	{ }
 
 	void setKp( double kp ) {
 		this->kp = kp;
@@ -90,8 +83,8 @@ public:
 	each parent-child pair (i.e. joint). Classes extending this one 
 	have to worry about setting the desired relative orientation properly.
 */
-class PoseController: public Controller {
-protected:
+class PoseController {
+public:
 	//this is the array of joint properties used to specify the 
 	std::vector<ControlParams> controlParams;
 
@@ -99,7 +92,7 @@ public:
 	/**
 		Constructor - expects a character that it will work on
 	*/
-	PoseController(Character* ch);
+	PoseController();
 	
 	//void setDesiredPose(const ReducedCharacterState& dp)
 	//    { desiredPose = dp; }
@@ -115,9 +108,8 @@ public:
 	/**
 		This method is used to compute the torques, based on the current and desired poses
 	*/
-	static void computePDTorques(Character* character,
-        ReducedCharacterState& desiredPose, JointTorques& torques,
-        const std::vector<ControlParams>& controlParams);
+	JointTorques computePDTorques(Character* character,
+        ReducedCharacterState& desiredPose);
 
 	/**
 		This method is used to compute the PD torque, given the current relative orientation of two coordinate frames (child and parent),

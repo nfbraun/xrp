@@ -8,11 +8,6 @@
 	constructor
 */
 IKVMCController::IKVMCController(Character* b) : SimBiController(b){
-	lKneeIndex = J_L_KNEE; //character->getJointIndex("lKnee");
-	rKneeIndex = J_R_KNEE; //character->getJointIndex("rKnee");
-	lAnkleIndex = J_L_ANKLE; //character->getJointIndex("lAnkle");
-	rAnkleIndex = J_R_ANKLE; //character->getJointIndex("rAnkle");
-
 	velDSagittal = 0;
 	velDCoronal = 0;
 
@@ -23,6 +18,9 @@ IKVMCController::IKVMCController(Character* b) : SimBiController(b){
 	unplannedForHeight = 0;
 
 	swingLegPlaneOfRotation = Vector3d(-1,0,0);
+	
+	swingFootPos = Vector3d(0., 0., 0.);
+	swingFootVel = Vector3d(0., 0., 0.);
 
 	doubleStanceMode = false;
 }
@@ -59,8 +57,8 @@ void IKVMCController::computeIKQandW(int parentJIndex, int childJIndex, const Ve
 
 	TwoLinkIK::getIKOrientations(parentJoint->getParentJointPosition(), gParent->getLocalCoordinatesForPoint(wP), parentNormal, parentAxis, childNormal, childEndEffector, &qParent, &qChild);
 
-	controlParams[parentJIndex].relToFrame = false;
-	controlParams[childJIndex].relToFrame = false;
+	poseControl.controlParams[parentJIndex].relToFrame = false;
+	poseControl.controlParams[childJIndex].relToFrame = false;
 	desiredPose.setJointRelativeOrientation(qChild, childJIndex);
 	desiredPose.setJointRelativeOrientation(qParent, parentJIndex);
 	
@@ -86,8 +84,12 @@ void IKVMCController::computeIKQandW(int parentJIndex, int childJIndex, const Ve
 		wChildD = qDiff.v * 2/dt;
 
 		//make sure we don't go overboard with the estimates, in case there are discontinuities in the trajectories...
-		boundToRange(&wChildD.x, -5, 5);boundToRange(&wChildD.y, -5, 5);boundToRange(&wChildD.z, -5, 5);
-		boundToRange(&wParentD.x, -5, 5);boundToRange(&wParentD.y, -5, 5);boundToRange(&wParentD.z, -5, 5);
+		boundToRange(&wChildD.x, -5, 5);
+		boundToRange(&wChildD.y, -5, 5);
+		boundToRange(&wChildD.z, -5, 5);
+		boundToRange(&wParentD.x, -5, 5);
+		boundToRange(&wParentD.y, -5, 5);
+		boundToRange(&wParentD.z, -5, 5);
 	}
 
 	desiredPose.setJointRelativeAngVelocity(wChildD, childJIndex);
@@ -98,22 +100,23 @@ void IKVMCController::computeIKQandW(int parentJIndex, int childJIndex, const Ve
 	This method is used to compute the target angles for the swing hip and swing knee that help 
 	to ensure (approximately) precise foot-placement control.
 */
-void IKVMCController::computeIKSwingLegTargets(double dt,
-    ReducedCharacterState& desiredPose)
+ReducedCharacterState IKVMCController::computeIKSwingLegTargets()
 {
+    const double dt = 0.001;
+    ReducedCharacterState desiredPose;
+
 	Point3d pNow, pFuture;
-
-	//note, V is already expressed in character frame coordinates.
-	pNow = getSwingFootTargetLocation(phi, comPosition, characterFrame);
-	pFuture = getSwingFootTargetLocation(MIN(phi+dt, 1), comPosition + comVelocity * dt, characterFrame);
-
+	pNow = transformSwingFootTarget(phi, swingFootPos, comPosition, characterFrame);
+	pFuture = transformSwingFootTarget(phi+dt, swingFootPos + swingFootVel*dt,
+	    comPosition + comVelocity*dt, characterFrame);
 
 	Vector3d parentAxis(character->getJoints()[swingHipIndex]->getChildJointPosition(), character->getJoints()[swingKneeIndex]->getParentJointPosition());
 	Vector3d childAxis(character->getJoints()[swingKneeIndex]->getChildJointPosition(), character->getJoints()[swingAnkleIndex]->getParentJointPosition());
 
-	computeIKQandW(swingHipIndex, swingKneeIndex, parentAxis, swingLegPlaneOfRotation, Vector3d(-1,0,0), childAxis, pNow, true, pFuture, dt,
-	desiredPose);
+	computeIKQandW(swingHipIndex, swingKneeIndex, parentAxis, swingLegPlaneOfRotation, Vector3d(-1,0,0), childAxis, pNow, true, pFuture, dt, desiredPose);
 //	computeIKQandW(swingHipIndex, swingKneeIndex, Vector3d(0, -0.355, 0), Vector3d(1,0,0), Vector3d(1,0,0), Vector3d(0, -0.36, 0), pNow, true, pFuture, dt);
+
+    return desiredPose;
 }
 
 /**
@@ -130,15 +133,33 @@ Vector3d IKVMCController::computeIPStepLocation(){
 	return step;
 }
 
+Vector3d IKVMCController::computeSwingFootDelta( double phiToUse, int stanceToUse )
+{
+    // unused for now (NB)
+	/* if( phiToUse < 0 )
+		phiToUse = phi;
+	if( phiToUse > 1 )
+		phiToUse = 1;
+	if( stanceToUse < 0 )
+		stanceToUse = stance;
+	if( stanceToUse > 1 )
+		stanceToUse = 1;
+
+	double sign = (stanceToUse==LEFT_STANCE)?1.0:-1.0;
+	Vector3d swingFootDelta(
+		swingFootTrajectoryDeltaCoronal.evaluate_catmull_rom(phiToUse) * sign,
+		swingFootTrajectoryDeltaHeight.evaluate_catmull_rom(phiToUse),
+		swingFootTrajectoryDeltaSagittal.evaluate_catmull_rom(phiToUse) ); */
+	return Vector3d(0., 0., 0.);
+}
+
 /**
 	This method returns a target for the location of the swing foot, based on some state information. It is assumed that the velocity vel
 	is expressed in character-relative coordinates (i.e. the sagittal component is the z-component), while the com position, and the
 	initial swing foot position is expressed in world coordinates. The resulting desired foot position is also expressed in world coordinates.
 */
-Point3d IKVMCController::getSwingFootTargetLocation(double t, const Point3d& com, const Quaternion& charFrameToWorld){
-	Vector3d step;
-	step.z = swingFootTrajectorySagittal.evaluate_catmull_rom(t);
-	step.x = swingFootTrajectoryCoronal.evaluate_catmull_rom(t);
+Vector3d IKVMCController::transformSwingFootTarget(double t, Vector3d step, const Point3d& com, const Quaternion& charFrameToWorld)
+{
 	//now transform this vector into world coordinates
 	step = charFrameToWorld.rotate(step);
 	//add it to the com location
@@ -147,7 +168,7 @@ Point3d IKVMCController::getSwingFootTargetLocation(double t, const Point3d& com
 	step.y = swingFootHeightTrajectory.evaluate_catmull_rom(t) + panicHeight + unplannedForHeight;
 
 	step += computeSwingFootDelta(t);
-
+	
 	return step;
 }
 
@@ -167,12 +188,17 @@ void IKVMCController::bubbleUpTorques(Character* character, JointTorques& torque
 	This method computes the torques that cancel out the effects of gravity, 
 	for better tracking purposes
 */
-void IKVMCController::computeGravityCompensationTorques(Character* character, JointTorques& torques){
+JointTorques IKVMCController::computeGravityCompensationTorques(Character* character)
+{
+    JointTorques torques;
+
 	for (unsigned int i=0;i<J_MAX;i++){
 		if (i != stanceHipIndex && i != stanceKneeIndex && i != stanceAnkleIndex) {
 			VirtualModelController::addJointTorquesEquivalentToForce(character, character->getJoints()[i], Point3d(), Vector3d(0, character->getJoints()[i]->child->getMass()*9.8, 0), NULL, torques);
 		}
-	}
+    }
+    
+    return torques;
 }
 
 /**
@@ -263,52 +289,31 @@ void IKVMCController::COMJT(std::vector<ContactPoint> *cfs, JointTorques& torque
 	//applying a force at the COM induces the force f. The equivalent torques are given by the J' * f, where J' is
 	// dp/dq, where p is the COM.
 
-	//int lBackIndex = J_PELVIS_LOWERBACK; //character->getJointIndex("pelvis_lowerback");
-	//int mBackIndex = J_LOWERBACK_TORSO; //character->getJointIndex("lowerback_torso");
-
-	double m = 0;
-	ArticulatedRigidBody* tibia = character->getJoints()[stanceAnkleIndex]->parent;
-	ArticulatedRigidBody* femur = character->getJoints()[stanceKneeIndex]->parent;
+	ArticulatedRigidBody* lowerLeg = character->getJoints()[stanceAnkleIndex]->parent;
+	ArticulatedRigidBody* upperLeg = character->getJoints()[stanceKneeIndex]->parent;
 	ArticulatedRigidBody* pelvis = character->getJoints()[stanceHipIndex]->parent;
-	//ArticulatedRigidBody* lBack = character->getJoints()[lBackIndex]->child;
-	//ArticulatedRigidBody* mBack = character->getJoints()[mBackIndex]->child;
 
 	Point3d anklePos = character->getJoints()[stanceAnkleIndex]->child->getWorldCoordinatesForPoint(character->getJoints()[stanceAnkleIndex]->getChildJointPosition());
 	Point3d kneePos = character->getJoints()[stanceKneeIndex]->child->getWorldCoordinatesForPoint(character->getJoints()[stanceKneeIndex]->getChildJointPosition());
 	Point3d hipPos = character->getJoints()[stanceHipIndex]->child->getWorldCoordinatesForPoint(character->getJoints()[stanceHipIndex]->getChildJointPosition());
-	//Point3d lbackPos = character->getJoints()[lBackIndex]->child->getWorldCoordinates(character->getJoints()[lBackIndex]->cJPos);
-	//Point3d mbackPos = character->getJoints()[mBackIndex]->child->getWorldCoordinates(character->getJoints()[mBackIndex]->cJPos);
 
 	//total mass...
-	m = tibia->getMass() + femur->getMass() + pelvis->getMass();// + lBack->getMass() + mBack->getMass();
+	double m = lowerLeg->getMass() + upperLeg->getMass() + pelvis->getMass();
 
 	Vector3d fA = computeVirtualForce();
 
-	Vector3d f1 =	Vector3d(anklePos, tibia->state.position) * tibia->getMass() +
-					Vector3d(anklePos, femur->state.position) * femur->getMass() + 
+	Vector3d f1 =	Vector3d(anklePos, lowerLeg->state.position) * lowerLeg->getMass() +
+					Vector3d(anklePos, upperLeg->state.position) * upperLeg->getMass() + 
 					Vector3d(anklePos, pelvis->state.position) * pelvis->getMass(); 
-					//Vector3d(anklePos, lBack->state.position) * lBack->getMass() + 
-					//Vector3d(anklePos, mBack->state.position) * mBack->getMass();
 	f1 /= m;
 	
-	Vector3d f2 =	Vector3d(kneePos, femur->state.position) * femur->getMass() + 
+	Vector3d f2 =	Vector3d(kneePos, upperLeg->state.position) * upperLeg->getMass() + 
 					Vector3d(kneePos, pelvis->state.position) * pelvis->getMass();
-					//Vector3d(kneePos, lBack->state.position) * lBack->getMass() + 
-					//Vector3d(kneePos, mBack->state.position) * mBack->getMass();
 	f2 /= m;
 
 	Vector3d f3 =	Vector3d(hipPos, pelvis->state.position) * pelvis->getMass();
-					//Vector3d(hipPos, lBack->state.position) * lBack->getMass() + 
-					//Vector3d(hipPos, mBack->state.position) * mBack->getMass();
 	f3 /= m;
 
-	//Vector3d f4 =	Vector3d(lbackPos, lBack->state.position) * lBack->getMass() + 
-	//				Vector3d(lbackPos, mBack->state.position) * mBack->getMass();
-	//f4 /= m;
-
-	//Vector3d f5 =	Vector3d(mbackPos, mBack->state.position) * mBack->getMass();
-	//f5 /= m;
-	
 	Vector3d ankleTorque = f1.crossProductWith(fA);
 	preprocessAnkleVTorque(stanceAnkleIndex, cfs, &ankleTorque);
 
@@ -318,21 +323,18 @@ void IKVMCController::COMJT(std::vector<ContactPoint> *cfs, JointTorques& torque
 
 	//the torque on the stance hip is cancelled out, so pass it in as a torque that the root wants to see!
 	ffRootTorque -= f3.crossProductWith(fA);
-
-	//torques[lBackIndex] -= f4.crossProductWith(fA) * 0.5;
-	//torques[mBackIndex] -= f5.crossProductWith(fA) * 0.3;
 }
 
 /**
 	updates the indexes of the swing and stance hip, knees and ankles
 */
 void IKVMCController::updateSwingAndStanceReferences(){
-	stanceHipIndex = ((stance == LEFT_STANCE) ? (lHipIndex) : (rHipIndex));
-	swingHipIndex = ((stance == LEFT_STANCE) ? (rHipIndex) : (lHipIndex));
-	swingKneeIndex = ((stance == LEFT_STANCE) ? (rKneeIndex) : (lKneeIndex));
-	stanceKneeIndex = ((stance == LEFT_STANCE) ? (lKneeIndex) : (rKneeIndex));
-	stanceAnkleIndex = ((stance == LEFT_STANCE) ? (lAnkleIndex) : (rAnkleIndex));
-	swingAnkleIndex = ((stance == LEFT_STANCE) ? (rAnkleIndex) : (lAnkleIndex));
+	stanceHipIndex = ((stance == LEFT_STANCE) ? (J_L_HIP) : (J_R_HIP));
+	swingHipIndex = ((stance == LEFT_STANCE) ? (J_R_HIP) : (J_L_HIP));
+	stanceKneeIndex = ((stance == LEFT_STANCE) ? (J_L_KNEE) : (J_R_KNEE));
+	swingKneeIndex = ((stance == LEFT_STANCE) ? (J_R_KNEE) : (J_L_KNEE));
+	stanceAnkleIndex = ((stance == LEFT_STANCE) ? (J_L_ANKLE) : (J_R_ANKLE));
+	swingAnkleIndex = ((stance == LEFT_STANCE) ? (J_R_ANKLE) : (J_L_ANKLE));
 
 	swingHip = character->getJoints()[swingHipIndex];
 	swingKnee = character->getJoints()[swingKneeIndex];
@@ -341,30 +343,32 @@ void IKVMCController::updateSwingAndStanceReferences(){
 /**
 	This method is used to compute the torques
 */
-void IKVMCController::computeTorques(std::vector<ContactPoint> *cfs, JointTorques& torques)
+JointTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
 {
-	//get the correct references for the swing knee and hip, as well as an estimate of the starting position for the swing foot
-	
-	ReducedCharacterState desiredPose;
-
+	//d and v are specified in the rotation (heading) invariant coordinate frame
+	updateDAndV();
 
 	//evaluate the target orientation for every joint, using the SIMBICON state information
-	evaluateJointTargets(desiredPose);
+	initControlParams();
 
+	//get the correct references for the swing knee and hip, as well as an estimate of the starting position for the swing foot
+	
 
 	//now overwrite the target angles for the swing hip and the swing knee in order to ensure foot-placement control
 	//if (doubleStanceMode == false)
-	    computeIKSwingLegTargets(0.001, desiredPose);
+	ReducedCharacterState desiredPose = computeIKSwingLegTargets();
 
-	computePDTorques(character, desiredPose, torques, controlParams);
+	JointTorques torques;
+	torques = poseControl.computePDTorques(character, desiredPose);
 
 	//bubble-up the torques computed from the PD controllers
 	bubbleUpTorques(character, torques);
+	
 
 	//we'll also compute the torques that cancel out the effects of gravity, for better tracking purposes
-	computeGravityCompensationTorques(character, torques);
+	torques.add(computeGravityCompensationTorques(character));
 
-	ffRootTorque.setValues(0,0,0);
+	ffRootTorque = Vector3d(0,0,0);
 
 	if (cfs->size() > 0)
 		COMJT(cfs, torques);
@@ -377,6 +381,8 @@ void IKVMCController::computeTorques(std::vector<ContactPoint> *cfs, JointTorque
 	//and now separetely compute the torques for the hips - together with the feedback term, this is what defines simbicon
 	computeHipTorques(qRootD, getStanceFootWeightRatio(cfs), ffRootTorque, torques);
 //	blendOutTorques();
+
+    return torques;
 }
 
 /**
