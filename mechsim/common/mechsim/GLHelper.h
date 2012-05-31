@@ -5,6 +5,7 @@
 #include <GL/gl.h>
 #include <ode/ode.h>
 #include <cmath>
+#include "Heightfield.h"
 
 namespace GL {
 
@@ -18,6 +19,7 @@ void drawTube(double r, Vector3d p1, Vector3d p2);
 void drawODEBox(dGeomID id, double lx, double ly, double lz);
 void drawBox(Vector3d p1, Vector3d p2);
 void drawUnitCube();
+void drawHeightfield(const Heightfield& hfield);
 
 void shadowsBeginFloor();
 void shadowsBeginObjects(Vector3d floor_n, double floor_d);

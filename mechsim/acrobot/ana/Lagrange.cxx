@@ -51,9 +51,15 @@ GiNaC::matrix Lagrange::dVdQ() const
     return deriv;
 }
 
+GiNaC::ex Lagrange::M_qdotdot() const
+{
+    return (fu - C() - dVdQ()).evalm();
+}
+
 GiNaC::ex Lagrange::qdotdot() const
 {
-    return (M().inverse() * (fu - C() - dVdQ())).evalm();
+    // The M.inverse() is hopelessy slow for large ndim()!
+    return (fM.inverse() * M_qdotdot()).evalm();
 }
 
 GiNaC::ex Lagrange::T() const

@@ -21,6 +21,7 @@ class Lagrange
   public:
     Lagrange(const System& s);
     
+    GiNaC::ex M_qdotdot() const;
     GiNaC::ex qdotdot() const;
     GiNaC::matrix C() const;
     GiNaC::matrix dVdQ() const;

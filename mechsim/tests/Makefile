@@ -4,7 +4,7 @@ LIBS = -lode -lmechsim
 
 .PHONY: all
 
-all: asphere ballslide cube bunny dp
+all: asphere ballslide cube bunny dp hftest
 
 asphere: AsymSphere.cxx AsymSphere.h asphere.cxx
 	g++ -o $@ $(CFLAGS) $(LDFLAGS) $(LIBS) AsymSphere.cxx asphere.cxx
@@ -20,3 +20,7 @@ cube: Cube.cxx Cube.h cube.cxx
 
 dp: DoublePendulum.cxx DoublePendulum.h dp.cxx
 	g++ -o $@ $(CFLAGS) $(LDFLAGS) $(LIBS) DoublePendulum.cxx dp.cxx
+
+hftest: HFTest.cxx HFTest.h hftest.cxx
+	g++ -o $@ $(CFLAGS) $(LDFLAGS) $(LIBS) HFTest.cxx hftest.cxx
+

@@ -1,5 +1,5 @@
-HEADERS = Lagrange.h ODEArray.h RawODESolver.h ODESolver.h Acrobot.h
-OBJS = Lagrange.o RawODESolver.o ODESolver.o Acrobot.o
+HEADERS = Lagrange.h ODEArray.h RawODESolver.h ODESolver.h LagrODESolver.h Acrobot.h
+OBJS = Lagrange.o RawODESolver.o ODESolver.o LagrODESolver.o Acrobot.o
 GIJIT_INCL = -I../../common/gijit
 GIJIT_LIBS = -L../../common/gijit -lgijit
 OCTAVE_LIBS = -L/usr/lib/octave-3.2.3 -loctave -loctinterp
@@ -12,6 +12,9 @@ tracking: tracking.o $(OBJS) CSVFile.o GSLInterp.o LTVLQR.o Makefile
 
 ene_capt: ene_capt.o $(OBJS) Octave.o LQR.o Makefile
 	g++ -O3 -o ene_capt -lgsl $(GIJIT_LIBS) $(OCTAVE_LIBS) ene_capt.o $(OBJS) Octave.o LQR.o
+
+lqr: lqr.o $(OBJS) Octave.o LQR.o Makefile
+	g++ -O3 -o lqr -lgsl $(GIJIT_LIBS) $(OCTAVE_LIBS) lqr.o $(OBJS) Octave.o LQR.o
 
 free_acrobot: free_acrobot.o $(OBJS) Makefile
 	g++ -O3 -o free_acrobot -lgsl -lblas $(GIJIT_LIBS) free_acrobot.o $(OBJS)

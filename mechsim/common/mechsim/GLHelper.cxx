@@ -211,6 +211,39 @@ void drawUnitCube()
     glEnd();
 }
 
+void drawHeightfield(const Heightfield& hfield)
+{
+    glPushMatrix();
+    
+    glTranslatef(hfield.x1(), 0., hfield.y1());
+    glScalef((hfield.x2() - hfield.x1())/hfield.xsize(),
+             1.,
+             (hfield.y2() - hfield.y1())/hfield.ysize());
+    
+    glBegin(GL_QUADS);
+    
+    for(unsigned int x = 1; x < hfield.xsize(); ++x) {
+        for(unsigned int y = 1; y < hfield.ysize(); ++y) {
+            if((x+y)%2)
+                glColor3f(1., 0., 0.);
+            else
+                glColor3f(0., 0., 1.);
+            
+            double zx = hfield.at(x,y) - hfield.at(x-1,y);
+            double zy = hfield.at(x,y) - hfield.at(x, y-1);
+            glNormal3f(-zx, 1., -zy);
+            
+            glVertex3f(x-1, hfield.at(x-1, y-1), y-1);
+            glVertex3f(x,   hfield.at(x,   y-1), y-1);
+            glVertex3f(x,   hfield.at(x,   y), y);
+            glVertex3f(x-1, hfield.at(x-1, y), y);
+        }
+    }
+    glEnd();
+    
+    glPopMatrix();
+}
+
 void shadowsBeginFloor()
 {
     glClear(GL_STENCIL_BUFFER_BIT);

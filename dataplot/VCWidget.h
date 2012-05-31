@@ -29,7 +29,7 @@ class VCWidget : public QWidget
     inline VChannel* vchannel(int ch)
       { if(ch < 0 || ch >= N_VCHANNELS) return 0; return &fVChannels[ch]; }
     
-    static const int N_VCHANNELS = 4;
+    static const int N_VCHANNELS = 8;
     
     void chParamsChanged();
     

@@ -22,10 +22,15 @@ VCWidget::VCWidget(QWidget* parent)
       fShowLegend(false),
       fMarkerPos(-1.)
 {
-    fVChannels[0] = VChannel(Qt::yellow);
-    fVChannels[1] = VChannel(Qt::cyan);
-    fVChannels[2] = VChannel(Qt::green);
-    fVChannels[3] = VChannel(Qt::magenta);
+    fVChannels[0] = VChannel(QColor(255, 255,   0));  // yellow
+    fVChannels[1] = VChannel(QColor(  0, 255, 255));  // cyan
+    fVChannels[2] = VChannel(QColor(  0, 255,   0));  // green
+    fVChannels[3] = VChannel(QColor(255,   0, 255));  // pink
+    
+    fVChannels[4] = VChannel(QColor(255,   0,   0));  // red
+    fVChannels[5] = VChannel(QColor(255, 128,   0));  // orange
+    fVChannels[6] = VChannel(QColor(  0,   0, 255));  // blue
+    fVChannels[7] = VChannel(QColor(128,   0, 255));  // lilac
     
     fTr.setBorders(50, 10, 10, 30);
     

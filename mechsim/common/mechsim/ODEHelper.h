@@ -67,6 +67,15 @@ namespace ODE {
     inline _Vector3 BodyGetAngularVel(dBodyID b)
         { return VectorFromArray(dBodyGetAngularVel(b)); }
     
+    inline _Vector3 JointGetHingeAxis(dJointID j)
+        { dVector3 axis; dJointGetHingeAxis(j, axis); return VectorFromArray(axis); }
+    
+    inline _Vector3 JointGetUniversalAxis1(dJointID j)
+        { dVector3 axis; dJointGetUniversalAxis1(j, axis); return VectorFromArray(axis); }
+    
+    inline _Vector3 JointGetUniversalAxis2(dJointID j)
+        { dVector3 axis; dJointGetUniversalAxis2(j, axis); return VectorFromArray(axis); }
+    
     
 } // end namespace ODE
 
