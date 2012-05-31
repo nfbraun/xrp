@@ -1,0 +1,146 @@
+\documentclass[a4paper]{article}
+\title{Direct collocation}
+\begin{document}
+\maketitle
+\section{Approximation of $x$ and $\dot{x}$ at midpoint}
+Let
+\begin{equation}
+y(s) = c_0 + c_1 s + c_2 s^2 + c_3 s^3
+\end{equation}
+Then,
+\begin{equation}
+\dot{y}(s) = c_1 + 2 c_2 s + 3 c_3 s^2
+\end{equation}
+Let $y(0)$, $\dot{y}(0)$, $y(1)$ and $\dot{y}(1)$ be given. This allows to determine $c_0,\ldots,c_3$.
+We have
+\begin{eqnarray}
+y(0) = c_0 &\qquad& \dot{y}(0) = c_1\\
+y(1) = c_0 + c_1 + c_2 + c_3 &\qquad& \dot{y}(1) = c_1 + 2c_2 + 3c_3 \nonumber
+\end{eqnarray}
+This can be inverted to give
+\begin{eqnarray}
+c_0 &=& y(0)\\
+c_1 &=& \dot{y}(0)\nonumber \\
+c_2 &=& -3y(0) - 2\dot{y}(0) + 3y(1) - \dot{y}(1)\nonumber \\
+c_3 &=& 2y(0) + \dot{y}(0) - 2y(1) + \dot{y}(1)\nonumber
+\end{eqnarray}
+We can thus obtain an approximation of $y(\frac{1}{2})$ and $\dot{y}(\frac{1}{2})$.
+\begin{eqnarray}
+y_c &:=& y(\frac{1}{2})\\
+&=& c_0 + \frac{1}{2} c_1 + \frac{1}{4} c_2 + \frac{1}{8} c_3\nonumber \\
+&=& \frac{1}{2} \left( y(0) + y(1) \right) + \frac{1}{8} \left( \dot{y}(0) - \dot{y}(1) \right)\nonumber
+\end{eqnarray}
+and
+\begin{eqnarray}
+\dot{y}_c &:=& \dot{y}(\frac{1}{2})\\
+&=& c_1 + c_2 + \frac{3}{4} c_3\nonumber \\
+&=& -\frac{3}{2} \left( y(0) - y(1) \right) - \frac{1}{4} \left( \dot{y}(0) + \dot{y}(1) \right) \nonumber
+\end{eqnarray}
+Finally, let $x(t) = y(\frac{t}{h})$. Then $\dot{x} = \frac{1}{h} \dot{y}$. Let $x_0 := x(0)$, $x_1 := x(h)$, and $x_c := x(\frac{h}{2}) = y(\frac{1}{2}) = y_c$. Thus
+\begin{eqnarray}
+x_c &=& \frac{1}{2}\left( x_0 + x_1 \right) + \frac{h}{8} \left( \dot{x}_0 - \dot{x}_1 \right)\\
+\dot{x}_c &=& - \frac{3}{2h} \left( x_0 - x_1 \right) - \frac{1}{4} \left( \dot{x}_0 + \dot{x}_1 \right)
+\end{eqnarray}
+
+\section{Solving ODEs}
+Consider a dynamical system with $n$ degrees of freedom and $m$ control inputs. This gives rise to an $n$-dimensional second-order ODE,
+\begin{equation}
+\ddot{q}_k = f_k(q_1, \ldots, q_n, \dot{q}_1, \ldots, \dot{q}_n, u_1, \ldots, u_m)
+\qquad k = 1,\ldots,n
+\end{equation}
+As usual, we turn this in a $2n$-dimensional first-order ODE by introducing $n$ dummy variables $v_k$:
+\begin{eqnarray}
+\dot{q}_k &=& v_k\\
+\dot{v}_k &=& f_k(q_1, \ldots, q_n, v_1, \ldots, v_n, u_1, \ldots, u_m)\nonumber
+\end{eqnarray}
+
+For the direct collocation method, we divide our time span of interest into $N$ sub-intervals. For each interval, we can use the equations from above to obtain values and derivatives at the interval midpoint.
+\begin{eqnarray}
+q_k^{(c)} &=& \frac{1}{2} \left( q_k^{(i)} + q_k^{(i+1)} \right) +
+    \frac{h}{8} \left( v_k^{(i)} - v_k^{(i+1)} \right)\\
+\dot{q}_k^{(c)} &=& -\frac{3}{2h} \left( q_k^{(i)} - q_k^{(i+1)} \right) -
+    \frac{1}{4} \left( v_k^{(i)} + v_k^{(i+1)} \right)\\
+v_k^{(c)} &=& \frac{1}{2} \left( v_k^{(i)} + v_k^{(i+1)} \right)\\
+    &&+ \frac{h}{8} \left( f_k(q^{(i)}, v^{(i)}, u^{(i)}) - f_k(q^{(i+1)}, v^{(i+1)}, u^{(i+1)}) \right)
+\nonumber \\
+\dot{v}_k^{(c)} &=& - \frac{3}{2h} \left( v_k^{(i)} - v_k^{(i+1)} \right)\\
+    &&- \frac{1}{4} \left( f_k(q^{(i)}, v^{(i)}, u^{(i)}) + f_k(q^{(i+1)}, v^{(i+1)}, u^{(i+1)}) \right)
+\nonumber
+\end{eqnarray}
+In these equations, $k = 1,\ldots,n$ is a degree of freedom index and $i = 0,\ldots,N-1$ is a node index.
+
+For the controls, we use a linear approximation,
+\begin{equation}
+u_k^{(c)} = \frac{1}{2} \left( u_k^{(i)} + u_k^{(i+1)} \right)
+\end{equation}
+
+We solve the ODE by enforcing it at the interval midpoints,
+\begin{eqnarray}
+0 &\stackrel{!}{=}& g_k^{(i),0} = v_k^{(c)} - \dot{q}_k^{(i)}\\
+&=& \frac{3}{2h} \left( q_k^{(i)} - q_k^{(i+1)} \right)
++ \frac{3}{4}\left( v_k^{(i)} + v_k^{(i+1)} \right)\nonumber \\
+&&+ \frac{h}{8}\left( f_k(q^{(i)}, v^{(i)}, u^{(i)}) - f_k(q^{(i+1)}, v^{(i+1)}, u^{(i+1)}) \right)\nonumber
+\end{eqnarray}
+\begin{eqnarray}
+0 &\stackrel{!}{=}& g_k^{(i),1} = f_k^{(c)} - \dot{v}_k^{(c)}\\
+&=& f_k(q^{(c)}, \dot{q}^{(c)}, u^{(c)}) + \frac{3}{2h} \left( v_k^{(i)} - v_k^{(i+1)} \right) \nonumber \\
+&& + \frac{1}{4} \left( f_k(q^{(i)}, v^{(i)}, u^{(i)}) + f_k(q^{(i+1)}, v^{(i+1)}, u^{(i+1)}) \right) \nonumber
+\end{eqnarray}
+
+\section{Solving the constrained optimization problem}
+We can now solve the constrained optimization problem, e.g. with \textsc{Ipopt}. There are $(2n + m)\cdot (N+1)$ optimization variables:
+\begin{eqnarray*}
+q_0^{(0)}, \ldots, q_n^{(0)}, \ldots, q_0^{(N)}, \ldots, q_n^{(N)},\\
+v_0^{(0)}, \ldots, v_n^{(0)}, \ldots, v_0^{(N)}, \ldots, v_n^{(N)},\\
+u_0^{(0)}, \ldots, u_m^{(0)}, \ldots, u_0^{(N)}, \ldots, u_m^{(N)}
+\end{eqnarray*}
+
+We write $\left. \frac{\partial f_k}{\partial q_l} \right|_{(i)}$ as a shorthand for $\left. \frac{\partial f_k}{\partial v_l} \right|_{(q^{(i)}, v^{(i)}, u^{(i)})}$.
+
+Derivatives
+\begin{eqnarray}
+\frac{\partial g_k^{(i),0}}{\partial q_l^{(i)}} 
+&=& \left. \frac{h}{8} \frac{\partial f_k}{\partial q_l} \right|_{(i)}
+ + \frac{3}{2h} \delta_{k,l}\\
+\frac{\partial g_k^{(i),0}}{\partial q_l^{(i+1)}} 
+&=& -\left. \frac{h}{8} \frac{\partial f_k}{\partial q_l} \right|_{(i+1)}
+ - \frac{3}{2h} \delta_{k,l}\\
+\frac{\partial g_k^{(i),0}}{\partial v_l^{(i)}} 
+&=& \left. \frac{h}{8} \frac{\partial f_k}{\partial v_l} \right|_{(i)}
+ + \frac{3}{4} \delta_{k,l}\\
+\frac{\partial g_k^{(i),0}}{\partial v_l^{(i+1)}} 
+&=& -\left. \frac{h}{8} \frac{\partial f_k}{\partial v_l} \right|_{(i+1)}
+ + \frac{3}{4} \delta_{k,l}\\
+ \frac{\partial g_k^{(i),0}}{\partial u_p^{(i)}} 
+&=& \left. \frac{h}{8} \frac{\partial f_k}{\partial u_p} \right|_{(i)}\\
+ \frac{\partial g_k^{(i),0}}{\partial u_p^{(i+1)}} 
+&=& -\left. \frac{h}{8} \frac{\partial f_k}{\partial u_p} \right|_{(i+1)}
+\end{eqnarray}
+
+\begin{eqnarray}
+\frac{\partial g_k^{(i),1}}{\partial q_l^{(i)}}
+&=& \frac{1}{2} \left. \frac{\partial f_k}{\partial q_l} \right|_{(c)}
+ - \frac{3}{2h} \left. \frac{\partial f_k}{\partial \dot{q}_l} \right|_{(c)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial q_l} \right|_{(i)}\\
+\frac{\partial g_k^{(i),1}}{\partial q_l^{(i+1)}}
+&=& \frac{1}{2} \left. \frac{\partial f_k}{\partial q_l} \right|_{(c)}
+ + \frac{3}{2h} \left. \frac{\partial f_k}{\partial \dot{q}_l} \right|_{(c)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial q_l} \right|_{(i+1)}\\
+\frac{\partial g_k^{(i),1}}{\partial v_l^{(i)}}
+&=& \frac{h}{8} \left. \frac{\partial f_k}{\partial q_l} \right|_{(c)}
+ - \frac{1}{4} \left. \frac{\partial f_k}{\partial \dot{q}_l} \right|_{(c)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial v_l} \right|_{(i)}
+ + \frac{3}{2h} \delta_{k,l}\\
+\frac{\partial g_k^{(i),1}}{\partial v_l^{(i+1)}}
+&=& - \frac{h}{8} \left. \frac{\partial f_k}{\partial q_l} \right|_{(c)}
+ - \frac{1}{4} \left. \frac{\partial f_k}{\partial \dot{q}_l} \right|_{(c)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial v_l} \right|_{(i+1)}
+ - \frac{3}{2h} \delta_{k,l}\\
+\frac{\partial g_k^{(i),1}}{\partial u_p^{(i)}}
+&=& \frac{1}{2} \left. \frac{\partial f_k}{\partial u_p} \right|_{(c)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial u_p} \right|_{(i)}\\
+\frac{\partial g_k^{(i),1}}{\partial u_p^{(i+1)}}
+&=& \frac{1}{2} \left. \frac{\partial f_k}{\partial u_p} \right|_{(c)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial u_p}\right|_{(i+1)}
+\end{eqnarray}
+\end{document}

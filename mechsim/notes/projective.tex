@@ -1,0 +1,31 @@
+\documentclass[a4paper]{article}
+\usepackage{dsfont}
+\title{Homogenous coordinates}
+\date{}
+\begin{document}
+\maketitle
+Consider $x = (x_1, \ldots, x_n, x_w) \in \mathds{R}^{n+1}$ and the equivalence relation $x \sim y \Leftrightarrow y = \lambda x, \lambda \neq 0$. Note that, for a linear map $A: \mathds{R}^{n+1} \mapsto \mathds{R}^{n+1}$, $x \sim y \Rightarrow Ax \sim Ay$.
+
+Represent equivalence class of $x$ with $x_w \neq 0$ by $(x_1/x_w, \ldots, x_n/x_w, 1) := (\vec{x}, 1)$. Coordinate representation of most general linear map $A: \mathds{R}^{n+1} \mapsto \mathds{R}^{n+1}$ is
+\begin{equation}
+A = \left(
+\begin{array}{cc}
+B & \vec{c}\\
+\vec{n} & k
+\end{array} \right)
+\end{equation}
+with $B \in \mathds{R}^{n \times n}$, $\vec{c}, \vec{n} \in \mathds{R}^n$ and $k \in \mathds{R}$.
+\begin{equation}
+A \left( \begin{array}{c} \vec{x}\\1 \end{array} \right) =
+\left(
+\begin{array}{cc}
+B & \vec{c}\\
+\vec{n} & k
+\end{array} \right)
+\left( \begin{array}{c} \vec{x}\\1 \end{array} \right) =
+\left( \begin{array}{c} B \vec{x} + \vec{c}\\ \vec{x} \cdot \vec{n} + k \end{array} \right)
+\sim \left( \begin{array}{c}
+\frac{B \vec{x} + \vec{c}}{\vec{x} \cdot \vec{n} + k}\\1
+\end{array}\right)
+\end{equation}
+\end{document}

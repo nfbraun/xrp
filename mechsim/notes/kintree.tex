@@ -1,0 +1,236 @@
+\documentclass[a4paper]{article}
+\usepackage{amsmath}
+\usepackage{bbold}
+\title{Lagrangian mechanics for kinematic trees}
+\author{Norbert Braun}
+\begin{document}
+\maketitle
+\section{Affine transforms}
+An \textit{affine transform} is a transform $x^\prime \to x$ of the form
+\begin{equation}
+x^\prime = Rx + c
+\end{equation}
+for $x, x^\prime \in \mathbb{R}^n$ (typically $\mathbb{R}^3$), where $c \in \mathbb{R}^n$ and $R \in \mathbb{R}^{n \times n}$ with $R^\top R = \mathbb{1}$.
+
+Let us consider \textit{augmented vectors} $\overline{x} \in \mathbb{R}^{n+1}$ of the form
+\begin{equation}
+\overline{x} = (x, 1)^\top = (x_1, \ldots, x_n, 1)^\top
+\end{equation}
+and matrices $T \in \mathbb{R}^{(n+1)\times(n+1)}$ of the form
+\begin{equation}
+T := \left( \begin{array}{cc}
+R & c\\
+0 & 1\end{array}\right)
+\end{equation}
+Then, for $\overline{x} = T \overline{x}^\prime$, $x = R x^\prime + c$.
+
+The inverse of $T$ is given by
+\begin{equation}
+T^{-1} = \left(\begin{array}{cc}
+R^\top & -R^\top c\\
+0 & 1
+\end{array}\right)
+\end{equation}
+
+\section{Kinematic trees}
+We assume the existance of an inertial (``fixed'') frame, called the world frame. Let vectors in the world frame be denoted by $x$.
+
+For each body, we define a body frame. Let vectors in the body frame be denoted by $x^\prime$ (we rely on context to distinguish between the frames of the different bodies). $x$ and $x^\prime$ are related by an affine transform,
+\begin{equation}
+\overline{x} = T \overline{x}^\prime
+\end{equation}
+
+\section{Kinetic energy}
+Consider a point mass $m_i$ at position $x^\prime_i$ (in body coordinates) inside the body. The body is assumed to be rigid, i.e.
+\begin{equation}
+\dot{x^\prime_i} = 0
+\end{equation}
+and the velocity $\dot{x}_i$ of the point mass in world coordinates is thus given by
+\begin{equation}
+\dot{\overline{x}}_i = \dot{T} \overline{x}^\prime_i
+\end{equation}
+where $\dot{\overline{x}}_i = (\dot{x}_i, 0)^\top$, and thus $\dot{x}_i^\top \dot{x}_i = \dot{\overline{x}}_i^\top \dot{\overline{x}}_i$.
+
+For the kinetic energy associated with the motion of the point mass, we have
+\begin{equation}
+E_{\mathrm{kin},i} = \frac{1}{2} m_i \dot{\overline{x}}_i^\top \dot{\overline{x}}_i
+= \frac{1}{2} m_i \operatorname{tr} (\dot{\overline{x}}_i \dot{\overline{x}}_i^\top )
+= \frac{1}{2} m_i \operatorname{tr} (\dot{T} \overline{x}^\prime_i {\overline{x}^\prime_i}^\top \dot{T}^\top )
+\end{equation}
+
+Now, let the body consist of many point masses. The kinetic energy is then
+\begin{equation}
+E_\mathrm{kin} = \sum_i E_{\mathrm{kin},i}
+= \frac{1}{2} \sum_i m_i \operatorname{tr} (\dot{T} \overline{x}^\prime_i {\overline{x}^\prime_i}^\top \dot{T}^\top )
+\end{equation}
+Making use of the linearity of the trace, we rewrite this as
+\begin{equation}
+\label{eqn:ekindef}
+E_\mathrm{kin} = \operatorname{tr} \left( \dot{T} \left( \frac{1}{2} \sum_i m_i \overline{x}^\prime_i {\overline{x}_i^\prime}^\top \right) \dot{T}^\top \right)
+:= \operatorname{tr} (\dot{T} J \dot{T}^\top )
+\end{equation}
+where
+\begin{equation}
+J = \frac{1}{2} \sum_i m_i \overline{x}^\prime {\overline{x}_i^\prime}^\top
+\end{equation}
+
+This naturally generalizes to the case of mass distributions:
+\begin{equation}
+J = \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \overline{x}^\prime\,{\overline{x}^\prime}^\top
+\end{equation}
+
+Usually, we are not given the mass distribution $\rho(x^\prime)$, but rather the total mass
+\begin{equation}
+m_\mathrm{tot} := \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime)
+\end{equation}
+the center of gravity
+\begin{equation}
+\label{eqn:xpcdef}
+x_c^\prime := \frac{1}{m_\mathrm{tot}} \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) x^\prime
+\end{equation}
+and the moment of inertia about the center of gravity,
+\begin{equation}
+I_c := \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( (x^\prime - x_c^\prime)^\top (x^\prime - x_c^\prime) - (x^\prime - x_c^\prime)(x^\prime - x_c^\prime)^\top \right)
+\end{equation}
+
+To continue, we note that
+\begin{eqnarray}
+\nonumber \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) (x^\prime - x_c^\prime)
+&=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) x^\prime
+- x_c^\prime \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime)\\
+&=& m_\mathrm{tot} x_c^\prime - x_c^\prime m_\mathrm{tot} = 0
+\end{eqnarray}
+which implies, for arbitrary $a \in \mathbb{R}^3$,
+\begin{equation}
+\int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) a^\top (x^\prime - x_c^\prime) = 0
+\end{equation}
+and
+\begin{equation}
+\int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) a (x^\prime - x_c^\prime)^\top = 0
+\end{equation}
+(note that the first 0 is a scalar zero, and the second 0 is a zero matrix).
+
+Now we can calculate the moment of inertia about the body frame origin,
+\begin{eqnarray}
+\label{eqn:i}
+\nonumber I &:=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( {x^\prime}^\top x^\prime - x^\prime {x^\prime}^\top \right)\\
+\nonumber&=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( (x^\prime - x_c^\prime + x_c^\prime)^\top (x^\prime - x_c^\prime + x_c^\prime) - (x^\prime - x_c^\prime + x_c^\prime)(x^\prime - x_c^\prime + x_c^\prime)^\top \right)\\
+\nonumber&=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( (x^\prime - x_c^\prime)^\top (x^\prime - x_c^\prime) - (x^\prime - x_c^\prime)(x^\prime - x_c^\prime)^\top \right.\\
+\nonumber && \left. + 2 {x_c^\prime}^\top (x^\prime - x_c^\prime) - 2 x_c^\prime (x^\prime - x_c^\prime)^\top + {x_c^\prime}^\top x_c^\prime - x_c^\prime {x_c^\prime}^\top \right)\\
+&=& I_c + {x_c^\prime}^\top x_c^\prime - x_c^\prime {x_c^\prime}^\top
+\end{eqnarray}
+
+Let us now examine $J = \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \overline{x}^\prime\,{\overline{x}^\prime}^\top$ in more detail. Keeping in mind that $\mathbb{R}^4 \ni \overline{x}^\prime = (x^\prime, 1)$, we have that
+\begin{equation}
+\overline{x}^\prime {\overline{x}^\prime}^\top =
+\left(\begin{array}{cc}
+x^\prime {x^\prime}^\top & x^\prime\\
+{x^\prime}^\top & 1
+\end{array}\right)
+\end{equation}
+and therefore
+\begin{equation}
+\label{eqn:j}
+J = \left(\begin{array}{cc}
+\tilde{J} & x_c^\prime\\
+{x_c^\prime}^\top & m_\mathrm{tot}
+\end{array}\right)
+\end{equation}
+where
+\begin{eqnarray}
+\nonumber \tilde{J} &=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) x^\prime\,{x^\prime}^\top\\
+\nonumber &=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left(x^\prime\,{x^\prime}^\top - {x^\prime}^\top x^\prime \right) + \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) {x^\prime}^\top{x^\prime}\\
+&=& I + \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) {x^\prime}^\top{x^\prime}
+\end{eqnarray}
+For the last step, we calculate
+\begin{eqnarray}
+\nonumber&&\operatorname{tr}(x^\top x - x x^\top)
+= x^\top x \operatorname{tr}(\mathbb{1}) - \operatorname{tr}(xx^\top)
+= x^\top x \operatorname{tr}(\mathbb{1}) - x^\top x\\
+&&= (\operatorname{tr}(\mathbb{1}) - 1) x^\top x
+= 2 x^\top x
+\end{eqnarray}
+Due to the linearity of the trace, we conclude that
+\begin{equation}
+\int\operatorname{d}^3\!x^\prime\; \rho(x^\prime) {x^\prime}^\top x^\prime
+= \frac{1}{2} \operatorname{tr} \left( \int\operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( {x^\prime}^\top x^\prime - x^\prime {x^\prime}^\top \right) \right)
+\end{equation}
+which gives
+\begin{equation}
+\label{eqn:jtilde}
+\tilde{J} = I + \frac{1}{2} \operatorname{tr}(I)
+\end{equation}
+By (\ref{eqn:j}), (\ref{eqn:jtilde}) and (\ref{eqn:i}), we have thus succeeded in expressing $J$ in terms of $m_\mathrm{tot}$, $x_c^\prime$ and $I_c$.
+
+\section{Potential energy}
+We restrict our analysis to the case of a homogeneous gravitational field, where the potential energy of a point mass at position $x_i$ (in world coordinates!) is given by
+\begin{equation}
+E_{\mathrm{pot},i} = - m_i g^\top x_i
+\end{equation}
+
+We define
+\begin{equation}
+\overline{g} := (g, 0)
+\end{equation}
+(which makes sense, because $g$ is an \emph{acceleration}, not a position). Then
+\begin{equation}
+E_{\mathrm{pot},i} = - m_i \overline{g}^\top \overline{x}_i
+= - m_i \overline{g}^\top T \overline{x}^\prime_i
+\end{equation}
+where $T$ is the affine transform associated with the body frame, as above. In the case of a mass distribution, we get
+\begin{equation}
+E_\mathrm{pot} = -\int\operatorname{d}^3\!x^\prime\; \rho(x^\prime)\, \overline{g}^\top T \overline{x}^\prime
+= -\overline{g}^\top T \int\operatorname{d}^3\!x^\prime\; \rho(x^\prime)\, \overline{x}^\prime
+\end{equation}
+With $\overline{x}_c^\prime := (x_c^\prime, 1)$ and (\ref{eqn:xpcdef}), we can rewrite this as
+\begin{equation}
+\label{eqn:epot}
+E_\mathrm{pot} = - m_\mathrm{tot} \overline{g}^\top T \overline{x}_c^\prime
+\end{equation}
+so we have succeeded in expressing $E_\mathrm{pot}$ in terms of $m_\mathrm{tot}$ and $x_c^\prime$.
+
+\section{The Lagrange equation}
+We now need to consider the case of many rigid bodies. Therefore, we let the affine transform associated with the body frame of body $i$ be denoted by $T_i$.
+
+Let the affine transforms be parameterized by generalized coordinates $q_j$. The time derivative of $T_i$ is then given by
+\begin{equation}
+\dot{T}_i = \sum_{j} \frac{\partial T}{\partial q_j} \dot{q}_j
+\end{equation}
+
+By (\ref{eqn:ekindef}), the kinetic energy of the rigid body is given by
+\begin{equation}
+E_{\mathrm{kin},i} = \operatorname{tr} (\dot{T}_i J_i \dot{T}_i^\top)
+\end{equation}
+(note that the index now refers to a rigid body, no longer to a point mass inside a rigid body). This can be written in terms of the generalized coordinates as
+\begin{equation}
+E_{\mathrm{kin},i} = \operatorname{tr} (\sum_{jk} \frac{\partial T_i}{\partial q_j} \dot{q}_j J_i \frac{\partial T_i^\top}{\partial q_k} \dot{q}_k)
+= \sum_{jk} \operatorname{tr} (\frac{\partial T_i}{\partial q_j} J_i \frac{\partial T_i^\top}{\partial q_k}) \dot{q}_j \dot{q}_k
+\end{equation}
+
+The kinetic energy of the whole kinematic tree is then given by
+\begin{equation}
+E_\mathrm{kin} = \sum_i E_{\mathrm{kin},i} = \sum_{ijk} \operatorname{tr} (\frac{\partial T_i}{\partial q_j} J_i \frac{\partial T_i^\top}{\partial q_k}) \dot{q}_j \dot{q}_k
+\end{equation}
+
+This is a quadratic form in the generalized velocities $\dot{q}$. We write it as
+\begin{equation}
+E_\mathrm{kin} = \dot{q}^\top M(q) \dot{q}
+\end{equation}
+where the mass matrix $M(q)$ is given by
+\begin{equation}
+M_{jk}(q) = \sum_i \operatorname{tr} (\frac{\partial T_i}{\partial q_j} J_i \frac{\partial T_i^\top}{\partial q_k})
+\end{equation}
+
+By (\ref{eqn:epot}), the potential energy for a single body is given by
+\begin{equation}
+E_{\mathrm{pot},i} = - m_{\mathrm{tot},i} \overline{g}^\top T_i \overline{x}_{c,i}^\prime
+\end{equation}
+so the total potential energy is
+\begin{equation}
+E_\mathrm{pot} = \sum_i E_{\mathrm{pot},i} = - \sum_i m_{\mathrm{tot},i} \overline{g}^\top T_i \overline{x}_{c,i}^\prime
+\end{equation}
+and the derivative that appears in the Lagrange equation is
+\begin{equation}
+\frac{\partial E_\mathrm{pot}}{\partial q_j} = - \sum_i m_{\mathrm{tot},i} \overline{g}^\top \frac{\partial T_i}{\partial q_j} \overline{x}_{c,i}^\prime
+\end{equation}
+\end{document}

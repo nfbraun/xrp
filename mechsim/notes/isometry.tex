@@ -1,0 +1,55 @@
+\documentclass{article}
+\usepackage{bbold}
+\begin{document}
+\section{Isometries}
+Let $x, y \in x \in \mathbb{R}^3$. Consider a function $f(x): \mathbb{R}^3 \to \mathbb{R}^3$ that leaves Euclidean distances invariant, i.e.
+\begin{equation}
+\forall_{x, y} ||f(x) - f(y)|| = ||x - y||
+\end{equation}
+Additionally, let
+\begin{equation}
+\label{eqn:zeroinv}
+f(0) = 0
+\end{equation}
+which implies
+\begin{equation}
+||f(x)|| = ||f(x) - f(0)|| = ||x - 0|| = ||x||
+\end{equation}
+
+As the Euclidean scalar product can be written as
+\begin{equation}
+<x, y> := x^T y = \frac{1}{2} (||x||^2 + ||y||^2 - ||x - y||^2)
+\end{equation}
+it follows that such functions leave the scalar product invariant as well.
+
+Now, let $e_i$ be an orthonormal basis of $\mathbb{R}^3$ (i.e. $<e_i,e_j> = \delta_{ij}$). Let $e^\prime_i := f(e_i)$. The invariance of the scalar product implies $<e^\prime_i, e^\prime_j> = \delta_{ij}$, so ${x^\prime_i}$ is an orthonormal basis as well. Let $x = \sum_i x_i e_i$ and $x^\prime :=  f(x)$. We can write $x^\prime$ in the basis ${e^\prime_i}$ as
+\begin{equation}
+x^\prime = \sum <x^\prime, e^\prime_i> e^\prime_i = <f(x), f(e_i)> e^\prime_i = \sum <x, e_i> e^\prime_i
+\end{equation}
+which implies that
+\begin{equation}
+f(x) = \sum <x, e_i> f(e_i)
+\end{equation}
+so $f$ is fully specified by giving its action on an orthonormal basis, and thus linear. Let
+\begin{equation}
+f(x) = Rx
+\end{equation}
+where $R \in \mathbb{R}^{3 \times 3}$. The invariance of the scalar product implies
+\begin{equation}
+<f(x), f(y)> = (Rx)^T(Ry) = x^T R^T R y \stackrel{!}{=} x^T y
+\end{equation}
+As this is true for all $x$ and $y$, it follows that
+\begin{equation}
+R^T R = 1
+\end{equation}
+
+Let us now drop requirement (\ref{eqn:zeroinv}). For a function $f$, we define a function $g$ by
+\begin{equation}
+g(x) = f(x) - f(0)
+\end{equation}
+We then have $g(0) = 0$ and
+\begin{equation}
+||g(x) - g(y)|| = ||f(x) - f(0) - f(y) + f(0)|| = ||f(x) - f(y)|| = ||x - y||
+\end{equation}
+so $g(x)$ is linear by the argument above, and $f(x) = g(x) + f(0)$ is thus affine.
+\end{document}
