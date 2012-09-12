@@ -1,5 +1,6 @@
 \documentclass[a4paper]{article}
 \title{Direct collocation}
+\author{Norbert Braun}
 \begin{document}
 \maketitle
 \section{Approximation of $x$ and $\dot{x}$ at midpoint}
@@ -84,8 +85,23 @@ We solve the ODE by enforcing it at the interval midpoints,
 \begin{eqnarray}
 0 &\stackrel{!}{=}& g_k^{(i),1} = f_k^{(c)} - \dot{v}_k^{(c)}\\
 &=& f_k(q^{(c)}, \dot{q}^{(c)}, u^{(c)}) + \frac{3}{2h} \left( v_k^{(i)} - v_k^{(i+1)} \right) \nonumber \\
+&& + \frac{1}{4} \left( f_k(q^{(i)}, v^{(i)}, u^{(i)}) + f_k(q^{(i+1)}, v^{(i+1)}, u^{(i+1)}) \right) \nonumber\\
+&=:& h_k(q^{(i)}, v^{(i)}, u^{(i)}, q^{(i+1)}, v^{(i+1)}, u^{(i+1)}) + \frac{3}{2h} \left( v_k^{(i)} - v_k^{(i+1)} \right) \nonumber \\
 && + \frac{1}{4} \left( f_k(q^{(i)}, v^{(i)}, u^{(i)}) + f_k(q^{(i+1)}, v^{(i+1)}, u^{(i+1)}) \right) \nonumber
 \end{eqnarray}
+
+The arguments of $f_k$ in the equation above turn out to be a linear function in the arguments of $h_k$,
+\begin{equation}
+\left( \begin{array}{c} q_k^{(c)}\\ \dot{q}_k^{(c)}\\ u_k^{(c)} \end{array} \right) =
+\left( \begin{array}{cccccc}
+\frac{1}{2} & \frac{h}{8} & 0 & \frac{1}{2} & -\frac{h}{8} & 0\\
+-\frac{3}{2h} & -\frac{1}{4} & 0 & \frac{3}{2h} & -\frac{1}{4} & 0\\
+0 & 0 & \frac{1}{2} & 0 & 0 & \frac{1}{2}
+\end{array} \right)
+\left( \begin{array}{c}
+q_k^{(i)}\\ v_k^{(i)}\\ u_k^{(i)}\\ q_k^{(i+1)}\\ v_k^{(i+1)}\\ u_k^{(i+1)}
+\end{array} \right)
+\end{equation}
 
 \section{Solving the constrained optimization problem}
 We can now solve the constrained optimization problem, e.g. with \textsc{Ipopt}. There are $(2n + m)\cdot (N+1)$ optimization variables:
@@ -97,7 +113,7 @@ u_0^{(0)}, \ldots, u_m^{(0)}, \ldots, u_0^{(N)}, \ldots, u_m^{(N)}
 
 We write $\left. \frac{\partial f_k}{\partial q_l} \right|_{(i)}$ as a shorthand for $\left. \frac{\partial f_k}{\partial v_l} \right|_{(q^{(i)}, v^{(i)}, u^{(i)})}$.
 
-Derivatives
+\subsection{Derivatives}
 \begin{eqnarray}
 \frac{\partial g_k^{(i),0}}{\partial q_l^{(i)}} 
 &=& \left. \frac{h}{8} \frac{\partial f_k}{\partial q_l} \right|_{(i)}
@@ -119,28 +135,68 @@ Derivatives
 
 \begin{eqnarray}
 \frac{\partial g_k^{(i),1}}{\partial q_l^{(i)}}
+&=& \left. \frac{\partial h_k}{\partial q_l^{(i)}} \right|_{(i), (i+1)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial q_l} \right|_{(i)}\\
 &=& \frac{1}{2} \left. \frac{\partial f_k}{\partial q_l} \right|_{(c)}
  - \frac{3}{2h} \left. \frac{\partial f_k}{\partial \dot{q}_l} \right|_{(c)}
- + \frac{1}{4} \left. \frac{\partial f_k}{\partial q_l} \right|_{(i)}\\
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial q_l} \right|_{(i)}
+\nonumber\\
 \frac{\partial g_k^{(i),1}}{\partial q_l^{(i+1)}}
-&=& \frac{1}{2} \left. \frac{\partial f_k}{\partial q_l} \right|_{(c)}
- + \frac{3}{2h} \left. \frac{\partial f_k}{\partial \dot{q}_l} \right|_{(c)}
+&=& \left. \frac{\partial h_k}{\partial q_l^{(i+1)}} \right|_{(i), (i+1)}
  + \frac{1}{4} \left. \frac{\partial f_k}{\partial q_l} \right|_{(i+1)}\\
+ &=& \frac{1}{2} \left. \frac{\partial f_k}{\partial q_l} \right|_{(c)}
+ + \frac{3}{2h} \left. \frac{\partial f_k}{\partial \dot{q}_l} \right|_{(c)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial q_l} \right|_{(i+1)}
+\nonumber\\
 \frac{\partial g_k^{(i),1}}{\partial v_l^{(i)}}
+&=& \left. \frac{\partial h_k}{\partial v_l^{(i)}} \right|_{(i), (i+1)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial v_l} \right|_{(i)}
+ + \frac{3}{2h} \delta_{k,l}\\
 &=& \frac{h}{8} \left. \frac{\partial f_k}{\partial q_l} \right|_{(c)}
  - \frac{1}{4} \left. \frac{\partial f_k}{\partial \dot{q}_l} \right|_{(c)}
  + \frac{1}{4} \left. \frac{\partial f_k}{\partial v_l} \right|_{(i)}
- + \frac{3}{2h} \delta_{k,l}\\
+ + \frac{3}{2h} \delta_{k,l}
+\nonumber\\
 \frac{\partial g_k^{(i),1}}{\partial v_l^{(i+1)}}
+&=& \left. \frac{\partial h_k}{\partial v_l^{(i+1)}} \right|_{(i), (i+1)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial v_l} \right|_{(i+1)}
+ - \frac{3}{2h} \delta_{k,l}\\
 &=& - \frac{h}{8} \left. \frac{\partial f_k}{\partial q_l} \right|_{(c)}
  - \frac{1}{4} \left. \frac{\partial f_k}{\partial \dot{q}_l} \right|_{(c)}
  + \frac{1}{4} \left. \frac{\partial f_k}{\partial v_l} \right|_{(i+1)}
- - \frac{3}{2h} \delta_{k,l}\\
+ - \frac{3}{2h} \delta_{k,l}
+\nonumber\\
 \frac{\partial g_k^{(i),1}}{\partial u_p^{(i)}}
-&=& \frac{1}{2} \left. \frac{\partial f_k}{\partial u_p} \right|_{(c)}
+&=& \left. \frac{\partial h_k}{\partial u_p^{(i)}} \right|_{(i), (i+1)}
  + \frac{1}{4} \left. \frac{\partial f_k}{\partial u_p} \right|_{(i)}\\
+&=& \frac{1}{2} \left. \frac{\partial f_k}{\partial u_p} \right|_{(c)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial u_p} \right|_{(i)}
+\nonumber\\
 \frac{\partial g_k^{(i),1}}{\partial u_p^{(i+1)}}
+&=& \left. \frac{\partial h_k}{\partial u_p^{(i+1)}} \right|_{(i), (i+1)}
+ + \frac{1}{4} \left. \frac{\partial f_k}{\partial u_p}\right|_{(i+1)}\\
 &=& \frac{1}{2} \left. \frac{\partial f_k}{\partial u_p} \right|_{(c)}
  + \frac{1}{4} \left. \frac{\partial f_k}{\partial u_p}\right|_{(i+1)}
+\nonumber
+\end{eqnarray}
+
+\subsection{Second derivatives}
+We let $y_l^{(i)}$ stand as a placeholder for $q_l^{(i)}$, $v_l^{(i)}$, $u_l^{(i)}$.
+\begin{eqnarray}
+\frac{\partial^2 g_k^{(i),0}}{\partial y_l^{(i)} \partial {y^\prime}_p^{(i)}} &=&
+\frac{h}{8} \frac{\partial^2 f_k}{\partial y_l^{(i)} \partial {y^\prime}_p^{(i)}}\\
+\frac{\partial^2 g_k^{(i),0}}{\partial y_l^{(i+1)} \partial {y^\prime}_p^{(i+1)}} &=&
+-\frac{h}{8} \frac{\partial^2 f_k}{\partial y_l^{(i+1)} \partial {y^\prime}_p^{(i+1)}}\\
+\frac{\partial^2 g_k^{(i),0}}{\partial y_l^{(i)} \partial {y^\prime}_p^{(i+1)}} &=& 0
+\end{eqnarray}
+\begin{eqnarray}
+\frac{\partial^2 g_k^{(i),1}}{\partial y_l^{(i)} \partial {y^\prime}_l^{(i)}} &=&
+\left. \frac{\partial^2 h_k}{\partial y_l^{(i)} \partial {y^\prime}_l^{(i)}} \right|_{(i), (i+1)} +
+\frac{1}{4} \frac{\partial^2 f_k}{\partial y_l^{(i)} \partial {y^\prime}_l^{(i)}}\\
+\frac{\partial^2 g_k^{(i),1}}{\partial y_l^{(i+1)} \partial {y^\prime}_l^{(i+1)}} &=&
+\left. \frac{\partial^2 h_k}{\partial y_l^{(i+1)} \partial {y^\prime}_l^{(i+1)}} \right|_{(i), (i+1)} +
+\frac{1}{4} \frac{\partial^2 f_k}{\partial y_l^{(i+1)} \partial {y^\prime}_l^{(i+1)}}\\
+\frac{\partial^2 g_k^{(i),1}}{\partial y_l^{(i)} \partial {y^\prime}_l^{(i+1)}} &=&
+\left. \frac{\partial^2 h_k}{\partial y_l^{(i+1)} \partial {y^\prime}_l^{(i+1)}} \right|_{(i), (i+1)}
 \end{eqnarray}
 \end{document}
