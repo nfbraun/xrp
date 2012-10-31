@@ -13,8 +13,8 @@ int main()
     app->Options()->SetStringValue("mu_strategy", "adaptive");
     app->Options()->SetStringValue("linear_solver", "mumps");
     //app->Options()->SetStringValue("hessian_approximation", "limited-memory");
-    //app->Options()->SetStringValue("derivative_test", "second-order");
-    //app->Options()->SetIntegerValue("max_iter", 0);
+    app->Options()->SetStringValue("derivative_test", "second-order");
+    app->Options()->SetIntegerValue("max_iter", 0);
     
     Ipopt::ApplicationReturnStatus status;
     status = app->Initialize();

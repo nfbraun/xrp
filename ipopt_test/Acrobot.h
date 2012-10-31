@@ -39,9 +39,10 @@ class Acrobot: public Ipopt::TNLP
     /* *** */
     static const Index N_dof;
     static const Index N_controls;
+    static const double t_end;
     
-    static const Index N_points;
-    static const Index N_vars;
+    static const Index N_intervals, N_nodes;
+    static const Index N_vars_per_node, N_vars;
     static const Index N_constraints;
     
     static const Index N_nnz_jac_g;
