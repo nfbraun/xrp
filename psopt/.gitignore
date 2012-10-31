@@ -1,0 +1,10 @@
+/acrobot
+/pendulum
+/acrobot.txt
+/pendulum.txt
+/gnuplot.scp
+/ipopt.out
+/mesh_statistics*.tex
+/mesh_statistics.txt
+/psopt_solution_*.txt
+/*.dat

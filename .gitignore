@@ -1,3 +1,7 @@
+*.o
 *.elf
 *.hex
 *.ihx
+setup.sh
+/bin
+/eigen-eigen-3.0.1
