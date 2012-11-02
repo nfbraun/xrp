@@ -3,7 +3,7 @@
 #include <QApplication>
 #include <iostream>
 
-int ShowSimulation(Simulation* sim, int argc, char** argv)
+int ShowSimulation(SimRunner* sim, int argc, char** argv)
 {
     QApplication app(argc, argv);
     

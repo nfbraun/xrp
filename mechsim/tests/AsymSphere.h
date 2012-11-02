@@ -2,7 +2,7 @@
 #define MSIM_ASYMSPHERE_H
 
 #include <Eigen/Dense>
-#include "SyncSimulation.h"
+#include "Simulation.h"
 #include <ode/ode.h>
 
 class ASState: public SimulationState {
@@ -23,7 +23,7 @@ class ASState: public SimulationState {
     static const int DISP_SLIDELEN2;
 };
 
-class AsymSphere: public SyncSimulation<ASState> {
+class AsymSphere: public Simulation {
   public:
     AsymSphere();
     ~AsymSphere();

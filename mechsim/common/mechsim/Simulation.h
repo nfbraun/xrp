@@ -21,7 +21,6 @@ class Simulation {
     virtual double GetTimestep() = 0;    // in units of seconds
     virtual int GetDefaultEndTime() = 0; // in units of TIMESTEPs
     
-    virtual const SimulationState* GetState(int t) = 0;  // t in units of TIMESTEPs
     virtual const char* GetTitle() = 0;
     
     // Interface for draw modes
@@ -31,12 +30,6 @@ class Simulation {
     // Interface for data display
     virtual int GetNDataCh() const { return 0; }
     virtual const char* GetChName(int) const { return ""; }
-    
-    // Interface for asynchronous simulation
-    virtual void StartSimulation() = 0;
-    virtual void ReadData() = 0;
-    virtual bool finished() = 0;
-    virtual int GetDescriptor() = 0;
 };
 
 #endif

@@ -2,7 +2,7 @@
 #define MSIM_BALLSLIDE_H
 
 #include <Eigen/Dense>
-#include "AsyncSimulation.h"
+#include "Simulation.h"
 #include <ode/ode.h>
 
 class BSState: public SimulationState {
@@ -28,7 +28,7 @@ class BSState: public SimulationState {
 
 void near_callback(void* data, dGeomID g1, dGeomID g2);
 
-class BallSlide: public AsyncSimulation<BSState> {
+class BallSlide: public Simulation {
   friend void near_callback(void* data, dGeomID g1, dGeomID g2);
 
   public:

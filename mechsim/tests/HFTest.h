@@ -2,7 +2,7 @@
 #define MSIM_HFTEST_H
 
 #include <Eigen/Dense>
-#include "AsyncSimulation.h"
+#include "Simulation.h"
 #include "Heightfield.h"
 #include <ode/ode.h>
 
@@ -32,7 +32,7 @@ class HFState: public SimulationState {
 
 void near_callback(void* data, dGeomID g1, dGeomID g2);
 
-class HFTest: public AsyncSimulation<HFState> {
+class HFTest: public Simulation {
   friend void near_callback(void* data, dGeomID g1, dGeomID g2);
 
   public:

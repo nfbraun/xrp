@@ -10,7 +10,7 @@
 #include <QValidator>
 #include <QSocketNotifier>
 #include "GLWidget.h"
-#include "Simulation.h"
+#include "SimRunner.h"
 #include "DataViewWidget.h"
 #include "CamCtrlWidget.h"
 
@@ -21,7 +21,7 @@ class SimulationWidget : public QMainWindow
     Q_OBJECT
     
     public:
-        SimulationWidget(Simulation* sim);
+        SimulationWidget(SimRunner* sim);
         
     public slots:
         void toggleSimulationRunning();
@@ -43,7 +43,7 @@ class SimulationWidget : public QMainWindow
         CamCtrlWidget *fCamCtrlWidget;
         QPushButton *fStartPauseButton;
         
-        Simulation* fSimulation;
+        SimRunner* fSimRunner;
         QSocketNotifier* fSockNotifier;
         
         static const char START[];

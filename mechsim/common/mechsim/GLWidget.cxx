@@ -31,7 +31,7 @@ const int GLWidget::DEFAULT_CAM_DIST = 5.;
 
 using Eigen::Vector3d;
 
-GLWidget::GLWidget(Simulation* sim, QWidget* parent, bool paused)
+GLWidget::GLWidget(SimRunner* sim, QWidget* parent, bool paused)
     : QGLWidget(parent),
       fCamPos(0., 0., 0.),
       fTheta(PI_UNITS/2), fPhi(3*PI_UNITS/2), fRoll(0.),
@@ -40,7 +40,7 @@ GLWidget::GLWidget(Simulation* sim, QWidget* parent, bool paused)
       fT(0),
       fPaused(paused),
       fTrackObject(true), fEnableRoll(false),
-      fSimulation(sim), fDrawMode(0)
+      fSimRunner(sim), fDrawMode(0)
 {
     fTimer = new QTimer(this);
     fTimer->setInterval(sim->GetTimestep()*1000.);
@@ -49,7 +49,7 @@ GLWidget::GLWidget(Simulation* sim, QWidget* parent, bool paused)
     if(!fPaused)
         fTimer->start();
     
-    fCenter = fSimulation->GetState(fT)->GetCenter() + fCenterOffset;
+    fCenter = fSimRunner->GetState(fT)->GetCenter() + fCenterOffset;
 }
 
 GLWidget::~GLWidget()
@@ -111,7 +111,7 @@ void GLWidget::setCamRollDeg(double roll)
 void GLWidget::setCenterOffset(Vector3d offset)
 {
     fCenterOffset = offset;
-    fCenter = fSimulation->GetState(fT)->GetCenter() + fCenterOffset;
+    fCenter = fSimRunner->GetState(fT)->GetCenter() + fCenterOffset;
     updateCam();
 }
 
@@ -154,7 +154,7 @@ void GLWidget::resetCamPos()
 void GLWidget::timestep()
 {
     ++fT;
-    if(fT >= fSimulation->GetDefaultEndTime())
+    if(fT >= fSimRunner->GetDefaultEndTime())
         pause();
     else
         updateGL();
@@ -427,10 +427,10 @@ void GLWidget::paintGL()
 {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     
-    const SimulationState* state = fSimulation->GetState(fT);
+    const SimulationState* state = fSimRunner->GetState(fT);
     
     if(state)
-        fCenter = fSimulation->GetState(fT)->GetCenter() + fCenterOffset;
+        fCenter = fSimRunner->GetState(fT)->GetCenter() + fCenterOffset;
     
     _updateCam();
     
@@ -486,7 +486,7 @@ void GLWidget::drawStatusText()
     glDisable(GL_LIGHTING);
     
     std::ostringstream s;
-    double t = (double) fT*fSimulation->GetTimestep();
+    double t = (double) fT*fSimRunner->GetTimestep();
     s << "Time: " << std::setprecision(2) << std::fixed << t << "s";
     if(fPaused)
         s << "   [PAUSED]";

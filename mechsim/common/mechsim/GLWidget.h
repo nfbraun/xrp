@@ -3,7 +3,7 @@
 
 #include <QTimer>
 #include <QGLWidget>
-#include "Simulation.h"
+#include "SimRunner.h"
 #include "Spherical.h"
 #include "GLHelper.h"
 
@@ -12,7 +12,7 @@ class GLWidget : public QGLWidget
     Q_OBJECT
     
   public:
-    GLWidget(Simulation* sim, QWidget *parent = 0, bool paused = false);
+    GLWidget(SimRunner* sim, QWidget *parent = 0, bool paused = false);
     ~GLWidget();
     
     QSize minimumSizeHint() const;
@@ -154,7 +154,7 @@ class GLWidget : public QGLWidget
     static const float Y_AXIS_COLOR[];
     static const float Z_AXIS_COLOR[];
     
-    Simulation* fSimulation;
+    SimRunner* fSimRunner;
     int fDrawMode;
 };
 

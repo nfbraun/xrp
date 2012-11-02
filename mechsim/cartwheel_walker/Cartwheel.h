@@ -1,13 +1,7 @@
 #ifndef CW_CARTWHEEL_H
 #define CW_CARTWHEEL_H
 
-//#define DEBUG_SYNC_SIMULATION
-
-#ifdef DEBUG_SYNC_SIMULATION
-#include "SyncSimulation.h"
-#else
-#include "AsyncSimulation.h"
-#endif
+#include "Simulation.h"
 
 #include "CWRobot.h"
 #include "Controller.h"
@@ -79,11 +73,7 @@ class CartState: public SimulationState {
     static const int DISP_SLIDELEN2;
 };
 
-#ifdef DEBUG_SYNC_SIMULATION
-class Cartwheel: public SyncSimulation<CartState> {
-#else
-class Cartwheel: public AsyncSimulation<CartState> {
-#endif
+class Cartwheel {
   public:
     Cartwheel();
     ~Cartwheel();

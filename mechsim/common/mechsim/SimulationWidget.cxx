@@ -14,10 +14,10 @@
 const char SimulationWidget::START[] = "▶";
 const char SimulationWidget::PAUSE[] = "❚❚";
 
-SimulationWidget::SimulationWidget(Simulation* sim)
+SimulationWidget::SimulationWidget(SimRunner* sim)
     : QMainWindow()
 {
-    fSimulation = sim;
+    fSimRunner = sim;
 
     QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
 
@@ -144,8 +144,8 @@ void SimulationWidget::setDrawMode(int mode)
 void SimulationWidget::simDataReady()
 {
     fSockNotifier->setEnabled(false);
-    fSimulation->ReadData();
-    if(!fSimulation->finished())
+    fSimRunner->ReadData();
+    if(!fSimRunner->finished())
         fSockNotifier->setEnabled(true);
     emit simHasNewData();
 }

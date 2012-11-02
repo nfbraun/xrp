@@ -1,7 +1,7 @@
 #ifndef MSIM_BUNNY_H
 #define MSIM_BUNNY_H
 
-#include "SyncSimulation.h"
+#include "Simulation.h"
 #include <GL/gl.h>
 
 class Bunny;
@@ -18,7 +18,7 @@ class BunnyState: public SimulationState {
     Bunny* fParent;
 };
 
-class Bunny: public SyncSimulation<BunnyState> {
+class Bunny: public Simulation {
   friend class BunnyState;
   public:
     Bunny();

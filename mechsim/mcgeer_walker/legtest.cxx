@@ -5,10 +5,10 @@
 #include "McGeer.h"
 
 // Alternate computation of right foot center; does not require leg to be intact
-Eigen::Vector3d GetFootCtr(const MGState* state)
+Eigen::Vector3d GetFootCtr(const MGState& state)
 {
-    return state->fOLeg.fSPos + state->fOLeg.fSRot *
-             ODE::VectorFromArray(dGeomGetOffsetPosition(state->fParent->fOuterFootG));
+    return state.fOLeg.fSPos + state.fOLeg.fSRot *
+             ODE::VectorFromArray(dGeomGetOffsetPosition(state.fParent->fOuterFootG));
 }
 
 // Function for comparing single leg rolloff to Lagrangian solution
@@ -21,15 +21,15 @@ int main(int argc, char**)
     const Vector3d par(cos(McGeer::GAMMA), 0., -sin(McGeer::GAMMA));
     const Vector3d nor(sin(McGeer::GAMMA), 0.,  cos(McGeer::GAMMA));
     
-    const MGState* state0 = sim.GetState(0);
+    const MGState state0 = sim.GetCurrentState();
     
     typedef Eigen::DiagonalMatrix<double, 3> Diag;
     
     SolidBody hip = SolidBody::SphereTotal(McGeer::M_H, .01, 
-        state0->fOLeg.hipCoG());
-    SolidBody thigh(McGeer::M_T, state0->fOLeg.thighCoG(),
+        state0.fOLeg.hipCoG());
+    SolidBody thigh(McGeer::M_T, state0.fOLeg.thighCoG(),
         Diag(1., McGeer::M_T*McGeer::R_GYR_T, 1.));
-    SolidBody shank(McGeer::M_S, state0->fOLeg.shankCoG(),
+    SolidBody shank(McGeer::M_S, state0.fOLeg.shankCoG(),
         Diag(1., McGeer::M_S*McGeer::R_GYR_S, 1.));
     
     SolidBody leg = combine(combine(hip, thigh), shank);
@@ -50,7 +50,7 @@ int main(int argc, char**)
     
     if(argc == 2) {
         for(int t=0; t<sim.GetDefaultEndTime()/2; t++) {
-            const MGState* state = sim.GetState(t);
+            const MGState state = sim.GetCurrentState();
             
             /* double T =  .5 * McGeer::M_T * state->fRLeg.fTVel.mag2()
                       + .5 * McGeer::M_T * McGeer::R_GYR_T * state->fRLeg.fTOme.mag2()
@@ -76,8 +76,10 @@ int main(int argc, char**)
             // std::cout << T << " " << Tp;
             // std::cout << T + V << " ";
             std::cout << (dist-d0)/McGeer::R + phi0 << " " << height << " ";
-            std::cout << state->fOLeg.thighAng() - state->fOLeg.shankAng();
+            std::cout << state.fOLeg.thighAng() - state.fOLeg.shankAng();
             std::cout << std::endl;
+            
+            sim.Advance();
         }
     }
     

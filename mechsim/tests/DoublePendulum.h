@@ -2,7 +2,7 @@
 #define MSIM_DOUBLEPENDULUM_H
 
 #include <Eigen/Dense>
-#include "SyncSimulation.h"
+#include "Simulation.h"
 #include <ode/ode.h>
 
 class DPState: public SimulationState {
@@ -27,7 +27,7 @@ class DPState: public SimulationState {
     }
 };
 
-class DoublePendulum: public SyncSimulation<DPState> {
+class DoublePendulum: public Simulation {
   public:
     DoublePendulum();
     ~DoublePendulum();

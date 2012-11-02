@@ -1,7 +1,7 @@
-#ifndef MSIM_ASYNCSIMULATION_H
-#define MSIM_ASYNCSIMULATION_H
+#ifndef MSIM_ASYNCSIMRUNNER_H
+#define MSIM_ASYNCSIMRUNNER_H
 
-#include "Simulation.h"
+#include "SimRunner.h"
 #include <Eigen/StdVector>
 #include <vector>
 #include <iostream>
@@ -11,22 +11,38 @@
 #include <sys/wait.h>
 
 #define DEBUG_ASYNCSIMULATION
-// Interface for simulations that take a while to complete, and are computed
+// Runner for simulations that take a while to complete, and are computed
 // asynchronously during playback
-template<class State_T>
-class AsyncSimulation: public Simulation
+template<class Sim_T, class State_T>
+class AsyncSimRunner: public SimRunner
 {
   public:
-    AsyncSimulation() : Simulation(), fFinished(false) {
+    AsyncSimRunner(Sim_T* sim) : fSim(sim), fFinished(false) {
         f_pipefd[0] = -1;
         f_pipefd[1] = -1;
     }
     
-    virtual const State_T* GetState(int t)  // t in units of TIMESTEPs
+    virtual double GetTimestep()
+        { return fSim->GetTimestep(); }    // in units of seconds
+    virtual int GetDefaultEndTime()
+        { return fSim->GetDefaultEndTime(); } // in units of TIMESTEPs
+
+    virtual const char* GetTitle()
+        { return fSim->GetTitle(); }
+    
+    virtual const SimulationState* GetState(int t)  // t in units of TIMESTEPs
     {
         if(t < 0 || ((unsigned int) t) >= fData.size()) return 0;
         else return &fData[t];
     }
+    
+    // Interface for draw modes
+    virtual int GetNDrawModes() const { return fSim->GetNDrawModes(); }
+    virtual const char* GetDrawModeName(int id) { return fSim->GetDrawModeName(id); }
+    
+    // Interface for data display
+    virtual int GetNDataCh() const { return fSim->GetNDataCh(); }
+    virtual const char* GetChName(int ch) const { return fSim->GetChName(ch); }
     
     virtual bool finished() { return fFinished; }
     virtual int GetDescriptor() { return f_pipefd[0]; }
@@ -101,19 +117,19 @@ class AsyncSimulation: public Simulation
         }
     }
     
-  protected:
-    virtual void Advance() = 0;
-    virtual State_T GetCurrentState() = 0;
-    
   private:
+    // Instances of this class must not be copied
+    AsyncSimRunner(const AsyncSimRunner& src) { assert(false); }
+    AsyncSimRunner& operator=(const AsyncSimRunner& src) { assert(false); return *this; }
+    
     void RunSimulation() {
         int tend = GetDefaultEndTime();
         for(int t=0; t<=tend; t++) {
-            State_T state = GetCurrentState();
+            State_T state = fSim->GetCurrentState();
             if(write(f_pipefd[1], &state, sizeof(State_T)) != sizeof(State_T)) {
                 ::_exit(-1);
             }
-            Advance();
+            fSim->Advance();
         }
     }
     
@@ -130,6 +146,8 @@ class AsyncSimulation: public Simulation
     char fBuf[BUF_SIZE] __attribute__((aligned(16)));
     unsigned int fBufIdx;
     bool fFinished;
+    
+    Sim_T* fSim;
     
     std::vector<State_T, Eigen::aligned_allocator<State_T> > fData;
 };

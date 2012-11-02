@@ -2,7 +2,7 @@
 #define MSIM_MCGEER_H
 
 #include <Eigen/Dense>
-#include "SyncSimulation.h"
+#include "Simulation.h"
 #include <ode/ode.h>
 
 class McGeer;
@@ -51,7 +51,7 @@ class MGState: public SimulationState {
     static const double DISP_SLIDEWIDTH;
 };
 
-class McGeer: public SyncSimulation<MGState> {
+class McGeer: public Simulation {
   public:
     McGeer();
     ~McGeer();

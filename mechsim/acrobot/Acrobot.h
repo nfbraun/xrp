@@ -2,7 +2,7 @@
 #define MSIM_ACROBOT_H
 
 #include <Eigen/Dense>
-#include "SyncSimulation.h"
+#include "Simulation.h"
 #include <ode/ode.h>
 
 class AcroState: public SimulationState {
@@ -12,7 +12,7 @@ class AcroState: public SimulationState {
     void Draw(int) const;
 };
 
-class Acrobot: public SyncSimulation<AcroState> {
+class Acrobot: public Simulation {
   public:
     Acrobot();
     ~Acrobot();

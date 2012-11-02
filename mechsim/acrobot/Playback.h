@@ -2,7 +2,7 @@
 #define MSIM_PLAYBACK_H
 
 #include <Eigen/Dense>
-#include "SyncSimulation.h"
+#include "Simulation.h"
 #include "CSVFile.h"
 
 class AcroState: public SimulationState {
@@ -26,7 +26,7 @@ class AcroState: public SimulationState {
     }
 };
 
-class Playback: public SyncSimulation<AcroState> {
+class Playback: public Simulation {
   public:
     Playback();
     

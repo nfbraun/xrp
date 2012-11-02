@@ -22,16 +22,18 @@ int main()
     std::cout << "#:2:theta2" << std::endl;
     
     for(int t=0; t<100*Acrobot::STEP_PER_SEC; t++) {
-        const AcroState* state = sim.GetState(t);
+        const AcroState state = sim.GetCurrentState();
         
         std::cout << t*sim.GetTimestep() << " ";
         
-        double theta1 = norm_angle(angle(state->fB1_pos));
-        double theta2 = norm_angle(angle(state->fB2_pos - state->fB1_pos) - theta1);
+        double theta1 = norm_angle(angle(state.fB1_pos));
+        double theta2 = norm_angle(angle(state.fB2_pos - state.fB1_pos) - theta1);
         
         std::cout << theta1 << " " << theta2;
         
         std::cout << std::endl;
+        
+        sim.Advance();
     }
     
     return 0;

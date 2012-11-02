@@ -1,8 +1,8 @@
 #include "DataViewWidget.h"
 #include <iostream>
 
-DataViewWidget::DataViewWidget(Simulation* sim, QWidget* parent)
-    : VCWidget(parent), fSimulation(sim), fT(0), fCurEndT(-1)
+DataViewWidget::DataViewWidget(SimRunner* sim, QWidget* parent)
+    : VCWidget(parent), fSimRunner(sim), fT(0), fCurEndT(-1)
 {
     int nch = sim->GetNDataCh();
     
@@ -32,12 +32,12 @@ DataViewWidget::DataViewWidget(Simulation* sim, QWidget* parent)
 
 void DataViewWidget::addNewData()
 {
-    int t, tend = fSimulation->GetDefaultEndTime();
-    double tstep = fSimulation->GetTimestep();
-    int nch = fSimulation->GetNDataCh();
+    int t, tend = fSimRunner->GetDefaultEndTime();
+    double tstep = fSimRunner->GetTimestep();
+    int nch = fSimRunner->GetNDataCh();
     
     for(t=fCurEndT+1; t<=tend; t++) {
-        const SimulationState* state = fSimulation->GetState(t);
+        const SimulationState* state = fSimRunner->GetState(t);
         if(state == 0) break;
         for(int ch=0; ch<nch; ch++) {
             fChannels[ch].data().data()[(double)t * tstep] =
@@ -60,12 +60,12 @@ void DataViewWidget::setTime(int t)
 {
     if(t == fT) return;
     fT = t;
-    setMarkerUserPos_Lazy(t * fSimulation->GetTimestep());
+    setMarkerUserPos_Lazy(t * fSimRunner->GetTimestep());
     emit timeChanged(t);
 }
 
 void DataViewWidget::setTime_d(double t_d)
 {
-    fT = (int) ceil(t_d / fSimulation->GetTimestep() - .5);
+    fT = (int) ceil(t_d / fSimRunner->GetTimestep() - .5);
     emit timeChanged(fT);
 }
