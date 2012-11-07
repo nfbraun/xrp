@@ -4,7 +4,8 @@
 /* NOTE: these functions are rather inefficient (which is OK, as they are
    intended for testing only). */
 
-Eigen::Matrix<Number, 2, 2> dqddot_dq(const Vector2N& q, const Vector2N& qdot, Number u)
+Eigen::Matrix<Number, 2, 2> dqddot_dq(const Vector_Ndof& q, const Vector_Ndof& qdot,
+                                      const Vector_Nctrl& u)
 {
     AcroDyn::DResult dresult = AcroDyn::qddot_full(q, qdot, u);
     
@@ -13,7 +14,8 @@ Eigen::Matrix<Number, 2, 2> dqddot_dq(const Vector2N& q, const Vector2N& qdot, N
     return result;
 }
 
-Eigen::Matrix<Number, 2, 2> dqddot_dqdot(const Vector2N& q, const Vector2N& qdot, Number u)
+Eigen::Matrix<Number, 2, 2> dqddot_dqdot(const Vector_Ndof& q, const Vector_Ndof& qdot,
+                                         const Vector_Nctrl& u)
 {
     AcroDyn::DResult dresult = AcroDyn::qddot_full(q, qdot, u);
     
@@ -22,15 +24,16 @@ Eigen::Matrix<Number, 2, 2> dqddot_dqdot(const Vector2N& q, const Vector2N& qdot
     return result;
 }
 
-Vector2N dqddot_du(const Vector2N& q, const Vector2N& qdot, Number u)
+Vector_Ndof dqddot_du(const Vector_Ndof& q, const Vector_Ndof& qdot,
+                      const Vector_Nctrl& u)
 {
     return AcroDyn::qddot_full(q, qdot, u).df[4];
 }
 
-Vector2N qddot_a(const Eigen::Matrix<Number, 5, 1>& arg)
+Vector_Ndof qddot_a(const Eigen::Matrix<Number, 5, 1>& arg)
 {
     // return phiddot(arg.block<2,1>(0,0), arg.block<2,1>(2,0), arg(4,0));
-    AcroDyn::DResult result = AcroDyn::qddot_full(arg.block<2,1>(0,0), arg.block<2,1>(2,0), arg(4,0));
+    AcroDyn::DResult result = AcroDyn::qddot_full(arg.block<2,1>(0,0), arg.block<2,1>(2,0), arg.block<1,1>(4,0));
     
     return result.f;
 }
@@ -39,7 +42,7 @@ Eigen::Matrix<Number, 2, 5> dqddot_a(const Eigen::Matrix<Number, 5, 1>& arg)
 {
     // return dphiddot(arg.block<2,1>(0,0), arg.block<2,1>(2,0), arg(4,0));
     
-    AcroDyn::DResult dresult = AcroDyn::qddot_full(arg.block<2,1>(0,0), arg.block<2,1>(2,0), arg(4,0));
+    AcroDyn::DResult dresult = AcroDyn::qddot_full(arg.block<2,1>(0,0), arg.block<2,1>(2,0), arg.block<1,1>(4,0));
     
     Eigen::Matrix<Number, 2, 5> result;
     result << dresult.df[0], dresult.df[1], dresult.df[2], dresult.df[3], dresult.df[4];
@@ -49,7 +52,7 @@ Eigen::Matrix<Number, 2, 5> dqddot_a(const Eigen::Matrix<Number, 5, 1>& arg)
 
 Eigen::Matrix<Number, 5, 5> ddqddot_a_1(const Eigen::Matrix<Number, 5, 1>& arg)
 {
-    AcroDyn::DResult dresult = AcroDyn::qddot_full(arg.block<2,1>(0,0), arg.block<2,1>(2,0), arg(4,0));
+    AcroDyn::DResult dresult = AcroDyn::qddot_full(arg.block<2,1>(0,0), arg.block<2,1>(2,0), arg.block<1,1>(4,0));
     
     Eigen::Matrix<Number, 5, 5> result;
     for(unsigned int a=0; a<5; a++) {
@@ -63,7 +66,7 @@ Eigen::Matrix<Number, 5, 5> ddqddot_a_1(const Eigen::Matrix<Number, 5, 1>& arg)
 
 Eigen::Matrix<Number, 5, 5> ddqddot_a_2(const Eigen::Matrix<Number, 5, 1>& arg)
 {
-    AcroDyn::DResult dresult = AcroDyn::qddot_full(arg.block<2,1>(0,0), arg.block<2,1>(2,0), arg(4,0));
+    AcroDyn::DResult dresult = AcroDyn::qddot_full(arg.block<2,1>(0,0), arg.block<2,1>(2,0), arg.block<1,1>(4,0));
     
     Eigen::Matrix<Number, 5, 5> result;
     for(unsigned int a=0; a<5; a++) {
@@ -77,12 +80,12 @@ Eigen::Matrix<Number, 5, 5> ddqddot_a_2(const Eigen::Matrix<Number, 5, 1>& arg)
 
 void dqddot_test()
 {
-    Vector2N q0;
+    Vector_Ndof q0;
     q0 << 1.4, 0.5;
-    Vector2N qdot0;
+    Vector_Ndof qdot0;
     qdot0 << .3, .9;
-    Number u0;
-    u0 = 1.1;
+    Vector_Nctrl u0;
+    u0 << 1.1;
     
     Eigen::Matrix<Number, 5, 1> x0;
     x0 << q0, qdot0, u0;

@@ -12,7 +12,8 @@ namespace SystemConst {
     // const double GAMMA = 0.;
 }
 
-AcroDyn::DResult AcroDyn::qddot_full(const Vector2N& q, const Vector2N& qdot, Number u)
+AcroDyn::DResult AcroDyn::qddot_full(const Vector_Ndof& q, const Vector_Ndof& qdot,
+                                     const Vector_Nctrl& u)
 {
     using namespace SystemConst;
     

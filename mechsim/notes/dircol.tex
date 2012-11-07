@@ -103,12 +103,65 @@ q_k^{(i)}\\ v_k^{(i)}\\ u_k^{(i)}\\ q_k^{(i+1)}\\ v_k^{(i+1)}\\ u_k^{(i+1)}
 \end{array} \right)
 \end{equation}
 
+\section{Cost function}
+We consider a standard cost functional $L$ of the form
+\begin{eqnarray}
+L &=& \frac{1}{2} \int_0^T\mathrm{d}t\;\left[
+\left(\begin{array}{cc}q(t)\\ \dot{q}(t)\end{array}\right)^\top
+Q
+\left(\begin{array}{cc}q(t)\\ \dot{q}(t)\end{array}\right)
++ u(t)^\top R u(t)
+\right]\\
+\nonumber &=:& \int_0^T\mathrm{d}t\; l(q(t), \dot{q}(t), u(t))
+\end{eqnarray}
+
+Let
+\begin{equation}
+w(t) = \int_0^t \mathrm{d}s\; l(q(s), \dot{q}(s), u(s))
+\end{equation}
+or equivalently,
+\begin{equation}
+\label{eqn:diff-w}
+w(0) = 0,\;\dot{w}(t) = l(q(t), \dot{q}(t), u(t))
+\end{equation}
+Our optimization objective is to minimize $L = w(T)$ ($w_N$ after discretization).
+
+As above, $w$ at interval midpoint is given by
+\begin{equation}
+\dot{w}^{(c)} = - \frac{3}{2h} (w^{(i)} - w^{(i+1)}) - \frac{1}{4}(l^{(i)} + l^{(i+1)})
+\end{equation}
+so enforcing (\ref{eqn:diff-w}) leads to the constraints
+\begin{equation}
+0 \stackrel{!}{=} g^{(i),2} = l^{(c)} - \dot{w}^{(c)}
+\end{equation}
+plus a trivial boundary constraint.
+
+\subsection{Derivatives of quadratic forms}
+Let
+\begin{equation}
+f(x) = \frac{1}{2} x^\top Q x
+\end{equation}
+where we assume, without loss of generality, that $Q$ is symmetric: $Q^\top = Q$.
+
+The derivatives of $f$ are then given by
+\begin{eqnarray}
+\frac{\mathrm{d}f}{\mathrm{d}x} &=& Q x\\
+\frac{\mathrm{d}^2 f}{\mathrm{d}x^2} &=& Q
+\end{eqnarray}
+Equivalently, in index form,
+\begin{eqnarray}
+f(x_1,\ldots,x_n) &=& \frac{1}{2} \sum_{i,j} Q_{ij} x_i x_j\\
+\frac{\mathrm{d}f}{\mathrm{d}x_a} &=& \sum_{i} Q_{ai} x_i\\
+\frac{\mathrm{d}^2 f}{\mathrm{d}x_a \mathrm{d}x_b} &=& Q_{ab}
+\end{eqnarray}
+
 \section{Solving the constrained optimization problem}
-We can now solve the constrained optimization problem, e.g. with \textsc{Ipopt}. There are $(2n + m)\cdot (N+1)$ optimization variables:
+We can now solve the constrained optimization problem, e.g. with \textsc{Ipopt}. There are $(2n + m + 1)\cdot (N+1)$ optimization variables:
 \begin{eqnarray*}
 q_0^{(0)}, \ldots, q_n^{(0)}, \ldots, q_0^{(N)}, \ldots, q_n^{(N)},\\
 v_0^{(0)}, \ldots, v_n^{(0)}, \ldots, v_0^{(N)}, \ldots, v_n^{(N)},\\
-u_0^{(0)}, \ldots, u_m^{(0)}, \ldots, u_0^{(N)}, \ldots, u_m^{(N)}
+u_0^{(0)}, \ldots, u_m^{(0)}, \ldots, u_0^{(N)}, \ldots, u_m^{(N)},\\
+w^{(0)}, \ldots, w^{(N)}
 \end{eqnarray*}
 
 We write $\left. \frac{\partial f_k}{\partial q_l} \right|_{(i)}$ as a shorthand for $\left. \frac{\partial f_k}{\partial v_l} \right|_{(q^{(i)}, v^{(i)}, u^{(i)})}$.
@@ -199,4 +252,12 @@ We let $y_l^{(i)}$ stand as a placeholder for $q_l^{(i)}$, $v_l^{(i)}$, $u_l^{(i
 \frac{\partial^2 g_k^{(i),1}}{\partial y_l^{(i)} \partial {y^\prime}_l^{(i+1)}} &=&
 \left. \frac{\partial^2 h_k}{\partial y_l^{(i+1)} \partial {y^\prime}_l^{(i+1)}} \right|_{(i), (i+1)}
 \end{eqnarray}
+
+\subsection{Sparsity structure of the Hessian of the Lagrangian}
+For \textsc{Ipopt}, the Hessian of the Lagrangian is
+\begin{equation}
+\sigma_f \nabla^2 f(x_k) + \sum_{i=1}^{m} \lambda_i \nabla^2 g_i(x_k)
+\end{equation}
+
+The objective is simply equal to the optimization variable $w_N$, and $\nabla^2 f(x_k)$ is thus zero. The constraints link two neighbouring time nodes. Thus, the Hessian of the Lagrangian has on-diagonal blocks, involving variables at some node $i$, and off-diagonal blocks, involving variables from nodes $i$ and $i+1$. All other blocks are zero.
 \end{document}

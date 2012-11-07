@@ -3,6 +3,7 @@
 
 #include <coin/IpTNLP.hpp>
 #include <adolc/adolc.h>
+#include <Eigen/Dense>
 
 using Ipopt::Index;
 using Ipopt::Number;
@@ -11,8 +12,6 @@ class Acrobot: public Ipopt::TNLP
 {
   public:
     Acrobot();
-    
-    void dphiddot_test();
     
     virtual bool get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
         Index& nnz_h_lag, IndexStyleEnum& index_style);
@@ -34,6 +33,12 @@ class Acrobot: public Ipopt::TNLP
         Index n, const Number* x, const Number* z_L, const Number* z_U,
         Index m, const Number* g, const Number* lambda, Number obj_value,
         const Ipopt::IpoptData*, Ipopt::IpoptCalculatedQuantities*);
+    
+    void dump_variables(const char* fname, Index n, const Number* x);
+    void dump_constraints(const char* fname, Index n, const Number* x);
+    
+    Eigen::Matrix2d Q_qq, Q_qqdot, Q_qdotqdot;
+    Eigen::Matrix<double, 1, 1> R;
   
   public:
     /* *** */

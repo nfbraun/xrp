@@ -1,15 +1,18 @@
 #include "Acrobot.h"
 #include "AcroDyn.h"
+#include "CSVFile.h"
 #include <iostream>
+#include <fstream>
 #include <cmath>
+#include <stdexcept>
 #include <Eigen/Dense>
 
 const Index Acrobot::N_dof = 2;      // number of degrees of freedom
 const Index Acrobot::N_controls = 1; // number of controls
-const double Acrobot::t_end = 10.;   // end time [s]
+const double Acrobot::t_end = 5.3;   // end time [s]
 
 // number of time intervals/nodes
-const Index Acrobot::N_intervals = 3;
+const Index Acrobot::N_intervals = 500;
 const Index Acrobot::N_nodes = N_intervals + 1;
 
 // number of optimization variables
@@ -25,9 +28,12 @@ const double Acrobot::dt = t_end/N_intervals;
 const Index Acrobot::N_nnz_jac_g =
       N_intervals * N_dof * 2 * (2 * N_dof + N_controls)   // q constraints
     + N_intervals * N_dof * 2 * (2 * N_dof + N_controls)   // qdot constraints
-    + 4*N_intervals                                        // control integration constraints
-    + 2*2*N_dof                                         // (q,qdot) boundary constraints
-    + 1;                                                // control integration boundary constraint
+    + N_intervals * (2 + 2*N_controls + 4*N_dof)           // control integration constraints
+    + 2*2*N_dof                                            // (q,qdot) boundary constraints
+    + 1;                                                   // control integration boundary constraint
+
+typedef Eigen::Matrix<Number, N_dof, 1> Vector_Ndof;
+typedef Eigen::Matrix<Number, N_ctrl, 1> Vector_Nctrl;
 
 Index calc_N_nnz_h_lag()
 {
@@ -52,7 +58,25 @@ Index index_of_u(Index node, Index ctrl)
 Acrobot::Acrobot()
     : Ipopt::TNLP()
 {
+    Q_qq << 2., 0., 0., 2.;
+    Q_qqdot.setZero();
+    Q_qdotqdot.setZero();
+    
+    R << 200.;
 }
+
+/* void Acrobot::constraint_test()
+{
+    Number* x = new Number[N_vars];
+    Number* g = new Number[N_constraints];
+    
+    get_starting_point(0, true, x, false, 0, 0, 0, false, 0);
+    
+    eval_g(N_vars, x, true, N_constraints, g);
+    
+    delete[] g;
+    delete[] x;
+} */
 
 bool Acrobot::get_nlp_info(Index& n, Index& m, Index& nnz_jac_g,
         Index& nnz_h_lag, IndexStyleEnum& index_style)
@@ -74,17 +98,17 @@ bool Acrobot::get_bounds_info(Index n, Number* x_l, Number* x_u,
     assert(n == N_vars);
     assert(m == N_constraints);
     
-    for(Index i=0; i<N_vars; i++)
+    /* for(Index i=0; i<N_vars; i++)
         x_l[i] = -30.;
     
     for(Index i=0; i<N_vars; i++)
-        x_u[i] = 30.;
+        x_u[i] = 30.; */
         
-    /* for(Index i=0; i<N_vars; i++)
+    for(Index i=0; i<N_vars; i++)
         x_l[i] = -1e20;
     
     for(Index i=0; i<N_vars; i++)
-        x_u[i] = 1e20; */
+        x_u[i] = 1e20;
     
     for(Index i=0; i<N_constraints; i++)
         g_l[i] = 0.;
@@ -93,6 +117,20 @@ bool Acrobot::get_bounds_info(Index n, Number* x_l, Number* x_u,
         g_u[i] = 0.;
     
     return true;
+}
+
+double GetInterpValue(const CSVFile& dataFile, int value_id, double t, int tidx)
+{
+    if(tidx < 1) return dataFile.data().at(0).at(value_id);
+    if(tidx >= dataFile.data().size())
+        return dataFile.data().at(dataFile.data().size()-1).at(value_id);
+    
+    double t0 = dataFile.data().at(tidx-1).at(0);
+    double t1 = dataFile.data().at(tidx).at(0);
+    double x0 = dataFile.data().at(tidx-1).at(value_id);
+    double x1 = dataFile.data().at(tidx).at(value_id);
+    
+    return x0 + (x1-x0)/(t1-t0) * (t - t0);
 }
 
 bool Acrobot::get_starting_point(Index n, bool init_x, Number* x,
@@ -104,7 +142,37 @@ bool Acrobot::get_starting_point(Index n, bool init_x, Number* x,
     assert(init_z == false);
     assert(init_lambda == false);
     
-    for(int i=0; i<N_vars; i++) x[i] = 0.;
+    // for(int i=0; i<N_vars; i++) x[i] = 0.;
+    
+    CSVFile dataFile("acrobot_psopt.dat");
+    
+    if(dataFile.fail())
+        throw std::runtime_error("Failed to open data: acrobot.dat");
+    
+    Index file_idx = 0;
+    Number w = 0.;
+    
+    for(Index node_idx=0; node_idx<N_nodes; node_idx++) {
+        double t = (double) node_idx * dt;
+        while((file_idx < dataFile.data().size())
+            && dataFile.data().at(file_idx).at(0) < t) file_idx++;
+        
+        double q0 = GetInterpValue(dataFile, 1, t, file_idx);
+        double q1 = GetInterpValue(dataFile, 2, t, file_idx);
+        double v0 = GetInterpValue(dataFile, 3, t, file_idx);
+        double v1 = GetInterpValue(dataFile, 4, t, file_idx);
+        double u = GetInterpValue(dataFile, 5, t, file_idx);
+        
+        x[index_of_q(node_idx, 0)] = q0;
+        x[index_of_q(node_idx, 1)] = q1;
+        x[index_of_v(node_idx, 0)] = v0;
+        x[index_of_v(node_idx, 1)] = v1;
+        x[index_of_u(node_idx, 0)] = u;
+        
+        x[index_of_w(node_idx)] = w;
+        
+        w += (q0*q0 + q1*q1 + 100*u*u)*dt;
+    }
     
     return true;
 }
@@ -138,33 +206,33 @@ bool Acrobot::eval_g(Index n, const Number* x, bool new_x, Index m, Number* g)
     // The ODEs to solve:
     //  phi_dot = omega
     //  omega_dot = f(phi, omega, u)
-    //  w_dot = u^2/2
+    //  w_dot = l = 1/2 * (q^T Q_qq q + 2*q^T Q_qqdot q_dot + q_dot^T Q_qdotqdot q_dot
+    //                      + u^T R u)
     
     Index idx = 0;
     
     for(Index i=0; i<N_intervals; i++) {
-        const Eigen::Map<const Vector2N> q_i(  &x[index_of_q(i, 0)]   );
-        const Eigen::Map<const Vector2N> q_i1( &x[index_of_q(i+1, 0)] );
-        const Eigen::Map<const Vector2N> v_i(  &x[index_of_v(i, 0)]   );
-        const Eigen::Map<const Vector2N> v_i1( &x[index_of_v(i+1, 0)] );
+        const Eigen::Map<const Vector_Ndof>  q_i(  &x[index_of_q(i, 0)]   );
+        const Eigen::Map<const Vector_Ndof>  q_i1( &x[index_of_q(i+1, 0)] );
+        const Eigen::Map<const Vector_Ndof>  v_i(  &x[index_of_v(i, 0)]   );
+        const Eigen::Map<const Vector_Ndof>  v_i1( &x[index_of_v(i+1, 0)] );
+        
+        const Eigen::Map<const Vector_Nctrl> u_i(  &x[index_of_u(i, 0)]   );
+        const Eigen::Map<const Vector_Nctrl> u_i1( &x[index_of_u(i+1, 0)] );
         
         const Number w_i  = x[index_of_w(i)];
         const Number w_i1 = x[index_of_w(i+1)];
-        const Number u_i  = x[index_of_u(i, 0)];
-        const Number u_i1 = x[index_of_u(i+1, 0)];
         
         // FIXME: inefficient. We do not need derivatives here.
         AcroDyn::DResult result_i = AcroDyn::qddot_full(q_i, v_i, u_i);
         AcroDyn::DResult result_i1 = AcroDyn::qddot_full(q_i1, v_i1, u_i1);
         
-        const Vector2N q_c = (q_i + q_i1)/2. + (dt/8.)*(v_i - v_i1);
-        const Vector2N v_c = (v_i + v_i1)/2. + (dt/8.)*(result_i.f - result_i1.f);
-        const Number w_c = (w_i + w_i1)/2. + (dt/8.)*(u_i*u_i/2. - u_i1*u_i1/2.);
-        const Number u_c = (u_i + u_i1)/2.;
+        const Vector_Ndof q_c = (q_i + q_i1)/2. + (dt/8.)*(v_i - v_i1);
+        const Vector_Ndof v_c = (v_i + v_i1)/2. + (dt/8.)*(result_i.f - result_i1.f);
+        const Vector_Nctrl u_c = (u_i + u_i1)/2.;
         
-        const Vector2N qdot_c = -3./(2.*dt)*(q_i - q_i1) - (v_i + v_i1)/4.;
-        const Vector2N vdot_c = -3./(2.*dt)*(v_i - v_i1) - (result_i.f + result_i1.f)/4.;
-        const Number wdot_c = -3./(2.*dt)*(w_i - w_i1) - (u_i*u_i/2. + u_i1*u_i1/2.)/4.;
+        const Vector_Ndof qdot_c = -3./(2.*dt)*(q_i - q_i1) - (v_i + v_i1)/4.;
+        const Vector_Ndof vdot_c = -3./(2.*dt)*(v_i - v_i1) - (result_i.f + result_i1.f)/4.;
         
         // FIXME: inefficient (see above)
         AcroDyn::DResult result_c = AcroDyn::qddot_full(q_c, qdot_c, u_c);
@@ -178,7 +246,22 @@ bool Acrobot::eval_g(Index n, const Number* x, bool new_x, Index m, Number* g)
             g[idx++] = (result_c.f - vdot_c)[j];
         
         // control integration constraints
-        g[idx++] = u_c*u_c/2. - wdot_c;
+        const Number l_i =   q_i.dot(Q_qq * q_i)/2.
+                           + q_i.dot(Q_qqdot * v_i)
+                           + v_i.dot(Q_qdotqdot * v_i)/2.
+                           + u_i.dot(R*u_i)/2.;
+        const Number l_i1 =   q_i1.dot(Q_qq * q_i1)/2.
+                            + q_i1.dot(Q_qqdot * v_i1)
+                            + v_i1.dot(Q_qdotqdot * v_i1)/2.
+                            + u_i1.dot(R*u_i1)/2.;
+        const Number l_c =   q_c.dot(Q_qq * q_c)/2.
+                           + q_c.dot(Q_qqdot * qdot_c)
+                           + qdot_c.dot(Q_qdotqdot * qdot_c)/2.
+                           + u_c.dot(R*u_c)/2.;
+        
+        const Number wdot_c = -3./(2.*dt)*(w_i - w_i1) - (l_i + l_i1)/4.;
+        
+        g[idx++] = l_c - wdot_c;
     }
     
     // q boundary constraints
@@ -199,6 +282,78 @@ bool Acrobot::eval_g(Index n, const Number* x, bool new_x, Index m, Number* g)
     assert(idx == N_constraints);
     
     return true;
+}
+
+void Acrobot::dump_constraints(const char* fname, Index n, const Number* x)
+{
+    assert(n == N_vars);
+    
+    std::ofstream outfile(fname);
+    
+    Index col_idx = 1;
+    for(Index j=0; j<N_dof; j++)
+        outfile << "#:" << col_idx++ << ":q_" << j << "\n";
+    for(Index j=0; j<N_dof; j++)
+        outfile << "#:" << col_idx++ << ":qdot_" << j << "\n";
+    outfile << "#:" << col_idx++ << ":cint" << std::endl;
+    
+    Index idx = 0;
+    
+    for(Index i=0; i<N_intervals; i++) {
+        outfile << i*dt << " ";
+        
+        const Eigen::Map<const Vector_Ndof>  q_i(  &x[index_of_q(i, 0)]   );
+        const Eigen::Map<const Vector_Ndof>  q_i1( &x[index_of_q(i+1, 0)] );
+        const Eigen::Map<const Vector_Ndof>  v_i(  &x[index_of_v(i, 0)]   );
+        const Eigen::Map<const Vector_Ndof>  v_i1( &x[index_of_v(i+1, 0)] );
+        
+        const Eigen::Map<const Vector_Nctrl> u_i(  &x[index_of_u(i, 0)]   );
+        const Eigen::Map<const Vector_Nctrl> u_i1( &x[index_of_u(i+1, 0)] );
+        
+        const Number w_i  = x[index_of_w(i)];
+        const Number w_i1 = x[index_of_w(i+1)];
+        
+        // FIXME: inefficient. We do not need derivatives here.
+        AcroDyn::DResult result_i = AcroDyn::qddot_full(q_i, v_i, u_i);
+        AcroDyn::DResult result_i1 = AcroDyn::qddot_full(q_i1, v_i1, u_i1);
+        
+        const Vector_Ndof q_c = (q_i + q_i1)/2. + (dt/8.)*(v_i - v_i1);
+        const Vector_Ndof v_c = (v_i + v_i1)/2. + (dt/8.)*(result_i.f - result_i1.f);
+        const Vector_Nctrl u_c = (u_i + u_i1)/2.;
+        
+        const Vector_Ndof qdot_c = -3./(2.*dt)*(q_i - q_i1) - (v_i + v_i1)/4.;
+        const Vector_Ndof vdot_c = -3./(2.*dt)*(v_i - v_i1) - (result_i.f + result_i1.f)/4.;
+        
+        // FIXME: inefficient (see above)
+        AcroDyn::DResult result_c = AcroDyn::qddot_full(q_c, qdot_c, u_c);
+        
+        // q constraints
+        for(Index j=0; j<N_dof; j++)
+            outfile << (v_c - qdot_c)[j] << " ";
+        
+        // qdot constraints
+        for(Index j=0; j<N_dof; j++)
+            outfile << (result_c.f - vdot_c)[j] << " ";
+        
+        // control integration constraints
+        const Number l_i =   q_i.dot(Q_qq * q_i)/2.
+                           + q_i.dot(Q_qqdot * v_i)
+                           + v_i.dot(Q_qdotqdot * v_i)/2.
+                           + u_i.dot(R*u_i)/2.;
+        const Number l_i1 =   q_i1.dot(Q_qq * q_i1)/2.
+                            + q_i1.dot(Q_qqdot * v_i1)
+                            + v_i1.dot(Q_qdotqdot * v_i1)/2.
+                            + u_i1.dot(R*u_i1)/2.;
+        const Number l_c =   q_c.dot(Q_qq * q_c)/2.
+                           + q_c.dot(Q_qqdot * qdot_c)
+                           + qdot_c.dot(Q_qdotqdot * qdot_c)/2.
+                           + u_c.dot(R*u_c)/2.;
+        
+        const Number wdot_c = -3./(2.*dt)*(w_i - w_i1) - (l_i + l_i1)/4.;
+        
+        outfile << l_c - wdot_c;
+        outfile << std::endl;
+    }
 }
 
 bool Acrobot::eval_jac_g(Index n, const Number* x, bool new_x, Index m,
@@ -237,10 +392,21 @@ bool Acrobot::eval_jac_g(Index n, const Number* x, bool new_x, Index m,
             }
             
             // control integration constraints
+            for(Index j=0; j<N_dof; j++) {
+                iRow[idx] = g_idx; jCol[idx] = index_of_q(i, j); idx++;
+                iRow[idx] = g_idx; jCol[idx] = index_of_q(i+1, j); idx++;
+                iRow[idx] = g_idx; jCol[idx] = index_of_v(i, j); idx++;
+                iRow[idx] = g_idx; jCol[idx] = index_of_v(i+1, j); idx++;
+            }
+            
+            for(Index j=0; j<N_ctrl; j++) {
+                iRow[idx] = g_idx; jCol[idx] = index_of_u(i, j); idx++;
+                iRow[idx] = g_idx; jCol[idx] = index_of_u(i+1, j); idx++;
+            }
+            
             iRow[idx] = g_idx; jCol[idx] = index_of_w(i); idx++;
             iRow[idx] = g_idx; jCol[idx] = index_of_w(i+1); idx++;
-            iRow[idx] = g_idx; jCol[idx] = index_of_u(i, 0); idx++;
-            iRow[idx] = g_idx; jCol[idx] = index_of_u(i+1, 0); idx++;
+            
             g_idx++;
         }
         
@@ -264,27 +430,26 @@ bool Acrobot::eval_jac_g(Index n, const Number* x, bool new_x, Index m,
     } else {
         Index idx = 0;
         for(Index i=0; i<N_intervals; i++) {
-            const Eigen::Map<const Vector2N> q_i(  &x[index_of_q(i, 0)]   );
-            const Eigen::Map<const Vector2N> q_i1( &x[index_of_q(i+1, 0)] );
-            const Eigen::Map<const Vector2N> v_i(  &x[index_of_v(i, 0)]   );
-            const Eigen::Map<const Vector2N> v_i1( &x[index_of_v(i+1, 0)] );
+            const Eigen::Map<const Vector_Ndof>  q_i(  &x[index_of_q(i, 0)]   );
+            const Eigen::Map<const Vector_Ndof>  q_i1( &x[index_of_q(i+1, 0)] );
+            const Eigen::Map<const Vector_Ndof>  v_i(  &x[index_of_v(i, 0)]   );
+            const Eigen::Map<const Vector_Ndof>  v_i1( &x[index_of_v(i+1, 0)] );
+            
+            const Eigen::Map<const Vector_Nctrl> u_i(  &x[index_of_u(i, 0)]   );
+            const Eigen::Map<const Vector_Nctrl> u_i1( &x[index_of_u(i+1, 0)] );
             
             const Number w_i  = x[index_of_w(i)];
             const Number w_i1 = x[index_of_w(i+1)];
-            const Number u_i  = x[index_of_u(i, 0)];
-            const Number u_i1 = x[index_of_u(i+1, 0)];
             
             // FIXME: inefficient. We do not need second derivatives here.
             AcroDyn::DResult result_i = AcroDyn::qddot_full(q_i, v_i, u_i);
             AcroDyn::DResult result_i1 = AcroDyn::qddot_full(q_i1, v_i1, u_i1);
             
-            const Vector2N q_c = (q_i + q_i1)/2. + (dt/8.)*(v_i - v_i1);
-            const Vector2N v_c = (v_i + v_i1)/2. + (dt/8.)*(result_i.f - result_i1.f);
-            const Number w_c = (w_i + w_i1)/2. + (dt/8.)*(u_i*u_i/2. - u_i1*u_i1/2.);
-            const Number u_c = (u_i + u_i1)/2.;
+            const Vector_Ndof q_c = (q_i + q_i1)/2. + (dt/8.)*(v_i - v_i1);
+            const Vector_Ndof v_c = (v_i + v_i1)/2. + (dt/8.)*(result_i.f - result_i1.f);
+            const Vector_Nctrl u_c = (u_i + u_i1)/2.;
             
-            const Vector2N qdot_c = -3./(2.*dt)*(q_i - q_i1) - (v_i + v_i1)/4.;
-            const Number wdot_c = -3./(2.*dt)*(w_i - w_i1) - (u_i*u_i/2. + u_i1*u_i1/2.)/4.;
+            const Vector_Ndof qdot_c = -3./(2.*dt)*(q_i - q_i1) - (v_i + v_i1)/4.;
             
             // FIXME: inefficient (see above)
             AcroDyn::DResult result_c = AcroDyn::qddot_full(q_c, qdot_c, u_c);
@@ -328,10 +493,31 @@ bool Acrobot::eval_jac_g(Index n, const Number* x, bool new_x, Index m,
             }
             
             // control integration constraints
+            Vector_Ndof dl_dq_i = Q_qq * q_i + Q_qqdot * v_i;
+            Vector_Ndof dl_dqdot_i = Q_qdotqdot * v_i + Q_qqdot.transpose() * q_i;
+            Vector_Ndof dl_dq_i1 = Q_qq * q_i1 + Q_qqdot * v_i1;
+            Vector_Ndof dl_dqdot_i1 = Q_qdotqdot * v_i1 + Q_qqdot.transpose() * q_i1;
+            Vector_Ndof dl_dq_c = Q_qq * q_c + Q_qqdot * qdot_c;
+            Vector_Ndof dl_dqdot_c = Q_qdotqdot * qdot_c + Q_qqdot.transpose() * q_c;
+            
+            for(Index j=0; j<N_dof; j++) {
+                values[idx++] = 1./2. * dl_dq_c(j) - 3./(2.*dt) * dl_dqdot_c(j)
+                    + 1./4.*dl_dq_i(j);
+                values[idx++] = 1./2. * dl_dq_c(j) + 3./(2.*dt) * dl_dqdot_c(j)
+                    + 1./4.*dl_dq_i1(j);
+                values[idx++] = dt/8. * dl_dq_c(j) - 1./4.*dl_dqdot_c(j)
+                    + 1./4.*dl_dqdot_i(j);
+                values[idx++] = -dt/8. * dl_dq_c(j) - 1./4.*dl_dqdot_c(j)
+                    + 1./4.*dl_dqdot_i1(j);
+            }
+            
+            for(Index j=0; j<N_ctrl; j++) {
+                values[idx++] = (R*u_c)(j)/2. + (R*u_i)(j)/4.;
+                values[idx++] = (R*u_c)(j)/2. + (R*u_i1)(j)/4.;
+            }
+            
             values[idx++] = 3./(2.*dt);
             values[idx++] = -3./(2.*dt);
-            values[idx++] = u_c/2. + u_i/4.;
-            values[idx++] = u_c/2. + u_i1/4.;
         }
         // q boundary constraints
         values[idx++] = 1.;
@@ -458,6 +644,17 @@ bool Acrobot::eval_h(Index n, const Number* x, bool new_x,
             centMap(2*N_dof+i, 2*N_dof+N_controls+2*N_dof+i) = 1./2.;
         }
         
+        /* The matrix costQ defines a quadratic form for the cost,
+           cost = (q, qdot, u) costQ (q, qdot, u)^T
+         */
+        Eigen::Matrix<double, 2*N_dof+N_ctrl, 2*N_dof+N_ctrl> costQ;
+        costQ.setZero();
+        costQ.block<N_dof,N_dof>(0, 0) = Q_qq;
+        costQ.block<N_dof,N_dof>(0, N_dof) = Q_qqdot;
+        costQ.block<N_dof,N_dof>(N_dof, 0) = Q_qqdot.transpose();
+        costQ.block<N_dof,N_dof>(N_dof, N_dof) = Q_qdotqdot;
+        costQ.block<N_ctrl,N_ctrl>(2*N_dof, 2*N_dof) = R;
+        
         // Init Hessian to zero
         idx = 0;
         for(Index node_idx = 0; node_idx < (N_nodes-1); node_idx++) {
@@ -469,17 +666,17 @@ bool Acrobot::eval_h(Index n, const Number* x, bool new_x,
         assert(idx == N_nnz_h_lag);
         
         for(Index con_idx=0; con_idx<N_intervals; con_idx++) {
-            const Eigen::Map<const Vector2N> q_i(  &x[index_of_q(con_idx, 0)]   );
-            const Eigen::Map<const Vector2N> q_i1( &x[index_of_q(con_idx+1, 0)] );
-            const Eigen::Map<const Vector2N> v_i(  &x[index_of_v(con_idx, 0)]   );
-            const Eigen::Map<const Vector2N> v_i1( &x[index_of_v(con_idx+1, 0)] );
+            const Eigen::Map<const Vector_Ndof>  q_i(  &x[index_of_q(con_idx, 0)]   );
+            const Eigen::Map<const Vector_Ndof>  q_i1( &x[index_of_q(con_idx+1, 0)] );
+            const Eigen::Map<const Vector_Ndof>  v_i(  &x[index_of_v(con_idx, 0)]   );
+            const Eigen::Map<const Vector_Ndof>  v_i1( &x[index_of_v(con_idx+1, 0)] );
             
-            const Number u_i  = x[index_of_u(con_idx, 0)];
-            const Number u_i1 = x[index_of_u(con_idx+1, 0)];
+            const Eigen::Map<const Vector_Nctrl> u_i(  &x[index_of_u(con_idx, 0)]   );
+            const Eigen::Map<const Vector_Nctrl> u_i1( &x[index_of_u(con_idx+1, 0)] );
             
-            const Vector2N q_c = (q_i + q_i1)/2. + (dt/8.)*(v_i - v_i1);
-            const Vector2N qdot_c = -3./(2.*dt)*(q_i - q_i1) - (v_i + v_i1)/4.;
-            const Number u_c = (u_i + u_i1)/2.;
+            const Vector_Ndof q_c = (q_i + q_i1)/2. + (dt/8.)*(v_i - v_i1);
+            const Vector_Ndof qdot_c = -3./(2.*dt)*(q_i - q_i1) - (v_i + v_i1)/4.;
+            const Vector_Nctrl u_c = (u_i + u_i1)/2.;
             
             AcroDyn::DResult result_i = AcroDyn::qddot_full(q_i, v_i, u_i);
             AcroDyn::DResult result_i1 = AcroDyn::qddot_full(q_i1, v_i1, u_i1);
@@ -546,13 +743,67 @@ bool Acrobot::eval_h(Index n, const Number* x, bool new_x,
             
             // control integration
             idx = con_idx*con_stride;
-            values[idx+14] += lambda[5*con_idx+4] * 1./2.;  // (u_i, u_i): FIXME
-            values[idx+39] += lambda[5*con_idx+4] * 1./4.;  // (u_i, u_i1): FIXME
-            values[idx+54] += lambda[5*con_idx+4] * 1./2.;  // (u_i1, u_i1): FIXME
+            for(Index j=0; j<5; j++) {
+                for(Index k=0; k<=j; k++) {
+                    values[idx++] += lambda[5*con_idx+2*N_dof] * (1./4.) * costQ(j,k);
+                }
+            }
+            idx += off_diag_block_size; // jump over cross terms
+            for(Index j=0; j<5; j++) {
+                for(Index k=0; k<=j; k++) {
+                    values[idx++] += lambda[5*con_idx+2*N_dof] * (1./4.) * costQ(j,k);
+                }
+            }
+            idx = con_idx*con_stride;
+            {
+                Eigen::Matrix<double, 10, 10> ddx = centMap.transpose() * costQ * centMap;
+                // Copy it
+                for(Index j=0; j<5; j++) {
+                    for(Index k=0; k<=j; k++) {
+                        values[idx++] += lambda[5*con_idx+2*N_dof] * ddx(j,k);
+                    }
+                }
+                for(Index j=0; j<5; j++) {
+                    for(Index k=0; k<5; k++) {
+                        // FIXME: figure out why it is (j,5+k) and not (5+j,k)
+                        values[idx++] += lambda[5*con_idx+2*N_dof] * ddx(j,5+k);
+                    }
+                }
+                for(Index j=0; j<5; j++) {
+                    for(Index k=0; k<=j; k++) {
+                        values[idx++] += lambda[5*con_idx+2*N_dof] * ddx(5+j,5+k);
+                    }
+                }
+            }
         }
     }
     
     return true;
+}
+
+void Acrobot::dump_variables(const char* fname, Index n, const Number* x)
+{
+    std::ofstream outfile(fname);
+    
+    Index col_idx = 1;
+    for(Index j=0; j<N_dof; j++)
+        outfile << "#:" << col_idx++ << ":q_" << j << "\n";
+    for(Index j=0; j<N_dof; j++)
+        outfile << "#:" << col_idx++ << ":qdot_" << j << "\n";
+    for(Index j=0; j<N_ctrl; j++)
+        outfile << "#:" << col_idx++ << ":u_" << j << "\n";
+    outfile << "#:" << col_idx++ << ":cint" << std::endl;
+    
+    for(Index i=0; i<=N_intervals; i++) {
+        outfile << (i*dt) << " ";
+        for(Index j=0; j<N_dof; j++)
+            outfile << x[index_of_q(i, j)] << " ";
+        for(Index j=0; j<N_dof; j++)
+            outfile << x[index_of_v(i, j)] << " ";
+        for(Index j=0; j<N_ctrl; j++)
+            outfile << x[index_of_u(i, j)] << " ";
+        outfile << x[index_of_w(i)] << std::endl;
+    }
 }
 
 void Acrobot::finalize_solution(Ipopt::SolverReturn status,
@@ -562,10 +813,6 @@ void Acrobot::finalize_solution(Ipopt::SolverReturn status,
 {
     std::cout << "f(x*) = " << obj_value << std::endl;
     
-    for(Index i=0; i<=N_intervals; i++) {
-        std::cerr << (i*dt) << " ";
-        std::cerr << x[index_of_q(i, 0)] << " " << x[index_of_q(i, 1)] << " ";
-        std::cerr << x[index_of_v(i, 0)] << " " << x[index_of_v(i, 1)] << " ";
-        std::cerr << x[index_of_w(i)] << " " << x[index_of_u(i, 0)] << std::endl;
-    }
+    dump_variables("output.dat", n, x);
+    dump_constraints("constraints.dat", n, x);
 }
