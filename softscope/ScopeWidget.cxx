@@ -68,7 +68,7 @@ void ScopeWidget::generateGrid()
     fGridPixmap.fill(Qt::black);
     int w = fGridPixmap.width(), h= fGridPixmap.height();
     
-    painter.setPen(QPen(Qt::gray, 1, Qt::DotLine));
+    painter.setPen(QPen(Qt::gray, 1, Qt::DashLine));
     for(int x=1; x<10; ++x) {
         int xp = x*(w-3)/10 + 1;
         painter.drawLine(xp, 2, xp, h-3);
