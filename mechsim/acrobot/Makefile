@@ -12,5 +12,5 @@ simprint: Acrobot.cxx Acrobot.h simprint.cxx Makefile
 simview: Acrobot.cxx Acrobot.h simview.cxx Makefile
 	g++ -o $@ $(CFLAGS) $(LDFLAGS) $(LIBS) Acrobot.cxx simview.cxx
 
-playback: Playback.cxx Playback.h CSVFile.cxx CSVFile.h playback.cxx Makefile
-	g++ -o $@ $(CFLAGS) $(LDFLAGS) -lmechsim Playback.cxx CSVFile.cxx playback.cxx
+playback: Playback.cxx Playback.h CSVFile.cxx CSVFile.h playback_main.cxx Makefile
+	g++ -o $@ $(CFLAGS) $(LDFLAGS) -lmechsim Playback.cxx CSVFile.cxx playback_main.cxx
