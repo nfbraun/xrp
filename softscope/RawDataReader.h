@@ -1,5 +1,5 @@
-#ifndef __RAWDATAREADER_H__
-#define __RAWDATAREADER_H__
+#ifndef SSCOPE_RAWDATAREADER_H
+#define SSCOPE_RAWDATAREADER_H
 
 #include <QFile>
 

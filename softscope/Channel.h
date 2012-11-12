@@ -1,5 +1,5 @@
-#ifndef __CHANNEL_H__
-#define __CHANNEL_H__
+#ifndef SSCOPE_CHANNEL_H
+#define SSCOPE_CHANNEL_H
 
 #include <QColor>
 

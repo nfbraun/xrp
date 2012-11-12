@@ -1,5 +1,5 @@
-#ifndef __SCOPEWIDGET_H__
-#define __SCOPEWIDGET_H__
+#ifndef SSCOPE_SCOPEWIDGET_H
+#define SSCOPE_SCOPEWIDGET_H
 
 #include "DataReader.h"
 #include "Channel.h"

@@ -1,5 +1,5 @@
-#ifndef __DATAREADER_H__
-#define __DATAREADER_H__
+#ifndef SSCOPE_DATAREADER_H
+#define SSCOPE_DATAREADER_H
 
 #include "RawDataReader.h"
 

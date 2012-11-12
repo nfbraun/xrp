@@ -1,5 +1,5 @@
-#ifndef __SCOPEWINDOW_H__
-#define __SCOPEWINDOW_H__
+#ifndef SSCOPE_SCOPEWINDOW_H
+#define SSCOPE_SCOPEWINDOW_H
 
 #include <QWidget>
 #include <QSignalMapper>
