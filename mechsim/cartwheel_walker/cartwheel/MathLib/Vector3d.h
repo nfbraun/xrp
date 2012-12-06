@@ -2,6 +2,7 @@
 
 #include <math.h>
 #include <MathLib/MathLib.h>
+#include <Eigen/Dense>
 
 /*================================================================================================================================================================*
  | This class implements a Vector3d in a three dimensional space. Note that the w-coordinate of a vector expressed in homogenous coordinates is 0.                  |
@@ -46,6 +47,10 @@ public:
 		this->y = a.z * b.x - a.x * b.z;
 		this->z = a.x * b.y - a.y * b.x;
 	}
+	
+	static Vector3d Zero() { return Vector3d(0., 0., 0.); }
+	
+	Eigen::Vector3d toEigen() { return Eigen::Vector3d(x, y, z); }
 
 	/**
 		addition of two vectors - results in a new vector.
@@ -197,9 +202,10 @@ public:
 	/**
 		computes the dot product of this vector with v.
 	*/
-	inline double dotProductWith(const Vector3d &v) const{
+	inline double dot(const Vector3d &v) const {
 		return (this->x * v.x + this->y*v.y + this->z * v.z);
 	}
+	inline double dotProductWith(const Vector3d& v) const { return dot(v); }
 	/**
 		computes the cross product of this vector with v (*this x v).
 	*/

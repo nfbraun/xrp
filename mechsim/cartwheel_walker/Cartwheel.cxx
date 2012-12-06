@@ -10,11 +10,12 @@
 #include <Core/TurnController.h>
 #include <Core/WorldOracle.h>
 
+const char* PhiNames[] = { "LH0", "LH1", "LH2", "LK", "LA0", "LA1",
+                           "RH0", "RH1", "RH2", "RK", "RA0", "RA1" };
+
 //#define DEBUG_FIXED_TORSO
 
-// ** Simulation parameters **
-const int Cartwheel::STEP_PER_SEC = 25;
-const int Cartwheel::INT_PER_STEP = 100;   // Integration intervals per timestep
+// ** Title **
 const char Cartwheel::TITLE[] = "Cartwheel Walker";
 
 // ** Display parameters (these do not enter into the simulation) **
@@ -191,7 +192,9 @@ void CartState::DrawRobotOutline() const
     glPopMatrix();
 }
 
-Cartwheel::Cartwheel()
+Cartwheel::Cartwheel(unsigned int stepPerSec, unsigned int intPerStep)
+    : fStepPerSec(stepPerSec),
+      fIntPerStep(intPerStep)   // Integration intervals per timestep
 {
     fT = 0.;
     
@@ -236,7 +239,7 @@ Cartwheel::~Cartwheel()
     dWorldDestroy(fWorld);
 }
 
-void Cartwheel::Collide(dGeomID g1, dGeomID g2, RigidBody* rb1, RigidBody* rb2)
+bool Cartwheel::Collide(dGeomID g1, dGeomID g2, RigidBody* rb1, RigidBody* rb2)
 {
     const int MAX_CONTACTS = 4;
     dContact contact[MAX_CONTACTS];
@@ -262,6 +265,8 @@ void Cartwheel::Collide(dGeomID g1, dGeomID g2, RigidBody* rb1, RigidBody* rb2)
             fJointFeedbackCount++;
         }
     }
+    
+    return (num_contacts > 0);
 }
 
 void Cartwheel::BodyAddTorque(dBodyID body, Vector3d torque)
@@ -269,20 +274,8 @@ void Cartwheel::BodyAddTorque(dBodyID body, Vector3d torque)
     dBodyAddTorque(body, torque.x, torque.y, torque.z);
 }
 
-void Cartwheel::AdvanceInTime(double dt, const JointTorques& torques)
+void Cartwheel::ApplyTorques(const JointTorques& torques)
 {
-    //restart the counter for the joint feedback terms
-    fJointFeedbackCount = 0;
-    
-    //go through all the joints in the world, and apply their torques to the parent and child rb's
-    /* for(int jid=0; jid<J_MAX; jid++) {
-        KTJoint* joint = fCharacter->getJoints()[jid];
-        Vector3d t = joint->torque;
-        //we will apply to the parent a positive torque, and to the child a negative torque
-        dBodyAddTorque(fRobot->getODEBody(joint->parent), t.x, t.y, t.z);
-        dBodyAddTorque(fRobot->getODEBody(joint->child), -t.x, -t.y, -t.z);
-    } */
-    
     BodyAddTorque(fRobot->fPelvisB, torques.get(J_L_HIP));
     BodyAddTorque(fRobot->fLUpperLegB, -torques.get(J_L_HIP));
     
@@ -300,7 +293,15 @@ void Cartwheel::AdvanceInTime(double dt, const JointTorques& torques)
     
     BodyAddTorque(fRobot->fRLowerLegB, torques.get(J_R_ANKLE));
     BodyAddTorque(fRobot->fRFootB, -torques.get(J_R_ANKLE));
+}
+
+void Cartwheel::AdvanceInTime(double dt, const JointTorques& torques)
+{
+    //restart the counter for the joint feedback terms
+    fJointFeedbackCount = 0;
     
+    //go through all the joints in the world, and apply their torques to the parent and child rb's
+    ApplyTorques(torques);
     
     //clear the previous list of contact forces
     fContactPoints.clear();
@@ -309,8 +310,8 @@ void Cartwheel::AdvanceInTime(double dt, const JointTorques& torques)
     dJointGroupEmpty(fContactGroup);
     //initiate the collision detection
     #ifndef DEBUG_FIXED_TORSO
-    Collide(fFloorG, fRobot->fLFootG, fFloorRB, fRobot->fLFootRB);
-    Collide(fFloorG, fRobot->fRFootG, fFloorRB, fRobot->fRFootRB);
+    fDebugContactL = Collide(fFloorG, fRobot->fLFootG, fFloorRB, fRobot->fLFootRB);
+    fDebugContactR = Collide(fFloorG, fRobot->fRFootG, fFloorRB, fRobot->fRFootRB);
     #endif
     
     //advance the simulation
@@ -366,13 +367,14 @@ void Cartwheel::setRBStateFromODE(RigidBody* rb)
 
 void Cartwheel::Advance()
 {
-    const double dt = 1./(STEP_PER_SEC * INT_PER_STEP);
+    const double dt = 1./(fStepPerSec * fIntPerStep);
     
-    for(int i=0; i<INT_PER_STEP; ++i) {
+    for(int i=0; i<fIntPerStep; ++i) {
         //dBodyAddForce(fRobot->fPelvisB, 40.*sin(fT), 40.*cos(fT), 0.);
         
         JointTorques torques = fHighController->performPreTasks(dt, &fContactPoints);
         //fLowController->performPreTasks(dt, &fContactPoints);
+        
         AdvanceInTime(dt, torques);
         fT += dt;
         //fLowController->performPostTasks(dt, &fContactPoints);
@@ -382,6 +384,46 @@ void Cartwheel::Advance()
         
         fDebugJTorques = torques;
     }
+}
+
+void printMat(const dReal* x)
+{
+    std::cout << x[0] << " " << x[1] << " " << x[2] << std::endl;
+    std::cout << x[4] << " " << x[5] << " " << x[6] << std::endl;
+    std::cout << x[8] << " " << x[9] << " " << x[10] << std::endl;
+    std::cout << std::endl;
+}
+
+void decompRot3(const dReal* R_p, const dReal* R_c, double& phi0, double& phi1, double& phi2)
+{
+    const double R0 = R_p[0]*R_c[0] + R_p[4]*R_c[4] + R_p[8]*R_c[8];
+    const double R1 = R_p[0]*R_c[1] + R_p[4]*R_c[5] + R_p[8]*R_c[9];
+    const double R2 = R_p[0]*R_c[2] + R_p[4]*R_c[6] + R_p[8]*R_c[10];
+    const double R6 = R_p[1]*R_c[2] + R_p[5]*R_c[6] + R_p[9]*R_c[10];
+    const double R10 = R_p[2]*R_c[2] + R_p[6]*R_c[6] + R_p[10]*R_c[10];
+    
+    phi1 = asin(-R2);
+    const double c_phi1 = cos(phi1);
+    
+    phi0 = atan2(R1/c_phi1, R0/c_phi1);
+    phi2 = atan2(R6/c_phi1, R10/c_phi1);
+}
+
+void transformOmega(const dReal* R_c, const dReal* omega_p, const dReal* omega_c, double& omega0, double& omega1, double& omega2)
+{
+    const double omega[3] = 
+        { omega_c[0] - omega_p[0], omega_c[1] - omega_p[1], omega_c[2] - omega_p[2] };
+    
+    omega0 = R_c[0] * omega[0] + R_c[4] * omega[1] + R_c[8] * omega[2];
+    omega1 = R_c[1] * omega[0] + R_c[5] * omega[1] + R_c[9] * omega[2];
+    omega2 = R_c[2] * omega[0] + R_c[6] * omega[1] + R_c[10] * omega[2];
+}
+
+void transformTorque(const dReal* R, const Eigen::Vector3d& torque, double& t0, double& t1, double& t2)
+{
+    t0 = R[0] * torque[0] + R[4] * torque[1] + R[8] * torque[2];
+    t1 = R[1] * torque[0] + R[5] * torque[1] + R[9] * torque[2];
+    t2 = R[2] * torque[0] + R[6] * torque[1] + R[10] * torque[2];
 }
 
 CartState Cartwheel::GetCurrentState()
@@ -422,6 +464,66 @@ CartState Cartwheel::GetCurrentState()
     
     Vector3d com = fRobot->fCharacter->getCOM();
     state.fCoM = Eigen::Vector3d(com.x, com.y, com.z);
+    
+    /*** left leg ***/
+    Eigen::Vector3d lKneeAxis = ODE::JointGetHingeAxis(fRobot->fLKneeJ);
+    
+    // FIXME: figure out the signs
+    decompRot3(dBodyGetRotation(fRobot->fPelvisB), dBodyGetRotation(fRobot->fLUpperLegB),
+        state.fRobot.phi[LH0], state.fRobot.phi[LH1], state.fRobot.phi[LH2]);
+    state.fRobot.phi[LK] = -dJointGetHingeAngle(fRobot->fLKneeJ);
+    state.fRobot.phi[LA0] = -dJointGetUniversalAngle1(fRobot->fLAnkleJ);
+    state.fRobot.phi[LA1] = -dJointGetUniversalAngle2(fRobot->fLAnkleJ);
+    
+    transformOmega(dBodyGetRotation(fRobot->fLFootB),
+                   dBodyGetAngularVel(fRobot->fLLowerLegB),
+                   dBodyGetAngularVel(fRobot->fLFootB),
+                   state.fRobot.omega[LH0], state.fRobot.omega[LH1], state.fRobot.omega[LH2]);
+    
+    state.fRobot.omega[LK] = dJointGetHingeAngleRate(fRobot->fLKneeJ);
+    state.fRobot.omega[LA0] = dJointGetUniversalAngle1Rate(fRobot->fLAnkleJ);
+    state.fRobot.omega[LA1] = dJointGetUniversalAngle2Rate(fRobot->fLAnkleJ);
+    
+    transformTorque(dBodyGetRotation(fRobot->fLUpperLegB),
+                    state.fJTorques[J_L_HIP],
+                    state.fTorques[LH0], state.fTorques[LH1], state.fTorques[LH2]);
+    
+    state.fTorques[LK] = lKneeAxis.dot(fDebugJTorques.get(J_L_KNEE).toEigen());
+    state.fTorques[LA0] = ODE::JointGetUniversalAxis1(fRobot->fLAnkleJ).dot(fDebugJTorques.get(J_L_ANKLE).toEigen());
+    state.fTorques[LA1] = ODE::JointGetUniversalAxis2(fRobot->fLAnkleJ).dot(fDebugJTorques.get(J_L_ANKLE).toEigen());
+    
+    /*** right leg ***/
+    Eigen::Vector3d rKneeAxis = ODE::JointGetHingeAxis(fRobot->fRKneeJ);
+    
+    // FIXME: figure out the signs
+    decompRot3(dBodyGetRotation(fRobot->fPelvisB), dBodyGetRotation(fRobot->fRUpperLegB),
+        state.fRobot.phi[RH0], state.fRobot.phi[RH1], state.fRobot.phi[RH2]);
+    state.fRobot.phi[RK] = -dJointGetHingeAngle(fRobot->fRKneeJ);
+    state.fRobot.phi[RA0] = -dJointGetUniversalAngle1(fRobot->fRAnkleJ);
+    state.fRobot.phi[RA1] = -dJointGetUniversalAngle2(fRobot->fRAnkleJ);
+    
+    transformOmega(dBodyGetRotation(fRobot->fRFootB),
+                   dBodyGetAngularVel(fRobot->fRLowerLegB),
+                   dBodyGetAngularVel(fRobot->fRFootB),
+                   state.fRobot.omega[RH0], state.fRobot.omega[RH1], state.fRobot.omega[RH2]);
+    
+    state.fRobot.omega[RK] = dJointGetHingeAngleRate(fRobot->fRKneeJ);
+    state.fRobot.omega[RA0] = dJointGetUniversalAngle1Rate(fRobot->fRAnkleJ);
+    state.fRobot.omega[RA1] = dJointGetUniversalAngle2Rate(fRobot->fRAnkleJ);
+    
+    transformTorque(dBodyGetRotation(fRobot->fRUpperLegB),
+                    state.fJTorques[J_R_HIP],
+                    state.fTorques[RH0], state.fTorques[RH1], state.fTorques[RH2]);
+    
+    state.fTorques[RK] = rKneeAxis.dot(fDebugJTorques.get(J_R_KNEE).toEigen());
+    state.fTorques[RA0] = ODE::JointGetUniversalAxis1(fRobot->fRAnkleJ).dot(fDebugJTorques.get(J_R_ANKLE).toEigen());
+    state.fTorques[RA1] = ODE::JointGetUniversalAxis2(fRobot->fRAnkleJ).dot(fDebugJTorques.get(J_R_ANKLE).toEigen());
+    
+    state.fPhi = fLowController->getPhase();
+    state.fStance = fLowController->getStance();
+    
+    state.fContactL = fDebugContactL;
+    state.fContactR = fDebugContactR;
     
     return state;
 }

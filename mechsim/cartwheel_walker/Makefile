@@ -54,7 +54,7 @@ LIBS = -lode -lmechsim -lgsl -lblas
 
 .PHONY: all clean
 
-all: simview
+all: simview simprint
 
 clean:
 	rm -f $(OBJS)
@@ -63,6 +63,9 @@ clean:
 
 simview: $(OBJS) simview.o
 	g++ -o $@ $(LDFLAGS) $(LIBS) $(CARTWHEEL_LIBS) $(OBJS) simview.o
+
+simprint: $(OBJS) simprint.o
+	g++ -o $@ $(LDFLAGS) $(LIBS) $(CARTWHEEL_LIBS) $(OBJS) simprint.o
 
 %.o: %.cxx $(HEADERS) $(CW_HEADERS) Makefile
 	g++ $(CFLAGS) -o $@ -c $<
