@@ -12,6 +12,7 @@ cartwheel/Physics/RigidBody.cxx \
 cartwheel/Core/BehaviourController.cxx \
 cartwheel/Core/Character.cxx \
 cartwheel/Core/IKVMCController.cxx \
+cartwheel/Core/InvPendulum.cxx \
 cartwheel/Core/PoseController.cxx \
 cartwheel/Core/SimBiController.cxx \
 cartwheel/Core/SimGlobals.cxx \
@@ -37,6 +38,7 @@ cartwheel/Core/BehaviourController.h \
 cartwheel/Core/Character.h \
 cartwheel/Core/Controller.h \
 cartwheel/Core/IKVMCController.h \
+cartwheel/Core/InvPendulum.h \
 cartwheel/Core/PoseController.h \
 cartwheel/Core/SimBiConState.h \
 cartwheel/Core/SimBiController.h \
