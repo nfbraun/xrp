@@ -176,11 +176,18 @@ AcroDyn::DResult AcroDyn::qddot_full(const Vector_Ndof& q, const Vector_Ndof& qd
         }
     }
     
-    Eigen::Matrix<Number, 2, 1> b;
-    b << 0, u;
+    Eigen::Matrix<Number, N_dof, N_ctrl> B;
+    // switch between fully-actuated and underactuated Acrobot
+    if(N_ctrl == 1) {
+        B << 0.,
+             1.;
+    } else {
+        B << 1., 0.,
+             0., 1.;
+    }
     
     // Helper g and derivatives
-    Eigen::Matrix<Number, 2, 1> g = b - c - dV_dq;
+    Eigen::Matrix<Number, 2, 1> g = B*u - c - dV_dq;
     
     Eigen::Matrix<Number, 2, 1> dg_dq[2];
     for(unsigned int a=0; a<2; a++) {
@@ -197,61 +204,65 @@ AcroDyn::DResult AcroDyn::qddot_full(const Vector_Ndof& q, const Vector_Ndof& qd
     DResult result;
     
     // f
-    result.f = mi * (b - c - dV_dq);
+    result.f = mi * (B*u - c - dV_dq);
     
     // df_dq
-    result.df[0] = dmi_dq[0] * g + mi * dg_dq[0];
-    result.df[1] = dmi_dq[1] * g + mi * dg_dq[1];
+    for(unsigned int a = 0; a < N_dof; a++)
+        result.df[a] = dmi_dq[a] * g + mi * dg_dq[a];
     
     // df_qdot
-    result.df[2] = mi * (-dc_dqdot[0]);
-    result.df[3] = mi * (-dc_dqdot[1]);
+    for(unsigned int a = 0; a < N_dof; a++)
+        result.df[a + N_dof] = mi * (-dc_dqdot[a]);
     
     // df_du
-    Eigen::Matrix<Number, 2, 1> bp;
-    bp << 0, 1;
-    
-    result.df[4] = mi * bp;
+    for(unsigned int a = 0; a < N_ctrl; a++)
+        result.df[a + 2*N_dof] = (mi * B).block<N_dof,1>(0,a);
     
     // d2f_dqq
-    for(unsigned int a=0; a<2; a++) {
-        for(unsigned int b=0; b<2; b++) {
+    for(unsigned int a=0; a<N_dof; a++) {
+        for(unsigned int b=0; b<N_dof; b++) {
             result.ddf[a][b] = d2mi_dqq[a][b] * g + dmi_dq[a] * dg_dq[b] 
                                   + dmi_dq[b] * dg_dq[a] + mi * d2g_dqq[a][b];
         }
     }
     
     // d2f_dqdotqdot
-    for(unsigned int a=0; a<2; a++) {
-        for(unsigned int b=0; b<2; b++) {
-            result.ddf[a+2][b+2] = -mi * d2c_dqdotqdot[a][b];
+    for(unsigned int a=0; a<N_dof; a++) {
+        for(unsigned int b=0; b<N_dof; b++) {
+            result.ddf[a+N_dof][b+N_dof] = -mi * d2c_dqdotqdot[a][b];
         }
     }
     
     // d2f_duu
-    result.ddf[4][4] << 0., 0.;
+    for(unsigned int a=0; a<N_ctrl; a++) {
+        for(unsigned int b=0; b<N_ctrl; b++) {
+            result.ddf[a+2*N_dof][b+2*N_dof].setZero();
+        }
+    }
     
     // d2f_dq_dqdot
-    for(unsigned int a=0; a<2; a++) {
-        for(unsigned int b=0; b<2; b++) {
-            result.ddf[a][b+2] = -dmi_dq[a] * dc_dqdot[b] - mi * d2c_dq_dqdot[a][b];
-            result.ddf[b+2][a] = result.ddf[a][b+2];
+    for(unsigned int a=0; a<N_dof; a++) {
+        for(unsigned int b=0; b<N_dof; b++) {
+            result.ddf[a][b+N_dof] = -dmi_dq[a] * dc_dqdot[b] - mi * d2c_dq_dqdot[a][b];
+            result.ddf[b+N_dof][a] = result.ddf[a][b+N_dof];
         }
     }
     
     // d2f_dq_du
-    result.ddf[0][4] = dmi_dq[0] * bp;
-    result.ddf[1][4] = dmi_dq[1] * bp;
-    
-    result.ddf[4][0] = result.ddf[0][4];
-    result.ddf[4][1] = result.ddf[1][4];
+    for(unsigned int a=0; a<N_dof; a++) {
+        for(unsigned int b=0; b<N_ctrl; b++) {
+            result.ddf[a][b+2*N_dof] = (dmi_dq[a] * B).block<N_dof,1>(0,b);
+            result.ddf[b+2*N_dof][a] = result.ddf[a][b+2*N_dof];
+        }
+    }
     
     // d2f_dqdot_du
-    result.ddf[2][4] << 0., 0.;
-    result.ddf[3][4] << 0., 0.;
-    
-    result.ddf[4][2] = result.ddf[2][4];
-    result.ddf[4][3] = result.ddf[3][4];
+    for(unsigned int a=0; a<N_dof; a++) {
+        for(unsigned int b=0; b<N_ctrl; b++) {
+            result.ddf[a+N_dof][b+2*N_dof].setZero();
+            result.ddf[b+2*N_dof][a+N_dof].setZero();
+        }
+    }
     
     return result;
 }

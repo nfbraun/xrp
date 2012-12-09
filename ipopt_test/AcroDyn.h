@@ -7,8 +7,8 @@
 using Ipopt::Number;
 using Ipopt::Index;
 
-const Index N_dof = 2;
-const Index N_ctrl = 1;
+const Index N_dof = 2;   // number of degrees of freedom
+const Index N_ctrl = 2;  // number of controls
 
 typedef Eigen::Matrix<Number, N_dof, 1> Vector_Ndof;
 typedef Eigen::Matrix<Number, N_ctrl, 1> Vector_Nctrl;

@@ -5,6 +5,8 @@
 #include <adolc/adolc.h>
 #include <Eigen/Dense>
 
+#include "AcroDyn.h"
+
 using Ipopt::Index;
 using Ipopt::Number;
 
@@ -37,13 +39,11 @@ class Acrobot: public Ipopt::TNLP
     void dump_variables(const char* fname, Index n, const Number* x);
     void dump_constraints(const char* fname, Index n, const Number* x);
     
-    Eigen::Matrix2d Q_qq, Q_qqdot, Q_qdotqdot;
-    Eigen::Matrix<double, 1, 1> R;
+    Eigen::Matrix<Number, N_dof, N_dof> Q_qq, Q_qqdot, Q_qdotqdot;
+    Eigen::Matrix<Number, N_ctrl, N_ctrl> R;
   
   public:
     /* *** */
-    static const Index N_dof;
-    static const Index N_controls;
     static const double t_end;
     
     static const Index N_intervals, N_nodes;

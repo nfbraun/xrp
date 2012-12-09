@@ -26,10 +26,17 @@ CFLAGS        = -O0 -fPIC
 
 ALL_LIBRARIES = $(PSOPT_LIBS) $(DMATRIX_LIBS)  $(FLIBS) $(SPARSE_LIBS) $(IPOPT_LIBS)  $(ADOLC_LIBS)
 
+.PHONY: all
+
+all: acrobot acrobot2
+
 %.o : %.cxx
 	$(CXX) -c $(CXXFLAGS) $< -o $@
 
 acrobot: acrobot.o $(PSOPT_LIBS) $(DMATRIX_LIBS) $(SPARSE_LIBS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ -L$(LIBDIR) $(ALL_LIBRARIES) $(LDFLAGS)
+
+acrobot2: acrobot2.o $(PSOPT_LIBS) $(DMATRIX_LIBS) $(SPARSE_LIBS)
 	$(CXX) $(CXXFLAGS) $^ -o $@ -L$(LIBDIR) $(ALL_LIBRARIES) $(LDFLAGS)
 
 pendulum: pendulum.o $(PSOPT_LIBS) $(DMATRIX_LIBS) $(SPARSE_LIBS)

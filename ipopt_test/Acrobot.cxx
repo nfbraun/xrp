@@ -1,5 +1,4 @@
 #include "Acrobot.h"
-#include "AcroDyn.h"
 #include "CSVFile.h"
 #include <iostream>
 #include <fstream>
@@ -7,16 +6,14 @@
 #include <stdexcept>
 #include <Eigen/Dense>
 
-const Index Acrobot::N_dof = 2;      // number of degrees of freedom
-const Index Acrobot::N_controls = 1; // number of controls
-const double Acrobot::t_end = 5.3;   // end time [s]
+const double Acrobot::t_end = 6.;   // end time [s]
 
 // number of time intervals/nodes
 const Index Acrobot::N_intervals = 500;
 const Index Acrobot::N_nodes = N_intervals + 1;
 
 // number of optimization variables
-const Index Acrobot::N_vars_per_node = 2*N_dof + N_controls + 1;
+const Index Acrobot::N_vars_per_node = 2*N_dof + N_ctrl + 1;
 const Index Acrobot::N_vars = N_vars_per_node*N_nodes;
 
 // number of constraints
@@ -26,9 +23,9 @@ const Index Acrobot::N_constraints = N_intervals*(2*N_dof+1) + 9;
 const double Acrobot::dt = t_end/N_intervals;
 
 const Index Acrobot::N_nnz_jac_g =
-      N_intervals * N_dof * 2 * (2 * N_dof + N_controls)   // q constraints
-    + N_intervals * N_dof * 2 * (2 * N_dof + N_controls)   // qdot constraints
-    + N_intervals * (2 + 2*N_controls + 4*N_dof)           // control integration constraints
+      N_intervals * N_dof * 2 * (2 * N_dof + N_ctrl)   // q constraints
+    + N_intervals * N_dof * 2 * (2 * N_dof + N_ctrl)   // qdot constraints
+    + N_intervals * (2 + 2*N_ctrl + 4*N_dof)           // control integration constraints
     + 2*2*N_dof                                            // (q,qdot) boundary constraints
     + 1;                                                   // control integration boundary constraint
 
@@ -37,7 +34,7 @@ typedef Eigen::Matrix<Number, N_ctrl, 1> Vector_Nctrl;
 
 Index calc_N_nnz_h_lag()
 {
-    Index N_vars = 2*Acrobot::N_dof + Acrobot::N_controls;
+    Index N_vars = 2*N_dof + N_ctrl;
     Index on_diag_block_size = N_vars * (N_vars+1) / 2;
     Index off_diag_block_size = N_vars * N_vars;
     
@@ -47,13 +44,13 @@ Index calc_N_nnz_h_lag()
 const Index Acrobot::N_nnz_h_lag = calc_N_nnz_h_lag();
 
 Index index_of_q(Index node, Index dof)
-    { return Acrobot::N_dof * node + dof; }
+    { return N_dof * node + dof; }
 Index index_of_v(Index node, Index dof)
-    { return Acrobot::N_dof * Acrobot::N_nodes + Acrobot::N_dof * node + dof; }
+    { return N_dof * Acrobot::N_nodes + N_dof * node + dof; }
 Index index_of_w(Index node)   // w is integral of total cost up to current node
-    { return 2 * Acrobot::N_dof * Acrobot::N_nodes + node; }
+    { return 2 * N_dof * Acrobot::N_nodes + node; }
 Index index_of_u(Index node, Index ctrl)
-    { return (2 * Acrobot::N_dof + 1) * Acrobot::N_nodes + Acrobot::N_controls * node + ctrl; }
+    { return (2 * N_dof + 1) * Acrobot::N_nodes + N_ctrl * node + ctrl; }
 
 Acrobot::Acrobot()
     : Ipopt::TNLP()
@@ -62,7 +59,11 @@ Acrobot::Acrobot()
     Q_qqdot.setZero();
     Q_qdotqdot.setZero();
     
-    R << 200.;
+    if(N_ctrl == 1) {
+        R << 200.;
+    } else {
+        R << 200., 0., 0., 200.;
+    }
 }
 
 /* void Acrobot::constraint_test()
@@ -157,21 +158,21 @@ bool Acrobot::get_starting_point(Index n, bool init_x, Number* x,
         while((file_idx < dataFile.data().size())
             && dataFile.data().at(file_idx).at(0) < t) file_idx++;
         
-        double q0 = GetInterpValue(dataFile, 1, t, file_idx);
-        double q1 = GetInterpValue(dataFile, 2, t, file_idx);
-        double v0 = GetInterpValue(dataFile, 3, t, file_idx);
-        double v1 = GetInterpValue(dataFile, 4, t, file_idx);
-        double u = GetInterpValue(dataFile, 5, t, file_idx);
+        for(Index i=0; i<N_dof; i++)
+            x[index_of_q(node_idx, i)] = GetInterpValue(dataFile, 1+i, t, file_idx);
         
-        x[index_of_q(node_idx, 0)] = q0;
-        x[index_of_q(node_idx, 1)] = q1;
-        x[index_of_v(node_idx, 0)] = v0;
-        x[index_of_v(node_idx, 1)] = v1;
-        x[index_of_u(node_idx, 0)] = u;
+        for(Index i=0; i<N_dof; i++)
+            x[index_of_v(node_idx, i)] = GetInterpValue(dataFile, 1+N_dof+i, t, file_idx);
+        
+        for(Index i=0; i<N_ctrl; i++)
+            x[index_of_u(node_idx, i)] = GetInterpValue(dataFile, 1+2*N_dof+i, t, file_idx);
         
         x[index_of_w(node_idx)] = w;
         
-        w += (q0*q0 + q1*q1 + 100*u*u)*dt;
+        const Eigen::Map<const Vector_Ndof>  q(  &x[index_of_q(node_idx, 0)]   );
+        const Eigen::Map<const Vector_Nctrl> u(  &x[index_of_u(node_idx, 0)]   );
+        
+        w += (q.dot(Q_qq * q)/2. + u.dot(R * u)/2.)*dt;
     }
     
     return true;
@@ -245,7 +246,7 @@ bool Acrobot::eval_g(Index n, const Number* x, bool new_x, Index m, Number* g)
         for(Index j=0; j<N_dof; j++)
             g[idx++] = (result_c.f - vdot_c)[j];
         
-        // control integration constraints
+        // control integration constraint
         const Number l_i =   q_i.dot(Q_qq * q_i)/2.
                            + q_i.dot(Q_qqdot * v_i)
                            + v_i.dot(Q_qdotqdot * v_i)/2.
@@ -373,8 +374,10 @@ bool Acrobot::eval_jac_g(Index n, const Number* x, bool new_x, Index m,
                     iRow[idx] = g_idx; jCol[idx] = index_of_v(i, k); idx++;
                     iRow[idx] = g_idx; jCol[idx] = index_of_v(i+1, k); idx++;
                 }
-                iRow[idx] = g_idx; jCol[idx] = index_of_u(i, 0); idx++;
-                iRow[idx] = g_idx; jCol[idx] = index_of_u(i+1, 0); idx++;
+                for(Index k=0; k<N_ctrl; k++) {
+                    iRow[idx] = g_idx; jCol[idx] = index_of_u(i, k); idx++;
+                    iRow[idx] = g_idx; jCol[idx] = index_of_u(i+1, k); idx++;
+                }
                 g_idx++;
             }
             
@@ -386,8 +389,10 @@ bool Acrobot::eval_jac_g(Index n, const Number* x, bool new_x, Index m,
                     iRow[idx] = g_idx; jCol[idx] = index_of_v(i, k); idx++;
                     iRow[idx] = g_idx; jCol[idx] = index_of_v(i+1, k); idx++;
                 }
-                iRow[idx] = g_idx; jCol[idx] = index_of_u(i, 0); idx++;
-                iRow[idx] = g_idx; jCol[idx] = index_of_u(i+1, 0); idx++;
+                for(Index k=0; k<N_ctrl; k++) {
+                    iRow[idx] = g_idx; jCol[idx] = index_of_u(i, k); idx++;
+                    iRow[idx] = g_idx; jCol[idx] = index_of_u(i+1, k); idx++;
+                }
                 g_idx++;
             }
             
@@ -463,8 +468,10 @@ bool Acrobot::eval_jac_g(Index n, const Number* x, bool new_x, Index m,
                     values[idx++] = dt/8.*result_i.df[N_dof+k](j) + 3./4. * djk;
                     values[idx++] = -dt/8.*result_i1.df[N_dof+k](j) + 3./4. * djk;
                 }
-                values[idx++] = dt/8.*result_i.df[2*N_dof](j);
-                values[idx++] = -dt/8.*result_i1.df[2*N_dof](j);
+                for(Index k=0; k<N_ctrl; k++) {
+                    values[idx++] = dt/8.*result_i.df[2*N_dof+k](j);
+                    values[idx++] = -dt/8.*result_i1.df[2*N_dof+k](j);
+                }
             }
             
             // qdot constraints
@@ -486,10 +493,12 @@ bool Acrobot::eval_jac_g(Index n, const Number* x, bool new_x, Index m,
                                     + result_i1.df[N_dof+k](j)/4.
                                     - 3./(2.*dt) * djk;
                 }
-                values[idx++] = result_c.df[2*N_dof](j)/2.
-                    + result_i.df[2*N_dof](j)/4.;
-                values[idx++] = result_c.df[2*N_dof](j)/2.
-                    + result_i1.df[2*N_dof](j)/4.;
+                for(Index k=0; k<N_ctrl; k++) {
+                    values[idx++] = result_c.df[2*N_dof+k](j)/2.
+                        + result_i.df[2*N_dof+k](j)/4.;
+                    values[idx++] = result_c.df[2*N_dof+k](j)/2.
+                        + result_i1.df[2*N_dof+k](j)/4.;
+                }
             }
             
             // control integration constraints
@@ -556,7 +565,7 @@ bool Acrobot::eval_h(Index n, const Number* x, bool new_x,
         bool new_lambda, Index nele_hess, Index* iRow, Index* jCol,
         Number* values)
 {
-    const Index block_len = 2*N_dof + N_controls;
+    const Index block_len = 2*N_dof + N_ctrl;
     const Index on_diag_block_size = block_len * (block_len+1) / 2;
     const Index off_diag_block_size = block_len * block_len;
     const Index con_stride = on_diag_block_size + off_diag_block_size;
@@ -572,7 +581,7 @@ bool Acrobot::eval_h(Index n, const Number* x, bool new_x,
                 
                 for(Index i=0; i<N_dof; i++) block_idx[b_idx++] = index_of_q(node_idx, i);
                 for(Index i=0; i<N_dof; i++) block_idx[b_idx++] = index_of_v(node_idx, i);
-                for(Index i=0; i<N_controls; i++) block_idx[b_idx++] = index_of_u(node_idx, i);
+                for(Index i=0; i<N_ctrl; i++) block_idx[b_idx++] = index_of_u(node_idx, i);
                 
                 assert(b_idx == block_len);
             }
@@ -593,7 +602,7 @@ bool Acrobot::eval_h(Index n, const Number* x, bool new_x,
                     
                     for(Index i=0; i<N_dof; i++) next_block_idx[b_idx++] = index_of_q(node_idx+1, i);
                     for(Index i=0; i<N_dof; i++) next_block_idx[b_idx++] = index_of_v(node_idx+1, i);
-                    for(Index i=0; i<N_controls; i++) next_block_idx[b_idx++] = index_of_u(node_idx+1, i);
+                    for(Index i=0; i<N_ctrl; i++) next_block_idx[b_idx++] = index_of_u(node_idx+1, i);
                     
                     assert(b_idx == block_len);
                 }
@@ -615,33 +624,33 @@ bool Acrobot::eval_h(Index n, const Number* x, bool new_x,
         
         /* The matrix centMap defines a linear map from
            (q_{i,0}, ..., q_{i,N_dof-1}, qdot_{i,0}, ..., qdot_{i,N_dof-1},
-            u_{i,0}, ..., u_{i,N_controls-1},
+            u_{i,0}, ..., u_{i,N_ctrl-1},
             q_{i+1,0}, ..., q_{i+1,N_dof-1}, qdot_{i+1,0}, ..., qdot_{i+1,N_dof-1},
-            u_{i+1,0}, ..., u_{i+1,N_controls-1})^T
+            u_{i+1,0}, ..., u_{i+1,N_ctrl-1})^T
            to
            (q_{c,0}, ..., q_{c,N_dof-1}, qdot_{c,0}, ..., qdot_{c,N_dof-1},
-            u_{c,0}, ..., u_{c,N_controls-1})^T
+            u_{c,0}, ..., u_{c,N_ctrl-1})^T
         */
-        Eigen::Matrix<double, 2*N_dof+N_controls, 2*(2*N_dof+N_controls)> centMap;
+        Eigen::Matrix<double, 2*N_dof+N_ctrl, 2*(2*N_dof+N_ctrl)> centMap;
         centMap.setZero();
         
         for(Index i=0; i<N_dof; i++) {
             centMap(i, i) = 1./2.;
             centMap(i, N_dof+i) = dt/8.;
-            centMap(i, 2*N_dof+N_controls+i) = 1./2.;
-            centMap(i, 2*N_dof+N_controls+N_dof+i) = -dt/8.;
+            centMap(i, 2*N_dof+N_ctrl+i) = 1./2.;
+            centMap(i, 2*N_dof+N_ctrl+N_dof+i) = -dt/8.;
         }
         
         for(Index i=0; i<N_dof; i++) {
             centMap(N_dof+i, i) = -3./(2.*dt);
             centMap(N_dof+i, N_dof+i) = -1./4.;
-            centMap(N_dof+i, 2*N_dof+N_controls+i) = 3./(2.*dt);
-            centMap(N_dof+i, 2*N_dof+N_controls+N_dof+i) = -1./4.;
+            centMap(N_dof+i, 2*N_dof+N_ctrl+i) = 3./(2.*dt);
+            centMap(N_dof+i, 2*N_dof+N_ctrl+N_dof+i) = -1./4.;
         }
         
-        for(Index i=0; i<N_controls; i++) {
+        for(Index i=0; i<N_ctrl; i++) {
             centMap(2*N_dof+i, 2*N_dof+i) = 1./2.;
-            centMap(2*N_dof+i, 2*N_dof+N_controls+2*N_dof+i) = 1./2.;
+            centMap(2*N_dof+i, 2*N_dof+N_ctrl+2*N_dof+i) = 1./2.;
         }
         
         /* The matrix costQ defines a quadratic form for the cost,
@@ -685,13 +694,13 @@ bool Acrobot::eval_h(Index n, const Number* x, bool new_x,
             // q constraints
             for(Index dof_idx=0; dof_idx < N_dof; dof_idx++) {
                 idx = con_idx*con_stride;
-                for(Index j=0; j<5; j++) {
+                for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
                     for(Index k=0; k<=j; k++) {
                         values[idx++] += lambda[5*con_idx+dof_idx] * (dt/8.) * result_i.ddf[j][k][dof_idx];
                     }
                 }
                 idx += off_diag_block_size; // jump over cross terms
-                for(Index j=0; j<5; j++) {
+                for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
                     for(Index k=0; k<=j; k++) {
                         values[idx++] -= lambda[5*con_idx+dof_idx] * (dt/8.) * result_i1.ddf[j][k][dof_idx];
                     }
@@ -701,41 +710,42 @@ bool Acrobot::eval_h(Index n, const Number* x, bool new_x,
             // qdot constraints
             for(Index dof_idx=0; dof_idx < N_dof; dof_idx++) {
                 idx = con_idx*con_stride;
-                for(Index j=0; j<5; j++) {
+                for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
                     for(Index k=0; k<=j; k++) {
                         values[idx++] += lambda[5*con_idx+N_dof+dof_idx] * (1./4.) * result_i.ddf[j][k][dof_idx];
                     }
                 }
                 idx += off_diag_block_size; // jump over cross terms
-                for(Index j=0; j<5; j++) {
+                for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
                     for(Index k=0; k<=j; k++) {
                         values[idx++] += lambda[5*con_idx+N_dof+dof_idx] * (1./4.) * result_i1.ddf[j][k][dof_idx];
                     }
                 }
                 idx = con_idx*con_stride;
                 {
-                    Eigen::Matrix<double, 5, 5> ddphiddot;
-                    for(Index j=0; j<5; j++) {
-                        for(Index k=0; k<5; k++) {
+                    Eigen::Matrix<double, 2*N_dof+N_ctrl, 2*N_dof+N_ctrl> ddphiddot;
+                    for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
+                        for(Index k=0; k<(2*N_dof+N_ctrl); k++) {
                             ddphiddot(j,k) = result_c.ddf[j][k][dof_idx];
                         }
                     }
-                    Eigen::Matrix<double, 10, 10> ddx = centMap.transpose() * ddphiddot * centMap;
+                    Eigen::Matrix<double, 2*(2*N_dof+N_ctrl), 2*(2*N_dof+N_ctrl)> ddx =
+                        centMap.transpose() * ddphiddot * centMap;
                     // Copy it
-                    for(Index j=0; j<5; j++) {
+                    for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
                         for(Index k=0; k<=j; k++) {
                             values[idx++] += lambda[5*con_idx+N_dof+dof_idx] * ddx(j,k);
                         }
                     }
-                    for(Index j=0; j<5; j++) {
-                        for(Index k=0; k<5; k++) {
+                    for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
+                        for(Index k=0; k<(2*N_dof+N_ctrl); k++) {
                             // FIXME: figure out why it is (j,5+k) and not (5+j,k)
-                            values[idx++] += lambda[5*con_idx+N_dof+dof_idx] * ddx(j,5+k);
+                            values[idx++] += lambda[5*con_idx+N_dof+dof_idx] * ddx(j,2*N_dof+N_ctrl+k);
                         }
                     }
-                    for(Index j=0; j<5; j++) {
+                    for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
                         for(Index k=0; k<=j; k++) {
-                            values[idx++] += lambda[5*con_idx+N_dof+dof_idx] * ddx(5+j,5+k);
+                            values[idx++] += lambda[5*con_idx+N_dof+dof_idx] * ddx(2*N_dof+N_ctrl+j, 2*N_dof+N_ctrl+k);
                         }
                     }
                 }
@@ -743,35 +753,36 @@ bool Acrobot::eval_h(Index n, const Number* x, bool new_x,
             
             // control integration
             idx = con_idx*con_stride;
-            for(Index j=0; j<5; j++) {
+            for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
                 for(Index k=0; k<=j; k++) {
                     values[idx++] += lambda[5*con_idx+2*N_dof] * (1./4.) * costQ(j,k);
                 }
             }
             idx += off_diag_block_size; // jump over cross terms
-            for(Index j=0; j<5; j++) {
+            for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
                 for(Index k=0; k<=j; k++) {
                     values[idx++] += lambda[5*con_idx+2*N_dof] * (1./4.) * costQ(j,k);
                 }
             }
             idx = con_idx*con_stride;
             {
-                Eigen::Matrix<double, 10, 10> ddx = centMap.transpose() * costQ * centMap;
+                Eigen::Matrix<double, 2*(2*N_dof+N_ctrl), 2*(2*N_dof+N_ctrl)> ddx =
+                    centMap.transpose() * costQ * centMap;
                 // Copy it
-                for(Index j=0; j<5; j++) {
+                for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
                     for(Index k=0; k<=j; k++) {
                         values[idx++] += lambda[5*con_idx+2*N_dof] * ddx(j,k);
                     }
                 }
-                for(Index j=0; j<5; j++) {
-                    for(Index k=0; k<5; k++) {
+                for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
+                    for(Index k=0; k<(2*N_dof+N_ctrl); k++) {
                         // FIXME: figure out why it is (j,5+k) and not (5+j,k)
-                        values[idx++] += lambda[5*con_idx+2*N_dof] * ddx(j,5+k);
+                        values[idx++] += lambda[5*con_idx+2*N_dof] * ddx(j, 2*N_dof+N_ctrl+k);
                     }
                 }
-                for(Index j=0; j<5; j++) {
+                for(Index j=0; j<(2*N_dof+N_ctrl); j++) {
                     for(Index k=0; k<=j; k++) {
-                        values[idx++] += lambda[5*con_idx+2*N_dof] * ddx(5+j,5+k);
+                        values[idx++] += lambda[5*con_idx+2*N_dof] * ddx(2*N_dof+N_ctrl+j, 2*N_dof+N_ctrl+k);
                     }
                 }
             }

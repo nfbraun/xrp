@@ -3,7 +3,7 @@ LIB_DIRS=-L/home/braun/Projects/Robot/opt/lib
 
 .PHONY: all
 
-all: brachistochrone doubleint pendulum acrobot acrodyn_deriv_test
+all: brachistochrone doubleint pendulum acrobot # acrodyn_deriv_test
 
 brachistochrone: brachistochrone_main.cxx Brachistochrone.cxx Makefile
 	g++ -o brachistochrone $(INCLUDE_DIRS) $(LIB_DIRS) -ladolc -lipopt -ldmumps_seq-4.9.2 brachistochrone_main.cxx Brachistochrone.cxx
