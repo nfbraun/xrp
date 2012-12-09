@@ -2,7 +2,6 @@
 #include <MathLib/Trajectory.h>
 
 BehaviourController::BehaviourController(Character* b, IKVMCController* llc, WorldOracle* w)
-    : ip(llc)
 {
 	this->bip = b;
 	this->lowLCon = llc;
@@ -56,7 +55,7 @@ void BehaviourController::setDesiredHeading(double v){
 }
 
 void BehaviourController::requestCoronalStepWidth(double corSW) {
-	ip.coronalStepWidth = corSW;
+	lowLCon->ip.coronalStepWidth = corSW;
 }
 
 void BehaviourController::adjustStepHeight(){
@@ -68,7 +67,7 @@ void BehaviourController::adjustStepHeight(){
 	//if the foot is high enough, we shouldn't do much about it... also, if we're close to the start or end of the
 	//walk cycle, we don't need to do anything... the thing below is a quadratic that is 1 at 0.5, 0 at 0 and 1...
 	double panicIntensity = -4 * lowLCon->getPhase() * lowLCon->getPhase() + 4 * lowLCon->getPhase();
-	panicIntensity *= ip.getPanicLevel();
+	panicIntensity *= lowLCon->ip.getPanicLevel();
 	lowLCon->panicHeight = panicIntensity * 0.05;
 }
 
@@ -78,10 +77,7 @@ void BehaviourController::adjustStepHeight(){
 void BehaviourController::simStepPlan(double dt){
 	lowLCon->updateSwingAndStanceReferences();
 	if (lowLCon->getPhase() <= 0.01)
-		ip.swingFootStartPos = lowLCon->getSwingFoot()->getWorldCoordinatesForPoint(bip->getJoints()[lowLCon->getSwingAnkleIndex()]->getChildJointPosition());
-
-	//compute desired swing foot location...
-	ip.setDesiredSwingFootLocation();
+		lowLCon->ip.swingFootStartPos = lowLCon->getSwingFoot()->getWorldCoordinatesForPoint(bip->getJoints()[lowLCon->getSwingAnkleIndex()]->getChildJointPosition());
 
 	//set some of these settings
 	//setUpperBodyPose(ubSagittalLean, ubCoronalLean, ubTwist);
@@ -114,7 +110,7 @@ void BehaviourController::conTransitionPlan(){
 	lowLCon->getState()->setStateTime(stepTime);
 
 	lowLCon->updateSwingAndStanceReferences();
-	ip.swingFootStartPos = lowLCon->getSwingFootPos();
+	lowLCon->ip.swingFootStartPos = lowLCon->getSwingFootPos();
 
 	//now prepare the step information for the following step:
 	lowLCon->swingFootHeightTrajectory.clear();

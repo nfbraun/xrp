@@ -62,6 +62,7 @@ class CartState: public SimulationState {
     
     double fPhi;
     int fStance;
+    Eigen::Vector3d fDesSwingPos, fDesSwingVel;
     
     bool fContactL, fContactR;
     

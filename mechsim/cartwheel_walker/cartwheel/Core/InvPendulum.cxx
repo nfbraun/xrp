@@ -1,4 +1,5 @@
 #include "InvPendulum.h"
+#include "IKVMCController.h"
 
 InvPendulum::InvPendulum(IKVMCController* llc)
 {
@@ -45,14 +46,15 @@ double InvPendulum::getPanicLevel()
 /**
 	determines the desired swing foot location
 */
-void InvPendulum::setDesiredSwingFootLocation()
+void InvPendulum::calcDesiredSwingFootLocation(Vector3d& desiredPos, Vector3d& desiredVel)
 {
 	Vector3d step0 = computeSwingFootLocationEstimate(lowLCon->getCOMPosition(), lowLCon->getPhase());
 	
 	double dt = 0.001;
 	Vector3d step1 = computeSwingFootLocationEstimate(lowLCon->getCOMPosition() + lowLCon->getCOMVelocity() * dt, lowLCon->getPhase()+dt);
 	
-	lowLCon->setDesiredSwingFootTrajectory(step0, (step1-step0)/dt);
+	desiredPos = step0;
+	desiredVel = (step1 - step0) / dt;
 }
 
 
@@ -108,11 +110,26 @@ bool InvPendulum::detectPossibleLegCrossing(const Vector3d& swingFootPos, Vector
 }
 
 /**
+	returns the required stepping location, as predicted by the inverted pendulum model. The prediction is made
+	on the assumption that the character will come to a stop by taking a step at that location. The step location
+	is expressed in the character's frame coordinates.
+*/
+Vector3d InvPendulum::computeIPStepLocation()
+{
+	Vector3d step;
+	double h = fabs(lowLCon->getCOMPosition().y - lowLCon->getStanceFootPos().y);
+	step.x = lowLCon->getV().x * sqrt(h/9.8 + lowLCon->getV().x * lowLCon->getV().x / (4*9.8*9.8)) * 1.3;
+	step.z = lowLCon->getV().z * sqrt(h/9.8 + lowLCon->getV().z * lowLCon->getV().z / (4*9.8*9.8)) * 1.1;	
+	step.y = 0;
+	return step;
+}
+
+/**
 	determine the estimate desired location of the swing foot, given the etimated position of the COM, and the phase
 */
 Vector3d InvPendulum::computeSwingFootLocationEstimate(const Point3d& comPos, double phase)
 {
-	Vector3d step = lowLCon->computeIPStepLocation();
+	Vector3d step = computeIPStepLocation();
 
 	//applying the IP prediction would make the character stop, so take a smaller step if you want it to walk faster, or larger
 	//if you want it to go backwards

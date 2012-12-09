@@ -5,6 +5,7 @@
 #include <Core/SimBiController.h>
 #include <Core/VirtualModelController.h>
 
+#include "InvPendulum.h"
 
 /**
 	Controller Inspired by Simbicon and Virtual Model Control ideas. Uses IK to control swing foot placement. It assumes
@@ -73,7 +74,6 @@ public:
 	//and relative to the current location of the CM
 	Trajectory1d swingFootHeightTrajectory;
 	
-	Vector3d swingFootPos, swingFootVel;
 	// unused for now (NB)
 	/* Trajectory1d swingFootTrajectoryDeltaSagittal;
 	Trajectory1d swingFootTrajectoryDeltaCoronal;
@@ -125,23 +125,13 @@ public:
 		return swingFootTrajectoryDeltaHeight;
 	} */
 	
-	void setDesiredSwingFootTrajectory(Vector3d desiredPos, Vector3d desiredVel)
-	    { swingFootPos = desiredPos; swingFootVel = desiredVel; }
-
 	Vector3d computeSwingFootDelta( double phiToUse = -1, int stanceToUse = -1 );
-
-	/**
-		returns the required stepping location, as predicted by the inverted pendulum model. The prediction is made
-		on the assumption that the character will come to a stop by taking a step at that location. The step location
-		is expressed in the character's frame coordinates.
-	*/
-	Vector3d computeIPStepLocation();
 
 	/**
 		This method is used to compute the target angles for the swing hip and swing knee that help 
 		to ensure (approximately) precise foot-placement control.
 	*/
-	ReducedCharacterState computeIKSwingLegTargets();
+	ReducedCharacterState computeIKSwingLegTargets(const Vector3d& swingFootPos, const Vector3d& swingFootVel);
 
 	/**
 		This method computes the desired target location for the swing ankle. It also returns an estimate of the desired
@@ -224,7 +214,10 @@ public:
 		updateDAndV();
 		return transition;
 	}
-
+	
+	InvPendulum ip;
+	
+	Vector3d DEBUG_desSwingPos, DEBUG_desSwingVel;
 };
 
 

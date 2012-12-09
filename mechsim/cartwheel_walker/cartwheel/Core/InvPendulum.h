@@ -2,7 +2,8 @@
 
 #include <MathLib/Trajectory.h>
 #include <MathLib/Segment.h>
-#include <Core/IKVMCController.h>
+
+class IKVMCController;
 
 class InvPendulum {
   public:
@@ -11,10 +12,17 @@ class InvPendulum {
     IKVMCController* lowLCon;
     
     // determines the desired swing foot location
-    void setDesiredSwingFootLocation();
+    void calcDesiredSwingFootLocation(Vector3d& desiredPos, Vector3d& desiredVel);
     
     // determine the estimate desired location of the swing foot, given the etimated position of the COM, and the phase
     Vector3d computeSwingFootLocationEstimate(const Point3d& comPos, double phase);
+    
+    /**
+        returns the required stepping location, as predicted by the inverted pendulum model. The prediction is made
+        on the assumption that the character will come to a stop by taking a step at that location. The step location
+        is expressed in the character's frame coordinates.
+    */
+    Vector3d computeIPStepLocation();
     
     // modify the coronal location of the step so that the desired step width results.
     double adjustCoronalStepLocation(double IPPrediction);

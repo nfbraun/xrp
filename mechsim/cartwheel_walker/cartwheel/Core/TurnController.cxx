@@ -179,6 +179,6 @@ double TurnController::getPanicLevel(){
 	if (stillTurning)
 		return 0;
 
-	return ip.getPanicLevel();
+	return lowLCon->ip.getPanicLevel();
 }
 

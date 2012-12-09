@@ -71,7 +71,7 @@ public:
 
 	double getDesiredStepTime() const { return stepTime; }
 	double getDesiredVelocitySagittal() const { return velDSagittal; }
-	double getCoronalStepWidth() const { return ip.coronalStepWidth; }
+	double getCoronalStepWidth() const { return lowLCon->ip.coronalStepWidth; }
 
 	/**
 		ask for a heading...
@@ -103,8 +103,6 @@ public:
 		this method is used to indicate what the behaviour of the character should be, once it decides to abort its plan.
 	*/
 	virtual void onAbort();
-	
-	InvPendulum ip;
 };
 
 

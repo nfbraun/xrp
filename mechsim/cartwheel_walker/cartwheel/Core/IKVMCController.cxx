@@ -7,7 +7,8 @@
 /**
 	constructor
 */
-IKVMCController::IKVMCController(Character* b) : SimBiController(b){
+IKVMCController::IKVMCController(Character* b) : SimBiController(b), ip(this)
+{
 	velDSagittal = 0;
 	velDCoronal = 0;
 
@@ -19,9 +20,6 @@ IKVMCController::IKVMCController(Character* b) : SimBiController(b){
 
 	swingLegPlaneOfRotation = Vector3d(-1,0,0);
 	
-	swingFootPos = Vector3d(0., 0., 0.);
-	swingFootVel = Vector3d(0., 0., 0.);
-
 	doubleStanceMode = false;
 }
 
@@ -100,7 +98,7 @@ void IKVMCController::computeIKQandW(int parentJIndex, int childJIndex, const Ve
 	This method is used to compute the target angles for the swing hip and swing knee that help 
 	to ensure (approximately) precise foot-placement control.
 */
-ReducedCharacterState IKVMCController::computeIKSwingLegTargets()
+ReducedCharacterState IKVMCController::computeIKSwingLegTargets(const Vector3d& swingFootPos, const Vector3d& swingFootVel)
 {
     const double dt = 0.001;
     ReducedCharacterState desiredPose;
@@ -117,20 +115,6 @@ ReducedCharacterState IKVMCController::computeIKSwingLegTargets()
 //	computeIKQandW(swingHipIndex, swingKneeIndex, Vector3d(0, -0.355, 0), Vector3d(1,0,0), Vector3d(1,0,0), Vector3d(0, -0.36, 0), pNow, true, pFuture, dt);
 
     return desiredPose;
-}
-
-/**
-	returns the required stepping location, as predicted by the inverted pendulum model. The prediction is made
-	on the assumption that the character will come to a stop by taking a step at that location. The step location
-	is expressed in the character's frame coordinates.
-*/
-Vector3d IKVMCController::computeIPStepLocation(){
-	Vector3d step;
-	double h = fabs(comPosition.y - stanceFoot->getCMPosition().y);
-	step.x = getV().x * sqrt(h/9.8 + getV().x * getV().x / (4*9.8*9.8)) * 1.3;
-	step.z = getV().z * sqrt(h/9.8 + getV().z * getV().z / (4*9.8*9.8)) * 1.1;	
-	step.y = 0;
-	return step;
 }
 
 Vector3d IKVMCController::computeSwingFootDelta( double phiToUse, int stanceToUse )
@@ -356,7 +340,14 @@ JointTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
 
 	//now overwrite the target angles for the swing hip and the swing knee in order to ensure foot-placement control
 	//if (doubleStanceMode == false)
-	ReducedCharacterState desiredPose = computeIKSwingLegTargets();
+	
+	//compute desired swing foot location...
+	Vector3d desiredPos, desiredVel;
+	ip.calcDesiredSwingFootLocation(desiredPos, desiredVel);
+	ReducedCharacterState desiredPose = computeIKSwingLegTargets(desiredPos, desiredVel);
+	
+	DEBUG_desSwingPos = desiredPos;
+	DEBUG_desSwingVel = desiredVel;
 
 	JointTorques torques;
 	torques = poseControl.computePDTorques(character, desiredPose);

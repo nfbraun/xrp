@@ -521,6 +521,8 @@ CartState Cartwheel::GetCurrentState()
     
     state.fPhi = fLowController->getPhase();
     state.fStance = fLowController->getStance();
+    state.fDesSwingPos = fLowController->DEBUG_desSwingPos.toEigen();
+    state.fDesSwingVel = fLowController->DEBUG_desSwingVel.toEigen();
     
     state.fContactL = fDebugContactL;
     state.fContactR = fDebugContactR;
