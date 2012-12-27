@@ -217,18 +217,9 @@ Cartwheel::Cartwheel(unsigned int stepPerSec, unsigned int intPerStep)
     //fFloorRB->setFrictionCoefficient(2.5);
     //fFloorRB->setRestitutionCoefficient(0.35);
     
-    fLowController = createController( fCharacter );
-    fLowController->setStance( LEFT_STANCE );
-    
     WorldOracle* worldOracle = new WorldOracle();
     
-    fHighController = new TurnController(fCharacter, fLowController, worldOracle);
-    fHighController->initializeDefaultParameters();
-    
-    fHighController->requestHeading(0.);
-    fHighController->conTransitionPlan();
-    fHighController->requestCoronalStepWidth(.3);
-    fHighController->requestVelocities(.5, 0.);
+    fController = new CWController(fCharacter, worldOracle);
     
     fContactGroup = dJointGroupCreate(0);
 }
@@ -372,15 +363,14 @@ void Cartwheel::Advance()
     for(int i=0; i<fIntPerStep; ++i) {
         //dBodyAddForce(fRobot->fPelvisB, 40.*sin(fT), 40.*cos(fT), 0.);
         
-        JointTorques torques = fHighController->performPreTasks(dt, &fContactPoints);
+        JointTorques torques = fController->Run(dt, &fContactPoints);
+        
+        fController->requestHeading(fT/4.);
         //fLowController->performPreTasks(dt, &fContactPoints);
         
         AdvanceInTime(dt, torques);
         fT += dt;
         //fLowController->performPostTasks(dt, &fContactPoints);
-        fHighController->performPostTasks(dt, &fContactPoints);
-        
-        fHighController->requestHeading(fT/4.);
         
         fDebugJTorques = torques;
     }
@@ -519,10 +509,10 @@ CartState Cartwheel::GetCurrentState()
     state.fTorques[RA0] = ODE::JointGetUniversalAxis1(fRobot->fRAnkleJ).dot(fDebugJTorques.get(J_R_ANKLE).toEigen());
     state.fTorques[RA1] = ODE::JointGetUniversalAxis2(fRobot->fRAnkleJ).dot(fDebugJTorques.get(J_R_ANKLE).toEigen());
     
-    state.fPhi = fLowController->getPhase();
-    state.fStance = fLowController->getStance();
-    state.fDesSwingPos = fLowController->DEBUG_desSwingPos.toEigen();
-    state.fDesSwingVel = fLowController->DEBUG_desSwingVel.toEigen();
+    state.fPhi = fController->fLowController->getPhase();
+    state.fStance = fController->fLowController->getStance();
+    state.fDesSwingPos = fController->fLowController->DEBUG_desSwingPos.toEigen();
+    state.fDesSwingVel = fController->fLowController->DEBUG_desSwingVel.toEigen();
     
     state.fContactL = fDebugContactL;
     state.fContactR = fDebugContactR;

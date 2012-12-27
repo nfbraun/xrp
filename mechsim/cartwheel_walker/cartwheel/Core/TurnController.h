@@ -58,22 +58,6 @@ public:
 		ask for a heading...
 	*/
 	virtual void requestHeading(double v);
-	
-	JointTorques performPreTasks(double dt, std::vector<ContactPoint> *cfs)
-	{
-        simStepPlan(SimGlobals::dt);
-        return lowLCon->performPreTasks(dt, cfs);
-    }
-
-    bool performPostTasks(double dt, std::vector<ContactPoint> *cfs)
-    {
-        bool newState = lowLCon->performPostTasks(dt, cfs);
-        if( newState ) {
-            conTransitionPlan();
-        }
-        
-        return newState;
-    }
 };
 
 

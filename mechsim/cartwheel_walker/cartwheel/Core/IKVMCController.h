@@ -210,21 +210,8 @@ public:
 	*/
 	void preprocessAnkleVTorque(int ankleJointIndex, std::vector<ContactPoint> *cfs, Vector3d *ankleVTorque);
 	
-	JointTorques performPreTasks(double dt, std::vector<ContactPoint> *cfs) {
-		return computeTorques(cfs);
-	}
-
-	// Returns true if it transitioned to a new state, false otherwise
-	bool performPostTasks(double dt, std::vector<ContactPoint> *cfs) {
-		bool transition = (advanceInTime(dt, cfs) != -1);
-		updateDAndV();
-		return transition;
-	}
-	
 	InvPendulum ip;
 	
 	Vector3d DEBUG_desSwingPos, DEBUG_desSwingVel;
 };
-
-
 

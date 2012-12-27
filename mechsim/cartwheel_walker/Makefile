@@ -1,5 +1,5 @@
-SOURCES = Cartwheel.cxx CWRobot.cxx Controller.cxx
-HEADERS = Cartwheel.h CWRobot.h Controller.h
+SOURCES = Cartwheel.cxx CWRobot.cxx
+HEADERS = Cartwheel.h CWRobot.h
 
 CW_SOURCES = \
 cartwheel/MathLib/Quaternion.cxx \
@@ -18,7 +18,8 @@ cartwheel/Core/SimBiController.cxx \
 cartwheel/Core/SimGlobals.cxx \
 cartwheel/Core/TurnController.cxx \
 cartwheel/Core/TwoLinkIK.cxx \
-cartwheel/Core/VirtualModelController.cxx
+cartwheel/Core/VirtualModelController.cxx \
+cartwheel/Core/CWController.cxx
 
 CW_HEADERS = \
 cartwheel/MathLib/MathLib.h \
@@ -46,7 +47,8 @@ cartwheel/Core/SimGlobals.h \
 cartwheel/Core/TurnController.h \
 cartwheel/Core/TwoLinkIK.h \
 cartwheel/Core/VirtualModelController.h \
-cartwheel/Core/WorldOracle.h
+cartwheel/Core/WorldOracle.h \
+cartwheel/Core/CWController.h
 
 OBJS = $(SOURCES:.cxx=.o) $(CW_SOURCES:.cxx=.o)
 CARTWHEEL=cartwheel

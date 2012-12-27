@@ -4,8 +4,7 @@
 #include "Simulation.h"
 
 #include "CWRobot.h"
-#include "Controller.h"
-#include <Core/TurnController.h>
+#include <Core/CWController.h>
 #include <Physics/ArticulatedFigure.h>
 #include <ode/ode.h>
 
@@ -234,9 +233,8 @@ class Cartwheel: public Simulation {
     std::vector<ContactPoint> fContactPoints;
     
     Character* fCharacter;
-    IKVMCController* fLowController;
-    TurnController* fHighController;
     CWRobot *fRobot;
+    CWController *fController;
     
     JointTorques fDebugJTorques;
     bool fDebugContactL, fDebugContactR;

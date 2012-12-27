@@ -252,7 +252,11 @@ double SimBiController::getStanceFootWeightRatio(std::vector<ContactPoint> *cfs)
 /**
 	This method is used to compute the distribution of forces between the two feet
 */
-void SimBiController::computeToeAndHeelForces(std::vector<ContactPoint> *cfs){
+void SimBiController::computeToeAndHeelForces(std::vector<ContactPoint> *cfs)
+{
+    /*** UNUSED ***/
+    assert(false);
+    
 	forceStanceToe.setValues(0,0,0);
 	forceSwingToe.setValues(0,0,0);
 	forceStanceHeel.setValues(0,0,0);
