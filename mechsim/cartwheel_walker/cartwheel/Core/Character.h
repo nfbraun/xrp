@@ -10,8 +10,6 @@
 	A character is an articulated figure - This class implements methods that allow it to easily save and restore its state, etc.
 */
 
-class ReducedCharacterState;
-
 class Character : public ArticulatedFigure {
 
 public:
@@ -99,94 +97,3 @@ public:
 inline Quaternion computeHeading(const Quaternion& rot){
 	return rot.getComplexConjugate().decomposeRotation(PhysicsGlobals::up).getComplexConjugate();
 }
-
-class ReducedCharacterState{
-private:
-	RBState fRootState;
-	Quaternion fJointOrient[J_MAX];
-	Vector3d fJointAngVel[J_MAX];
-public:
-    ReducedCharacterState() {
-        setPosition(Vector3d(0., 0., 0.));
-        setVelocity(Vector3d(0., 0., 0.));
-        setOrientation(Quaternion(1, 0, 0, 0));
-        setAngularVelocity(Vector3d(0., 0., 0.));
-        
-        for (int i=0;i<J_MAX;i++){
-            setJointRelativeAngVelocity(Vector3d(0., 0., 0.), i);
-            setJointRelativeOrientation(Quaternion(1., 0., 0., 0.), i);
-        }
-    }
-    
-	/**
-		gets the root position.
-	*/
-	inline Vector3d getPosition() { return fRootState.position; }
-
-	/**
-		sets the root position.
-	*/
-	inline void setPosition(const Vector3d& p) { fRootState.position = p; }
-
-	/**
-		gets the root orientation.
-	*/
-	inline Quaternion getOrientation() { return fRootState.orientation; }
-
-	/**
-		sets the root orientation.
-	*/
-	inline void setOrientation(const Quaternion& q)
-	    { fRootState.orientation = q; }
-
-	/**
-		gets the root velocity.
-	*/
-	inline Vector3d getVelocity() { return fRootState.velocity; }
-
-	/**
-		sets the root velocity.
-	*/
-	inline void setVelocity(const Vector3d& v){ fRootState.velocity = v; }
-
-	/**
-		gets the root angular velocity.
-	*/
-	inline Vector3d getAngularVelocity() { return fRootState.angularVelocity; }
-
-	/**
-		sets the root angular velocity.
-	*/
-	inline void setAngularVelocity(const Vector3d& v)
-	    { fRootState.angularVelocity = v; }
-	
-	/**
-	    sets the entire root state at once.
-	*/
-	inline void setRootState(const RBState& state)  { fRootState = state; }
-	
-	/**
-		gets the relative orientation for joint jIndex
-	*/
-	inline Quaternion getJointRelativeOrientation(int jIndex)
-	{ return fJointOrient[jIndex]; }
-
-	/**
-		sets the orientation for joint jIndex
-	*/
-	inline void setJointRelativeOrientation(const Quaternion& q, int jIndex)
-		{ fJointOrient[jIndex] = q; }
-
-	/**
-		gets the relative angular velocity for joint jIndex
-	*/
-	inline Vector3d getJointRelativeAngVelocity(int jIndex)
-		{ return fJointAngVel[jIndex]; }
-
-	/**
-		sets the orientation for joint jIndex
-	*/
-	inline void setJointRelativeAngVelocity(const Vector3d& w, int jIndex)
-		{ fJointAngVel[jIndex] = w; }
-
-};

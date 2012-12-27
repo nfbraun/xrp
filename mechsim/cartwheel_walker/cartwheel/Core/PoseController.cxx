@@ -91,74 +91,73 @@ void PoseController::scaleAndLimitTorque(Vector3d* torque, const ControlParams* 
 /**
 	This method is used to compute the torques that are to be applied at the next step.
 */
-JointTorques PoseController::computePDTorques(Character* character,
-    ReducedCharacterState& desiredPose)
+Vector3d PoseController::computePDJointTorque(Character* character, int jid,
+    Quaternion desiredOrientationInFrame, Vector3d desiredRelativeAngularVelocityInFrame,
+    bool relToFrame)
 {
-    JointTorques torques;
+    Vector3d torque;
+    
+    assert(relToFrame == controlParams[jid].relToFrame);
 
-	Quaternion qRelD;
-	Vector3d relAngVelD;
+    //ReducedCharacterState rs(&desiredPose);
 
-	Quaternion qRel;
-	Vector3d wRel;
+    Quaternion qRelD;
+    Vector3d relAngVelD;
 
-	//ReducedCharacterState rs(&desiredPose);
+    Quaternion qRel;
+    Vector3d wRel;
 
-	for (int i=0;i<character->getJointCount();i++){
-		if (controlParams[i].controlled == true){
+    assert(controlParams[jid].controlled);
 
-			RigidBody* parentRB = character->getJoint(i)->getParent();
-			RigidBody* childRB = character->getJoint(i)->getChild();
-			Quaternion parentQworld = parentRB->getOrientation().getComplexConjugate();			
+    RigidBody* parentRB = character->getJoint(jid)->getParent();
+    RigidBody* childRB = character->getJoint(jid)->getChild();
+    Quaternion parentQworld = parentRB->getOrientation().getComplexConjugate();			
 
-			Quaternion frameQworld;
-			Vector3d frameAngularVelocityInFrame;
+    Quaternion frameQworld;
+    Vector3d frameAngularVelocityInFrame;
 
-			if (controlParams[i].relToFrame == false){
-				frameQworld = parentQworld;
-				frameAngularVelocityInFrame = parentQworld.rotate( parentRB->getAngularVelocity() );
-			}else{
-				frameQworld = controlParams[i].frame.getComplexConjugate();
-				frameAngularVelocityInFrame = frameQworld.rotate( controlParams[i].frameAngularVelocityInWorld );
-			}
+    if (relToFrame == false) {
+        // std::cout << "relToFrame[" << i << "] = false" << std::endl;
+        frameQworld = parentQworld;
+        frameAngularVelocityInFrame = parentQworld.rotate( parentRB->getAngularVelocity() );
+    } else {
+        // std::cout << "relToFrame[" << i << "] = true" << std::endl;
+        frameQworld = controlParams[jid].frame.getComplexConjugate();
+        frameAngularVelocityInFrame = frameQworld.rotate( controlParams[jid].frameAngularVelocityInWorld );
+    }
 
-			Quaternion currentOrientationInFrame = frameQworld * childRB->getOrientation();
-			Quaternion desiredOrientationInFrame = desiredPose.getJointRelativeOrientation(i);
-			Vector3d currentAngularVelocityInFrame = frameQworld.rotate( childRB->getAngularVelocity() );
-			Vector3d desiredRelativeAngularVelocityInFrame = desiredPose.getJointRelativeAngVelocity(i);
-			Vector3d currentRelativeAngularVelocityInFrame = currentAngularVelocityInFrame - frameAngularVelocityInFrame;
+    Quaternion currentOrientationInFrame = frameQworld * childRB->getOrientation();
+    // Quaternion desiredOrientationInFrame = desiredPose.getJointRelativeOrientation(jid);
+    Vector3d currentAngularVelocityInFrame = frameQworld.rotate( childRB->getAngularVelocity() );
+    // Vector3d desiredRelativeAngularVelocityInFrame = desiredPose.getJointRelativeAngVelocity(jid);
+    Vector3d currentRelativeAngularVelocityInFrame = currentAngularVelocityInFrame - frameAngularVelocityInFrame;
 
-			Quaternion parentQframe = parentQworld * frameQworld.getComplexConjugate();
+    Quaternion parentQframe = parentQworld * frameQworld.getComplexConjugate();
 
-			torques.at(i) = computePDTorque(parentQframe * currentOrientationInFrame, 
-										 parentQframe * desiredOrientationInFrame, 
-										 parentQframe.rotate(currentRelativeAngularVelocityInFrame), 
-										 parentQframe.rotate(desiredRelativeAngularVelocityInFrame), 
-										 &controlParams[i]);
-			torques.at(i) = parentRB->getWorldCoordinatesForVector(torques.get(i));
+    torque = computePDTorque(parentQframe * currentOrientationInFrame, 
+                             parentQframe * desiredOrientationInFrame, 
+                             parentQframe.rotate(currentRelativeAngularVelocityInFrame), 
+                             parentQframe.rotate(desiredRelativeAngularVelocityInFrame), 
+                             &controlParams[jid]);
+    torque = parentRB->getWorldCoordinatesForVector(torque);
 
 /*
-			if (controlParams[i].relToCharFrame == false){
-				//get the current relative orientation between the child and parent
-				character->getRelativeOrientation(i, &qRel);
-				//and the relative angular velocity, computed in parent coordinates
-				character->getRelativeAngularVelocity(i, &wRel);
-				//now compute the torque
-				torques[i] = computePDTorque(qRel, rs.getJointRelativeOrientation(i), wRel, rs.getJointRelativeAngVelocity(i), &controlParams[i]);
-				//the torque is expressed in parent coordinates, so we need to convert it to world coords now
-				torques[i] = character->getJoint(i)->getParent()->getWorldCoordinates(torques[i]);
-			}else{
-				RigidBody* childRB = character->getJoint(i)->getChild();
-				torques[i] = computePDTorque(childRB->getOrientation(), controlParams[i].charFrame * rs.getJointRelativeOrientation(i), childRB->getAngularVelocity(), rs.getJointRelativeAngVelocity(i), &controlParams[i]);
-			}
+    if (controlParams[i].relToCharFrame == false){
+        //get the current relative orientation between the child and parent
+        character->getRelativeOrientation(i, &qRel);
+        //and the relative angular velocity, computed in parent coordinates
+        character->getRelativeAngularVelocity(i, &wRel);
+        //now compute the torque
+        torques[i] = computePDTorque(qRel, rs.getJointRelativeOrientation(i), wRel, rs.getJointRelativeAngVelocity(i), &controlParams[i]);
+        //the torque is expressed in parent coordinates, so we need to convert it to world coords now
+        torques[i] = character->getJoint(i)->getParent()->getWorldCoordinates(torques[i]);
+    }else{
+        RigidBody* childRB = character->getJoint(i)->getChild();
+        torques[i] = computePDTorque(childRB->getOrientation(), controlParams[i].charFrame * rs.getJointRelativeOrientation(i), childRB->getAngularVelocity(), rs.getJointRelativeAngVelocity(i), &controlParams[i]);
+    }
 */
 
-		}else{
-			torques.at(i) = Vector3d(0,0,0);
-		} 
-	}
-
-    return torques;
+    return torque;
 }
 
 /**

@@ -7,6 +7,12 @@
 
 #include "InvPendulum.h"
 
+class IKSwingLegTarget {
+  public:
+    Quaternion swingHipOrient, swingKneeOrient;
+    Vector3d swingHipAngVel, swingKneeAngVel;
+};
+
 /**
 	Controller Inspired by Simbicon and Virtual Model Control ideas. Uses IK to control swing foot placement. It assumes
 	a pretty specilized character architecture: Legs look like this: 
@@ -131,7 +137,7 @@ public:
 		This method is used to compute the target angles for the swing hip and swing knee that help 
 		to ensure (approximately) precise foot-placement control.
 	*/
-	ReducedCharacterState computeIKSwingLegTargets(const Vector3d& swingFootPos, const Vector3d& swingFootVel);
+	IKSwingLegTarget computeIKSwingLegTargets(const Vector3d& swingFootPos, const Vector3d& swingFootVel);
 
 	/**
 		This method computes the desired target location for the swing ankle. It also returns an estimate of the desired
@@ -178,7 +184,7 @@ public:
 
 			- an estimate of the desired position of the end effector, in world coordinates, some dt later - used to compute desired angular velocities
 	*/
-	void computeIKQandW(int parentJIndex, int childJIndex, const Vector3d& parentAxis, const Vector3d& parentNormal, const Vector3d& childNormal, const Vector3d& childEndEffector, const Point3d& wP, bool computeAngVelocities, const Point3d& futureWP, double dt, ReducedCharacterState& desiredPose);
+	IKSwingLegTarget computeIKQandW(const Vector3d& parentAxis, const Vector3d& parentNormal, const Vector3d& childNormal, const Vector3d& childEndEffector, const Point3d& wP, bool computeAngVelocities, const Point3d& futureWP, double dt);
 
 	/**
 		This method is used to ensure that each RB sees the net torque that the PD controller computed for it.

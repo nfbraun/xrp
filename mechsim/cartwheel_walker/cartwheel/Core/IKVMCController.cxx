@@ -39,82 +39,91 @@ IKVMCController::IKVMCController(Character* b) : SimBiController(b), ip(this)
 
 		- an estimate of the desired position of the end effector, in world coordinates, some dt later - used to compute desired angular velocities
 */
-void IKVMCController::computeIKQandW(int parentJIndex, int childJIndex, const Vector3d& parentAxis, const Vector3d& parentNormal, const Vector3d& childNormal, const Vector3d& childEndEffector, const Point3d& wP, bool computeAngVelocities, const Point3d& futureWP, double dt, ReducedCharacterState& desiredPose){
-	//this is the joint between the grandparent RB and the parent
-	KTJoint* parentJoint = character->getJoints()[parentJIndex];
-	//this is the grandparent - most calculations will be done in its coordinate frame
-	ArticulatedRigidBody* gParent = parentJoint->parent;
-	//this is the reduced character space where we will be setting the desired orientations and ang vels.
-	//ReducedCharacterState rs(&desiredPose);
+IKSwingLegTarget IKVMCController::computeIKQandW(const Vector3d& parentAxis, const Vector3d& parentNormal, const Vector3d& childNormal, const Vector3d& childEndEffector, const Point3d& wP, bool computeAngVelocities, const Point3d& futureWP, double dt)
+{
+    IKSwingLegTarget desiredPose;
+    
+    //assert(parentJIndex == swingHipIndex);
+    //assert(childJIndex == swingKneeIndex);
 
-	//the desired relative orientation between parent and grandparent
-	Quaternion qParent;
-	//and the desired relative orientation between child and parent
-	Quaternion qChild;
+    //this is the joint between the grandparent RB and the parent
+    KTJoint* parentJoint = character->getJoints()[swingHipIndex];
+    //this is the grandparent - most calculations will be done in its coordinate frame
+    ArticulatedRigidBody* gParent = parentJoint->parent;
+    //this is the reduced character space where we will be setting the desired orientations and ang vels.
+    //ReducedCharacterState rs(&desiredPose);
+
+    //the desired relative orientation between parent and grandparent
+    Quaternion qParent;
+    //and the desired relative orientation between child and parent
+    Quaternion qChild;
 
 
-	TwoLinkIK::getIKOrientations(parentJoint->getParentJointPosition(), gParent->getLocalCoordinatesForPoint(wP), parentNormal, parentAxis, childNormal, childEndEffector, &qParent, &qChild);
+    TwoLinkIK::getIKOrientations(parentJoint->getParentJointPosition(), gParent->getLocalCoordinatesForPoint(wP), parentNormal, parentAxis, childNormal, childEndEffector, &qParent, &qChild);
 
-	poseControl.controlParams[parentJIndex].relToFrame = false;
-	poseControl.controlParams[childJIndex].relToFrame = false;
-	desiredPose.setJointRelativeOrientation(qChild, childJIndex);
-	desiredPose.setJointRelativeOrientation(qParent, parentJIndex);
-	
+    poseControl.controlParams[swingHipIndex].relToFrame = false;
+    poseControl.controlParams[swingKneeIndex].relToFrame = false;
+    //desiredPose.setJointRelativeOrientation(qChild, swingKneeIndex);
+    //desiredPose.setJointRelativeOrientation(qParent, swingHipIndex);
+    desiredPose.swingHipOrient = qParent;
+    desiredPose.swingKneeOrient = qChild;
 
-	Vector3d wParentD(0,0,0);
-	Vector3d wChildD(0,0,0);
 
-	if (computeAngVelocities){
-		//the joint's origin will also move, so take that into account, by subbing the offset by which it moves to the
-		//futureTarget (to get the same relative position to the hip)
-		Vector3d velOffset = gParent->getAbsoluteVelocityForLocalPoint(parentJoint->getParentJointPosition());
+    Vector3d wParentD(0,0,0);
+    Vector3d wChildD(0,0,0);
 
-		Quaternion qParentF;
-		Quaternion qChildF;
-		TwoLinkIK::getIKOrientations(parentJoint->getParentJointPosition(), gParent->getLocalCoordinatesForPoint(futureWP + velOffset * -dt), parentNormal, parentAxis, childNormal, childEndEffector, &qParentF, &qChildF);
+    if (computeAngVelocities){
+        //the joint's origin will also move, so take that into account, by subbing the offset by which it moves to the
+        //futureTarget (to get the same relative position to the hip)
+        Vector3d velOffset = gParent->getAbsoluteVelocityForLocalPoint(parentJoint->getParentJointPosition());
 
-		Quaternion qDiff = qParentF * qParent.getComplexConjugate();
-		wParentD = qDiff.v * 2/dt;
-		//the above is the desired angular velocity, were the parent not rotating already - but it usually is, so we'll account for that
-		wParentD -= gParent->getLocalCoordinatesForVector(gParent->getAngularVelocity());
+        Quaternion qParentF;
+        Quaternion qChildF;
+        TwoLinkIK::getIKOrientations(parentJoint->getParentJointPosition(), gParent->getLocalCoordinatesForPoint(futureWP + velOffset * -dt), parentNormal, parentAxis, childNormal, childEndEffector, &qParentF, &qChildF);
 
-		qDiff = qChildF * qChild.getComplexConjugate();
-		wChildD = qDiff.v * 2/dt;
+        Quaternion qDiff = qParentF * qParent.getComplexConjugate();
+        wParentD = qDiff.v * 2/dt;
+        //the above is the desired angular velocity, were the parent not rotating already - but it usually is, so we'll account for that
+        wParentD -= gParent->getLocalCoordinatesForVector(gParent->getAngularVelocity());
 
-		//make sure we don't go overboard with the estimates, in case there are discontinuities in the trajectories...
-		boundToRange(&wChildD.x, -5, 5);
-		boundToRange(&wChildD.y, -5, 5);
-		boundToRange(&wChildD.z, -5, 5);
-		boundToRange(&wParentD.x, -5, 5);
-		boundToRange(&wParentD.y, -5, 5);
-		boundToRange(&wParentD.z, -5, 5);
-	}
+        qDiff = qChildF * qChild.getComplexConjugate();
+        wChildD = qDiff.v * 2/dt;
 
-	desiredPose.setJointRelativeAngVelocity(wChildD, childJIndex);
-	desiredPose.setJointRelativeAngVelocity(wParentD, parentJIndex);
+        //make sure we don't go overboard with the estimates, in case there are discontinuities in the trajectories...
+        boundToRange(&wChildD.x, -5, 5);
+        boundToRange(&wChildD.y, -5, 5);
+        boundToRange(&wChildD.z, -5, 5);
+        boundToRange(&wParentD.x, -5, 5);
+        boundToRange(&wParentD.y, -5, 5);
+        boundToRange(&wParentD.z, -5, 5);
+    }
+
+    //desiredPose.setJointRelativeAngVelocity(wChildD, swingKneeIndex);
+    //desiredPose.setJointRelativeAngVelocity(wParentD, swingHipIndex);
+    desiredPose.swingHipAngVel = wParentD;
+    desiredPose.swingKneeAngVel = wChildD;
+
+    return desiredPose;
 }
 
 /**
 	This method is used to compute the target angles for the swing hip and swing knee that help 
 	to ensure (approximately) precise foot-placement control.
 */
-ReducedCharacterState IKVMCController::computeIKSwingLegTargets(const Vector3d& swingFootPos, const Vector3d& swingFootVel)
+IKSwingLegTarget IKVMCController::computeIKSwingLegTargets(const Vector3d& swingFootPos, const Vector3d& swingFootVel)
 {
     const double dt = 0.001;
-    ReducedCharacterState desiredPose;
 
-	Point3d pNow, pFuture;
-	pNow = transformSwingFootTarget(phi, swingFootPos, comPosition, characterFrame);
-	pFuture = transformSwingFootTarget(phi+dt, swingFootPos + swingFootVel*dt,
-	    comPosition + comVelocity*dt, characterFrame);
+    Point3d pNow, pFuture;
+    pNow = transformSwingFootTarget(phi, swingFootPos, comPosition, characterFrame);
+    pFuture = transformSwingFootTarget(phi+dt, swingFootPos + swingFootVel*dt,
+        comPosition + comVelocity*dt, characterFrame);
+    
+    Vector3d parentAxis(character->getJoints()[swingHipIndex]->getChildJointPosition(), character->getJoints()[swingKneeIndex]->getParentJointPosition());
+    Vector3d childAxis(character->getJoints()[swingKneeIndex]->getChildJointPosition(), character->getJoints()[swingAnkleIndex]->getParentJointPosition());
 
-	Vector3d parentAxis(character->getJoints()[swingHipIndex]->getChildJointPosition(), character->getJoints()[swingKneeIndex]->getParentJointPosition());
-	Vector3d childAxis(character->getJoints()[swingKneeIndex]->getChildJointPosition(), character->getJoints()[swingAnkleIndex]->getParentJointPosition());
-
-	computeIKQandW(swingHipIndex, swingKneeIndex, parentAxis, swingLegPlaneOfRotation, Vector3d(-1,0,0), childAxis, pNow, true, pFuture, dt, desiredPose);
-//	computeIKQandW(swingHipIndex, swingKneeIndex, Vector3d(0, -0.355, 0), Vector3d(1,0,0), Vector3d(1,0,0), Vector3d(0, -0.36, 0), pNow, true, pFuture, dt);
-
-    return desiredPose;
+    return computeIKQandW(parentAxis, swingLegPlaneOfRotation, Vector3d(-1,0,0), childAxis, pNow, true, pFuture, dt);
+    // computeIKQandW(swingHipIndex, swingKneeIndex, Vector3d(0, -0.355, 0), Vector3d(1,0,0), Vector3d(1,0,0), Vector3d(0, -0.36, 0), pNow, true, pFuture, dt);
 }
 
 Vector3d IKVMCController::computeSwingFootDelta( double phiToUse, int stanceToUse )
@@ -344,13 +353,32 @@ JointTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
 	//compute desired swing foot location...
 	Vector3d desiredPos, desiredVel;
 	ip.calcDesiredSwingFootLocation(desiredPos, desiredVel);
-	ReducedCharacterState desiredPose = computeIKSwingLegTargets(desiredPos, desiredVel);
+	IKSwingLegTarget desiredPose = computeIKSwingLegTargets(desiredPos, desiredVel);
 	
 	DEBUG_desSwingPos = desiredPos;
 	DEBUG_desSwingVel = desiredVel;
 
 	JointTorques torques;
-	torques = poseControl.computePDTorques(character, desiredPose);
+	
+	/* for (int jid=0;jid<character->getJointCount();jid++){
+	    torques.at(jid) = poseControl.computePDJointTorque(character, jid,
+	        desiredPose.getJointRelativeOrientation(jid),
+	        desiredPose.getJointRelativeAngVelocity(jid));
+	} */
+	torques.at(swingHipIndex) = poseControl.computePDJointTorque(character, swingHipIndex,
+	    desiredPose.swingHipOrient, desiredPose.swingHipAngVel, false);
+	torques.at(swingKneeIndex) = poseControl.computePDJointTorque(character, swingKneeIndex,
+	    desiredPose.swingKneeOrient, desiredPose.swingKneeAngVel, false);
+	
+	torques.at(stanceHipIndex) = poseControl.computePDJointTorque(character, stanceHipIndex,
+	    Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), false);
+	torques.at(stanceKneeIndex) = poseControl.computePDJointTorque(character, stanceKneeIndex,
+	    Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), false);
+	
+	torques.at(J_L_ANKLE) = poseControl.computePDJointTorque(character, J_L_ANKLE,
+	    Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), true);
+	torques.at(J_R_ANKLE) = poseControl.computePDJointTorque(character, J_R_ANKLE,
+	    Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), true);
 
 	//bubble-up the torques computed from the PD controllers
 	bubbleUpTorques(character, torques);

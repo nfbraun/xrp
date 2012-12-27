@@ -108,8 +108,9 @@ public:
 	/**
 		This method is used to compute the torques, based on the current and desired poses
 	*/
-	JointTorques computePDTorques(Character* character,
-        ReducedCharacterState& desiredPose);
+	Vector3d computePDJointTorque(Character* character, int jid,
+        Quaternion desiredOrientationInFrame,
+        Vector3d desiredRelativeAngularVelocityInFrame, bool relToFrame);
 
 	/**
 		This method is used to compute the PD torque, given the current relative orientation of two coordinate frames (child and parent),
