@@ -59,6 +59,12 @@ void CartState::Draw(int mode) const
     } else {
         DrawRobotOutline();
     }
+    
+    glPushMatrix();
+    GL::Rotate(Eigen::AngleAxis<double>(M_PI/2., Eigen::Vector3d::UnitX()));
+    glColor3f(1., 1., 0.);
+    GL::drawSphere(0.1, fDesSwingPos);
+    glPopMatrix();
 }
 
 void CartState::DrawRobot(bool shadowmode) const
@@ -180,13 +186,13 @@ void CartState::DrawRobotOutline() const
     GL::Vertex3(fJPos[J_R_ANKLE]);
     glEnd();
     
-    const double scale = 0.01;
+    /* const double scale = 0.01;
     glColor3f(1., 1., 0.);
     glBegin(GL_LINES);
     for(int jid=0; jid<J_MAX; jid++) {
         GL::Vertex3(fJPos[jid]);
         GL::Vertex3(fJPos[jid]+scale*fJTorques[jid]);
-    }
+    } */
     glEnd();
     
     glPopMatrix();
@@ -260,33 +266,37 @@ bool Cartwheel::Collide(dGeomID g1, dGeomID g2, RigidBody* rb1, RigidBody* rb2)
     return (num_contacts > 0);
 }
 
-void Cartwheel::BodyAddTorque(dBodyID body, Vector3d torque)
+Eigen::Vector3d invTransformTorque(const dReal* R, double t0, double t1, double t2)
 {
-    dBodyAddTorque(body, torque.x, torque.y, torque.z);
+    Eigen::Vector3d v;
+    
+    v(0) = R[0] * t0 + R[1] * t1 + R[2] * t2;
+    v(1) = R[4] * t0 + R[5] * t1 + R[6] * t2;
+    v(2) = R[8] * t0 + R[9] * t1 + R[10] * t2;
+    
+    return v;
 }
 
-void Cartwheel::ApplyTorques(const JointTorques& torques)
+void Cartwheel::ApplyTorques(const JointSpTorques& jt)
 {
-    BodyAddTorque(fRobot->fPelvisB, torques.get(J_L_HIP));
-    BodyAddTorque(fRobot->fLUpperLegB, -torques.get(J_L_HIP));
+    Eigen::Vector3d lHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fPelvisB),
+        jt.fLeftLeg[0], jt.fLeftLeg[1], jt.fLeftLeg[2]);
+    ODE::BodyAddTorque(fRobot->fPelvisB, lHipTorque);
+    ODE::BodyAddTorque(fRobot->fLUpperLegB, -lHipTorque);
     
-    BodyAddTorque(fRobot->fLUpperLegB, torques.get(J_L_KNEE));
-    BodyAddTorque(fRobot->fLLowerLegB, -torques.get(J_L_KNEE));
+    dJointAddHingeTorque(fRobot->fLKneeJ, -jt.fLeftLeg[3]);
+    dJointAddUniversalTorques(fRobot->fLAnkleJ, -jt.fLeftLeg[4], -jt.fLeftLeg[5]);
     
-    BodyAddTorque(fRobot->fLLowerLegB, torques.get(J_L_ANKLE));
-    BodyAddTorque(fRobot->fLFootB, -torques.get(J_L_ANKLE));
+    Eigen::Vector3d rHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fPelvisB),
+        jt.fRightLeg[0], jt.fRightLeg[1], jt.fRightLeg[2]);
+    ODE::BodyAddTorque(fRobot->fPelvisB, rHipTorque);
+    ODE::BodyAddTorque(fRobot->fRUpperLegB, -rHipTorque);
     
-    BodyAddTorque(fRobot->fPelvisB, torques.get(J_R_HIP));
-    BodyAddTorque(fRobot->fRUpperLegB, -torques.get(J_R_HIP));
-    
-    BodyAddTorque(fRobot->fRUpperLegB, torques.get(J_R_KNEE));
-    BodyAddTorque(fRobot->fRLowerLegB, -torques.get(J_R_KNEE));
-    
-    BodyAddTorque(fRobot->fRLowerLegB, torques.get(J_R_ANKLE));
-    BodyAddTorque(fRobot->fRFootB, -torques.get(J_R_ANKLE));
+    dJointAddHingeTorque(fRobot->fRKneeJ, -jt.fRightLeg[3]);
+    dJointAddUniversalTorques(fRobot->fRAnkleJ, -jt.fRightLeg[4], -jt.fRightLeg[5]);
 }
 
-void Cartwheel::AdvanceInTime(double dt, const JointTorques& torques)
+void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
 {
     //restart the counter for the joint feedback terms
     fJointFeedbackCount = 0;
@@ -363,14 +373,12 @@ void Cartwheel::Advance()
     for(int i=0; i<fIntPerStep; ++i) {
         //dBodyAddForce(fRobot->fPelvisB, 40.*sin(fT), 40.*cos(fT), 0.);
         
-        JointTorques torques = fController->Run(dt, &fContactPoints);
+        JointSpTorques torques = fController->Run(dt, &fContactPoints);
         
         fController->requestHeading(fT/4.);
-        //fLowController->performPreTasks(dt, &fContactPoints);
         
         AdvanceInTime(dt, torques);
         fT += dt;
-        //fLowController->performPostTasks(dt, &fContactPoints);
         
         fDebugJTorques = torques;
     }
@@ -416,6 +424,11 @@ void transformTorque(const dReal* R, const Eigen::Vector3d& torque, double& t0, 
     t2 = R[2] * torque[0] + R[6] * torque[1] + R[10] * torque[2];
 }
 
+void printVector(const Eigen::Vector3d& vec)
+{
+    std::cout << "(" << vec.x() << ", " << vec.y() << ", " << vec.z() << ")";
+}
+
 CartState Cartwheel::GetCurrentState()
 {
     double tmp[4];
@@ -447,11 +460,6 @@ CartState Cartwheel::GetCurrentState()
     dJointGetBallAnchor(fRobot->fRHipJ, tmp); 
     state.fJPos[J_R_HIP] = Eigen::Vector3d(tmp);
     
-    for(int jid=0; jid<J_MAX; jid++) {
-        Vector3d t = fDebugJTorques.get(jid);
-        state.fJTorques[jid] = Eigen::Vector3d(t.x, t.y, t.z);
-    }
-    
     Vector3d com = fRobot->fCharacter->getCOM();
     state.fCoM = Eigen::Vector3d(com.x, com.y, com.z);
     
@@ -474,13 +482,12 @@ CartState Cartwheel::GetCurrentState()
     state.fRobot.omega[LA0] = dJointGetUniversalAngle1Rate(fRobot->fLAnkleJ);
     state.fRobot.omega[LA1] = dJointGetUniversalAngle2Rate(fRobot->fLAnkleJ);
     
-    transformTorque(dBodyGetRotation(fRobot->fLUpperLegB),
-                    state.fJTorques[J_L_HIP],
-                    state.fTorques[LH0], state.fTorques[LH1], state.fTorques[LH2]);
-    
-    state.fTorques[LK] = lKneeAxis.dot(fDebugJTorques.get(J_L_KNEE).toEigen());
-    state.fTorques[LA0] = ODE::JointGetUniversalAxis1(fRobot->fLAnkleJ).dot(fDebugJTorques.get(J_L_ANKLE).toEigen());
-    state.fTorques[LA1] = ODE::JointGetUniversalAxis2(fRobot->fLAnkleJ).dot(fDebugJTorques.get(J_L_ANKLE).toEigen());
+    state.fTorques[LH0] = fDebugJTorques.fLeftLeg[0];
+    state.fTorques[LH1] = fDebugJTorques.fLeftLeg[1];
+    state.fTorques[LH2] = fDebugJTorques.fLeftLeg[2];
+    state.fTorques[LK]  = fDebugJTorques.fLeftLeg[3];
+    state.fTorques[LA0] = fDebugJTorques.fLeftLeg[4];
+    state.fTorques[LA1] = fDebugJTorques.fLeftLeg[5];
     
     /*** right leg ***/
     Eigen::Vector3d rKneeAxis = ODE::JointGetHingeAxis(fRobot->fRKneeJ);
@@ -501,18 +508,19 @@ CartState Cartwheel::GetCurrentState()
     state.fRobot.omega[RA0] = dJointGetUniversalAngle1Rate(fRobot->fRAnkleJ);
     state.fRobot.omega[RA1] = dJointGetUniversalAngle2Rate(fRobot->fRAnkleJ);
     
-    transformTorque(dBodyGetRotation(fRobot->fRUpperLegB),
-                    state.fJTorques[J_R_HIP],
-                    state.fTorques[RH0], state.fTorques[RH1], state.fTorques[RH2]);
-    
-    state.fTorques[RK] = rKneeAxis.dot(fDebugJTorques.get(J_R_KNEE).toEigen());
-    state.fTorques[RA0] = ODE::JointGetUniversalAxis1(fRobot->fRAnkleJ).dot(fDebugJTorques.get(J_R_ANKLE).toEigen());
-    state.fTorques[RA1] = ODE::JointGetUniversalAxis2(fRobot->fRAnkleJ).dot(fDebugJTorques.get(J_R_ANKLE).toEigen());
+    state.fTorques[RH0] = fDebugJTorques.fRightLeg[0];
+    state.fTorques[RH1] = fDebugJTorques.fRightLeg[1];
+    state.fTorques[RH2] = fDebugJTorques.fRightLeg[2];
+    state.fTorques[RK]  = fDebugJTorques.fRightLeg[3];
+    state.fTorques[RA0] = fDebugJTorques.fRightLeg[4];
+    state.fTorques[RA1] = fDebugJTorques.fRightLeg[5];
     
     state.fPhi = fController->fLowController->getPhase();
     state.fStance = fController->fLowController->getStance();
     state.fDesSwingPos = fController->fLowController->DEBUG_desSwingPos.toEigen();
     state.fDesSwingVel = fController->fLowController->DEBUG_desSwingVel.toEigen();
+    
+    // state.fSwingPos = ODE::JointGetUniversalAnchor(fRobot->fLKneeJ);
     
     state.fContactL = fDebugContactL;
     state.fContactR = fDebugContactR;

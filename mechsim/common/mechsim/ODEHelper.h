@@ -13,6 +13,9 @@ namespace ODE {
         { dBodySetLinearVel(id, v.x(), v.y(), v.z()); }
     inline void BodySetAngularVel(dBodyID id, const _Vector3& o)
         { dBodySetAngularVel(id, o.x(), o.y(), o.z()); }
+    inline void BodyAddTorque(dBodyID id, const _Vector3& t)
+        { dBodyAddTorque(id, t.x(), t.y(), t.z()); }
+        
     inline void JointSetHingeAnchor(dJointID j, const _Vector3& r)
         { dJointSetHingeAnchor(j, r.x(), r.y(), r.z()); }
     inline void JointSetHingeAxis(dJointID j, const _Vector3& a)
@@ -69,6 +72,9 @@ namespace ODE {
     
     inline _Vector3 JointGetHingeAxis(dJointID j)
         { dVector3 axis; dJointGetHingeAxis(j, axis); return VectorFromArray(axis); }
+    
+    inline _Vector3 JointGetUniversalAnchor(dJointID j)
+        { dVector3 anchor; dJointGetUniversalAnchor(j, anchor); return VectorFromArray(anchor); }
     
     inline _Vector3 JointGetUniversalAxis1(dJointID j)
         { dVector3 axis; dJointGetUniversalAxis1(j, axis); return VectorFromArray(axis); }

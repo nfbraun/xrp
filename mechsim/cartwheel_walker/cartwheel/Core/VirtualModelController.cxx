@@ -25,7 +25,7 @@
 		origin of link 1 to p, and the second entry is the vector (in 'global' coordinates) from
 		the origin of link 2 to p (and therein lies the general way of writing this).
 */
-void VirtualModelController::addJointTorquesEquivalentToForce(const Character* character, KTJoint* start, const Point3d& pLocal, const Vector3d& fGlobal, KTJoint* end, JointTorques& torques){
+void VirtualModelController::addJointTorquesEquivalentToForce(const Character* character, KTJoint* start, const Point3d& pLocal, const Vector3d& fGlobal, KTJoint* end, RawTorques& torques){
 	//starting from the start joint, going towards the end joint, get the origin of each link, in world coordinates,
 	//and compute the vector to the global coordinates of pLocal.
 

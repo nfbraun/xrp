@@ -187,7 +187,7 @@ protected:
 		between 0 and 1, and it corresponds to the percentage of the total net vertical force that rests on the stance
 		foot.
 	*/
-	void computeHipTorques(const Quaternion& qRootD, double stanceHipToSwingHipRatio, Vector3d ffRootTorque, JointTorques& torques);
+	void computeHipTorques(const Quaternion& qRootD, double stanceHipToSwingHipRatio, Vector3d ffRootTorque, RawTorques& torques);
 	
 	PoseController poseControl;
 

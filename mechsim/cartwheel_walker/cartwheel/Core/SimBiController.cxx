@@ -361,7 +361,7 @@ void SimBiController::initControlParams()
 	This method is used to compute the torques that need to be applied to the stance and swing hips, given the
 	desired orientation for the root and the swing hip.
 */
-void SimBiController::computeHipTorques(const Quaternion& qRootD, double stanceHipToSwingHipRatio, Vector3d ffRootTorque, JointTorques& torques){
+void SimBiController::computeHipTorques(const Quaternion& qRootD, double stanceHipToSwingHipRatio, Vector3d ffRootTorque, RawTorques& torques){
 	//compute the total torques that should be applied to the root and swing hip, keeping in mind that
 	//the desired orientations are expressed in the character frame
 	Vector3d rootTorque;

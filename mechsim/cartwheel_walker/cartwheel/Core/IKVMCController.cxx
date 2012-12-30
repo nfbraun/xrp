@@ -3,7 +3,6 @@
 #include <Core/BehaviourController.h>
 #include <Core/TwoLinkIK.h>
 
-
 /**
 	constructor
 */
@@ -17,8 +16,6 @@ IKVMCController::IKVMCController(Character* b) : SimBiController(b), ip(this)
 
 	panicHeight = 0;
 	unplannedForHeight = 0;
-
-	swingLegPlaneOfRotation = Vector3d(-1,0,0);
 	
 	doubleStanceMode = false;
 }
@@ -112,12 +109,17 @@ IKSwingLegTarget IKVMCController::computeIKQandW(const Vector3d& parentAxis, con
 */
 IKSwingLegTarget IKVMCController::computeIKSwingLegTargets(const Vector3d& swingFootPos, const Vector3d& swingFootVel)
 {
+    //this is the vector that specifies the plane of rotation for the swing leg, relative to the root...
+	Vector3d swingLegPlaneOfRotation = Vector3d(-1,0,0);;
+    
     const double dt = 0.001;
 
     Point3d pNow, pFuture;
     pNow = transformSwingFootTarget(phi, swingFootPos, comPosition, characterFrame);
     pFuture = transformSwingFootTarget(phi+dt, swingFootPos + swingFootVel*dt,
         comPosition + comVelocity*dt, characterFrame);
+        
+    DEBUG_desSwingPos = pNow;
     
     Vector3d parentAxis(character->getJoints()[swingHipIndex]->getChildJointPosition(), character->getJoints()[swingKneeIndex]->getParentJointPosition());
     Vector3d childAxis(character->getJoints()[swingKneeIndex]->getChildJointPosition(), character->getJoints()[swingAnkleIndex]->getParentJointPosition());
@@ -169,7 +171,7 @@ Vector3d IKVMCController::transformSwingFootTarget(double t, Vector3d step, cons
 	This method is used to ensure that each RB sees the net torque that the PD controller computed for it.
 	Without it, an RB sees also the sum of -t of every child.
 */
-void IKVMCController::bubbleUpTorques(Character* character, JointTorques& torques){
+void IKVMCController::bubbleUpTorques(Character* character, RawTorques& torques){
 	for (int i=J_MAX-1;i>=0;i--){
 		if (i != stanceHipIndex && i != stanceKneeIndex)
 			if (character->getJoints()[i]->getParent() != root)
@@ -181,9 +183,9 @@ void IKVMCController::bubbleUpTorques(Character* character, JointTorques& torque
 	This method computes the torques that cancel out the effects of gravity, 
 	for better tracking purposes
 */
-JointTorques IKVMCController::computeGravityCompensationTorques(Character* character)
+RawTorques IKVMCController::computeGravityCompensationTorques(Character* character)
 {
-    JointTorques torques;
+    RawTorques torques;
 
 	for (unsigned int i=0;i<J_MAX;i++){
 		if (i != stanceHipIndex && i != stanceKneeIndex && i != stanceAnkleIndex) {
@@ -247,7 +249,7 @@ void IKVMCController::preprocessAnkleVTorque(int ankleJointIndex, std::vector<Co
 /**
 	This method is used to compute torques for the stance leg that help achieve a desired speed in the sagittal and lateral planes
 */
-void IKVMCController::computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, std::vector<ContactPoint> *cfs, JointTorques& torques){
+void IKVMCController::computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, std::vector<ContactPoint> *cfs, RawTorques& torques){
 	Vector3d fA = computeVirtualForce();
 
 	Vector3d r;
@@ -278,7 +280,10 @@ void IKVMCController::computeLegTorques(int ankleIndex, int kneeIndex, int hipIn
 	torques[mBackIndex] += r.crossProductWith(fA) / 10; */
 }
 
-void IKVMCController::COMJT(std::vector<ContactPoint> *cfs, JointTorques& torques){
+RawTorques IKVMCController::COMJT(std::vector<ContactPoint> *cfs)
+{
+    RawTorques torques;
+
 	//applying a force at the COM induces the force f. The equivalent torques are given by the J' * f, where J' is
 	// dp/dq, where p is the COM.
 
@@ -316,6 +321,8 @@ void IKVMCController::COMJT(std::vector<ContactPoint> *cfs, JointTorques& torque
 
 	//the torque on the stance hip is cancelled out, so pass it in as a torque that the root wants to see!
 	ffRootTorque -= f3.crossProductWith(fA);
+	
+	return torques;
 }
 
 /**
@@ -336,7 +343,7 @@ void IKVMCController::updateSwingAndStanceReferences(){
 /**
 	This method is used to compute the torques
 */
-JointTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
+RawTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
 {
 	//d and v are specified in the rotation (heading) invariant coordinate frame
 	updateDAndV();
@@ -355,10 +362,10 @@ JointTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
 	ip.calcDesiredSwingFootLocation(desiredPos, desiredVel);
 	IKSwingLegTarget desiredPose = computeIKSwingLegTargets(desiredPos, desiredVel);
 	
-	DEBUG_desSwingPos = desiredPos;
-	DEBUG_desSwingVel = desiredVel;
+	//DEBUG_desSwingPos = desiredPos;
+	//DEBUG_desSwingVel = desiredVel;
 
-	JointTorques torques;
+	RawTorques torques;
 	
 	/* for (int jid=0;jid<character->getJointCount();jid++){
 	    torques.at(jid) = poseControl.computePDJointTorque(character, jid,
@@ -375,9 +382,9 @@ JointTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
 	torques.at(stanceKneeIndex) = poseControl.computePDJointTorque(character, stanceKneeIndex,
 	    Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), false);
 	
-	torques.at(J_L_ANKLE) = poseControl.computePDJointTorque(character, J_L_ANKLE,
+	torques.at(stanceAnkleIndex) = poseControl.computePDJointTorque(character, stanceAnkleIndex,
 	    Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), true);
-	torques.at(J_R_ANKLE) = poseControl.computePDJointTorque(character, J_R_ANKLE,
+	torques.at(swingAnkleIndex) = poseControl.computePDJointTorque(character, swingAnkleIndex,
 	    Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), true);
 
 	//bubble-up the torques computed from the PD controllers
@@ -390,7 +397,7 @@ JointTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
 	ffRootTorque = Vector3d(0,0,0);
 
 	if (cfs->size() > 0)
-		COMJT(cfs, torques);
+		torques.add(COMJT(cfs));
 //		computeLegTorques(stanceAnkleIndex, stanceKneeIndex, stanceHipIndex, cfs);
 
 	//if (doubleStanceMode && cfs->size() > 0)

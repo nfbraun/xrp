@@ -84,8 +84,7 @@ public:
 	/* Trajectory1d swingFootTrajectoryDeltaSagittal;
 	Trajectory1d swingFootTrajectoryDeltaCoronal;
 	Trajectory1d swingFootTrajectoryDeltaHeight; */
-	//this is the vector that specifies the plane of rotation for the swing leg, relative to the root...
-	Vector3d swingLegPlaneOfRotation;
+	
 	//if the controller is in double-stance mode, then the swing foot won't have an IK target
 	bool doubleStanceMode;
 	//desired offset of the CM relative to the stance foot/midpoint of the feet
@@ -148,7 +147,7 @@ public:
 	/**
 		This method is used to compute the torques
 	*/
-	JointTorques computeTorques(std::vector<ContactPoint> *cfs);
+	RawTorques computeTorques(std::vector<ContactPoint> *cfs);
 
 	/**
 		This method returns a target for the location of the swing foot, based on some state information. It is assumed that the velocity v
@@ -161,7 +160,7 @@ public:
 		This method computes the torques that cancel out the effects of gravity, 
 		for better tracking purposes
 	*/
-	JointTorques computeGravityCompensationTorques(Character* character);
+	RawTorques computeGravityCompensationTorques(Character* character);
 
 	/**
 		updates the indexes of the swing and stance hip, knees and ankles
@@ -190,14 +189,14 @@ public:
 		This method is used to ensure that each RB sees the net torque that the PD controller computed for it.
 		Without it, an RB sees also the sum of -t of every child.
 	*/
-	void bubbleUpTorques(Character* character, JointTorques& torques);
+	void bubbleUpTorques(Character* character, RawTorques& torques);
 
 	/**
 		This method is used to compute torques for the stance leg that help achieve a desired speed in the sagittal and lateral planes
 	*/
-	void computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, std::vector<ContactPoint> *cfs, JointTorques& torques);
+	void computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, std::vector<ContactPoint> *cfs, RawTorques& torques);
 
-	void COMJT(std::vector<ContactPoint> *cfs, JointTorques& torques);
+	RawTorques COMJT(std::vector<ContactPoint> *cfs);
 
 	/**
 		This method is used to compute the force that the COM of the character should be applying.

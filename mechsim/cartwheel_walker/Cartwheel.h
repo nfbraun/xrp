@@ -52,12 +52,11 @@ class CartState: public SimulationState {
     BodyQ fLFootQ, fRFootQ;
     
     Eigen::Vector3d fJPos[J_MAX];
-    Eigen::Vector3d fJTorques[J_MAX];
+    double fTorques[12];
     
     Eigen::Vector3d fCoM;
     
     RobotState fRobot;
-    double fTorques[12];
     
     double fPhi;
     int fStance;
@@ -221,8 +220,8 @@ class Cartwheel: public Simulation {
     void InitLeg(HobLeg& leg, ChainSegment upperLegC, ChainSegment lowerLegC,
              FootSegment footC); */
     
-    void AdvanceInTime(double dt, const JointTorques& torques);
-    void ApplyTorques(const JointTorques& torques);
+    void AdvanceInTime(double dt, const JointSpTorques& torques);
+    void ApplyTorques(const JointSpTorques& jt);
     void setRBStateFromODE(RigidBody* rb);
     
     void BodyAddTorque(dBodyID body, Vector3d torque);
@@ -236,7 +235,7 @@ class Cartwheel: public Simulation {
     CWRobot *fRobot;
     CWController *fController;
     
-    JointTorques fDebugJTorques;
+    JointSpTorques fDebugJTorques;
     bool fDebugContactL, fDebugContactR;
     
     RigidBody* fFloorRB;
