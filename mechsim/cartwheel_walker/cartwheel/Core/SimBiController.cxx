@@ -105,13 +105,13 @@ void SimBiController::transitionToState(int stateIndex){
 /**
 	This method returns the net force on the body rb, acting from the ground
 */
-Vector3d SimBiController::getForceOn(RigidBody* rb, std::vector<ContactPoint> *cfs){
+Vector3d SimBiController::getForceOn(RigidBody* rb, const std::vector<ContactPoint>& cfs){
 	Vector3d fNet = Vector3d();
-	for (unsigned int i=0;i<cfs->size();i++){
-		if ((*cfs)[i].rb1 == rb)
-			fNet += (*cfs)[i].f;
-		if ((*cfs)[i].rb2 == rb)
-			fNet -= (*cfs)[i].f;
+	for (unsigned int i=0;i<cfs.size();i++){
+		if (cfs[i].rb1 == rb)
+			fNet += cfs[i].f;
+		if (cfs[i].rb2 == rb)
+			fNet -= cfs[i].f;
 	}
 	return fNet;
 }
@@ -186,7 +186,7 @@ bool SimBiController::isStanceFoot(RigidBody* rb){
 /**
 	This method returns the net force on the body rb, acting from the ground
 */
-Vector3d SimBiController::getForceOnFoot(RigidBody* foot, std::vector<ContactPoint> *cfs)
+Vector3d SimBiController::getForceOnFoot(RigidBody* foot, const std::vector<ContactPoint>& cfs)
 {
 	Vector3d fNet = getForceOn(foot, cfs);
 
@@ -202,19 +202,19 @@ Vector3d SimBiController::getForceOnFoot(RigidBody* foot, std::vector<ContactPoi
 	used to determine when to transition to a new state. This method returns -1 if the controller does not advance to a new state,
 	or the index of the state that it transitions to otherwise.
 */
-int SimBiController::advanceInTime(double dt, std::vector<ContactPoint> *cfs){
+int SimBiController::advanceInTime(double dt, const std::vector<ContactPoint>& cfs){
 
 	if( dt <= 0 )
 		return -1;
 
 	bodyTouchedTheGround = false;
 	//see if anything else other than the feet touch the ground...
-	for (unsigned int i=0;i<cfs->size();i++){
+	for (unsigned int i=0;i<cfs.size();i++){
 		//if neither of the bodies involved are articulated, it means they are just props so we can ignore them
 		/* if ((*cfs)[i].rb1->isArticulated() == false && (*cfs)[i].rb2->isArticulated() == false)
 			continue; */
 			
-		if (isFoot((*cfs)[i].rb1) || isFoot((*cfs)[i].rb2))
+		if (isFoot(cfs[i].rb1) || isFoot(cfs[i].rb2))
 			continue;
 
 		bodyTouchedTheGround = true;
@@ -237,7 +237,7 @@ int SimBiController::advanceInTime(double dt, std::vector<ContactPoint> *cfs){
 /**
 	This method is used to return the ratio of the weight that is supported by the stance foot.
 */
-double SimBiController::getStanceFootWeightRatio(std::vector<ContactPoint> *cfs){
+double SimBiController::getStanceFootWeightRatio(const std::vector<ContactPoint>& cfs){
 	Vector3d stanceFootForce = getForceOnFoot(stanceFoot, cfs);
 	Vector3d swingFootForce = getForceOnFoot(swingFoot, cfs);
 	double totalYForce = (stanceFootForce + swingFootForce).dotProductWith(PhysicsGlobals::up);
@@ -252,7 +252,7 @@ double SimBiController::getStanceFootWeightRatio(std::vector<ContactPoint> *cfs)
 /**
 	This method is used to compute the distribution of forces between the two feet
 */
-void SimBiController::computeToeAndHeelForces(std::vector<ContactPoint> *cfs)
+void SimBiController::computeToeAndHeelForces(const std::vector<ContactPoint>& cfs)
 {
     /*** UNUSED ***/
     assert(false);
@@ -272,7 +272,7 @@ void SimBiController::computeToeAndHeelForces(std::vector<ContactPoint> *cfs)
 	swingHeelInContact = false;
 	stanceHeelInContact = false;
 
-	if (cfs == NULL || cfs->size() == 0){
+	if (cfs.size() == 0){
 		haveToeAndHeelInformation = false;
 		return;
 	}
@@ -280,34 +280,34 @@ void SimBiController::computeToeAndHeelForces(std::vector<ContactPoint> *cfs)
 
 	int swingToeCount = 0, stanceToeCount = 0, swingHeelCount = 0, stanceHeelCount = 0;
 
-	for (unsigned int i=0;i<cfs->size();i++){
-		if (isStanceFoot((*cfs)[i].rb1) || isStanceFoot((*cfs)[i].rb2)){
+	for (unsigned int i=0;i<cfs.size();i++){
+		if (isStanceFoot(cfs[i].rb1) || isStanceFoot(cfs[i].rb2)){
 			//need to determine if this is a heel or the toe...
-			Point3d localPoint = stanceFoot->getLocalCoordinatesForPoint((*cfs)[i].cp);
+			Point3d localPoint = stanceFoot->getLocalCoordinatesForPoint(cfs[i].cp);
 			if (localPoint.z > 0){
-				forceStanceToe += (*cfs)[i].f;
-				toeStancePos += (*cfs)[i].cp;
+				forceStanceToe += cfs[i].f;
+				toeStancePos += cfs[i].cp;
 				stanceToeCount++;
 				stanceToeInContact = true;
 			}else{
-				forceStanceHeel += (*cfs)[i].f;
-				heelStancePos += (*cfs)[i].cp;
+				forceStanceHeel += cfs[i].f;
+				heelStancePos += cfs[i].cp;
 				stanceHeelCount++;
 				stanceHeelInContact = true;
 			}
 		}
 
-		if (isSwingFoot((*cfs)[i].rb1) || isSwingFoot((*cfs)[i].rb2)){
+		if (isSwingFoot(cfs[i].rb1) || isSwingFoot(cfs[i].rb2)){
 			//need to determine if this is a heel or the toe...
-			Point3d localPoint = swingFoot->getLocalCoordinatesForPoint((*cfs)[i].cp);
+			Point3d localPoint = swingFoot->getLocalCoordinatesForPoint(cfs[i].cp);
 			if (localPoint.z > 0){
-				forceSwingToe += (*cfs)[i].f;
-				toeSwingPos += (*cfs)[i].cp;
+				forceSwingToe += cfs[i].f;
+				toeSwingPos += cfs[i].cp;
 				swingToeCount++;
 				swingToeInContact = true;
 			}else{
-				forceSwingHeel += (*cfs)[i].f;
-				heelSwingPos += (*cfs)[i].cp;
+				forceSwingHeel += cfs[i].f;
+				heelSwingPos += cfs[i].cp;
 				swingHeelCount++;
 				swingHeelInContact = true;
 			}

@@ -10,11 +10,11 @@ class CWController {
     
     void requestHeading(double v) { fHighController->requestHeading(v); }
     
-    JointSpTorques Run(double dt, std::vector<ContactPoint> *cfs);
+    JointSpTorques Run(double dt, const std::vector<ContactPoint>& cfs);
     
   public:
-    RawTorques performPreTasks(double dt, std::vector<ContactPoint> *cfs);
-    void performPostTasks(double dt, std::vector<ContactPoint> *cfs);
+    RawTorques performPreTasks(double dt, const std::vector<ContactPoint>& cfs);
+    void performPostTasks(double dt, const std::vector<ContactPoint>& cfs);
     
     JointSpTorques transformTorques(const RawTorques& torques);
     

@@ -226,7 +226,7 @@ Vector3d IKVMCController::computeVirtualForce(){
 	This method returns performes some pre-processing on the virtual torque. The torque is assumed to be in world coordinates,
 	and it will remain in world coordinates.
 */
-void IKVMCController::preprocessAnkleVTorque(int ankleJointIndex, std::vector<ContactPoint> *cfs, Vector3d *ankleVTorque){
+void IKVMCController::preprocessAnkleVTorque(int ankleJointIndex, const std::vector<ContactPoint>& cfs, Vector3d *ankleVTorque){
 	bool heelInContact, toeInContact;
 	ArticulatedRigidBody* foot = character->getJoints()[ankleJointIndex]->child;
 	getForceInfoOn(foot, cfs, &heelInContact, &toeInContact);
@@ -249,7 +249,7 @@ void IKVMCController::preprocessAnkleVTorque(int ankleJointIndex, std::vector<Co
 /**
 	This method is used to compute torques for the stance leg that help achieve a desired speed in the sagittal and lateral planes
 */
-void IKVMCController::computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, std::vector<ContactPoint> *cfs, RawTorques& torques){
+void IKVMCController::computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, const std::vector<ContactPoint>& cfs, RawTorques& torques){
 	Vector3d fA = computeVirtualForce();
 
 	Vector3d r;
@@ -280,7 +280,7 @@ void IKVMCController::computeLegTorques(int ankleIndex, int kneeIndex, int hipIn
 	torques[mBackIndex] += r.crossProductWith(fA) / 10; */
 }
 
-RawTorques IKVMCController::COMJT(std::vector<ContactPoint> *cfs)
+RawTorques IKVMCController::COMJT(const std::vector<ContactPoint>& cfs)
 {
     RawTorques torques;
 
@@ -343,7 +343,7 @@ void IKVMCController::updateSwingAndStanceReferences(){
 /**
 	This method is used to compute the torques
 */
-RawTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
+RawTorques IKVMCController::computeTorques(const std::vector<ContactPoint>& cfs)
 {
 	//d and v are specified in the rotation (heading) invariant coordinate frame
 	updateDAndV();
@@ -396,7 +396,7 @@ RawTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
 
 	ffRootTorque = Vector3d(0,0,0);
 
-	if (cfs->size() > 0)
+	if (cfs.size() > 0)
 		torques.add(COMJT(cfs));
 //		computeLegTorques(stanceAnkleIndex, stanceKneeIndex, stanceHipIndex, cfs);
 
@@ -414,14 +414,14 @@ RawTorques IKVMCController::computeTorques(std::vector<ContactPoint> *cfs)
 /**
 	determines if there are any heel/toe forces on the given RB
 */
-void IKVMCController::getForceInfoOn(RigidBody* rb, std::vector<ContactPoint> *cfs, bool* heelForce, bool* toeForce){
+void IKVMCController::getForceInfoOn(RigidBody* rb, const std::vector<ContactPoint>& cfs, bool* heelForce, bool* toeForce){
 	//figure out if the toe/heel are in contact...
 	*heelForce = false;
 	*toeForce = false;
 	Point3d tmpP;
-	for (unsigned int i=0;i<cfs->size();i++){
-		if (haveRelationBetween((*cfs)[i].rb1, rb) || haveRelationBetween((*cfs)[i].rb2, rb)){
-			tmpP = rb->getLocalCoordinatesForPoint((*cfs)[i].cp);
+	for (unsigned int i=0;i<cfs.size();i++){
+		if (haveRelationBetween(cfs[i].rb1, rb) || haveRelationBetween(cfs[i].rb2, rb)){
+			tmpP = rb->getLocalCoordinatesForPoint(cfs[i].cp);
 			if (tmpP.z < 0) *heelForce = true;
 			if (tmpP.z > 0) *toeForce = true;
 		}

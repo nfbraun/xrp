@@ -118,7 +118,7 @@ protected:
 	bool swingHeelInContact;
 	bool stanceHeelInContact;
 	bool haveToeAndHeelInformation;
-	void computeToeAndHeelForces(std::vector<ContactPoint> *cfs);
+	void computeToeAndHeelForces(const std::vector<ContactPoint>& cfs);
 
 
 	//the phase parameter, phi must have values between 0 and 1, and it indicates the progress through the current state.
@@ -147,12 +147,12 @@ protected:
 	/**
 		This method returns the net force on the body rb, acting from the ground
 	*/
-	Vector3d getForceOn(RigidBody* rb, std::vector<ContactPoint> *cfs);
+	Vector3d getForceOn(RigidBody* rb, const std::vector<ContactPoint>& cfs);
 
 	/**
 		This method returns the net force on the body rb, acting from the ground
 	*/
-	Vector3d getForceOnFoot(RigidBody* foot, std::vector<ContactPoint> *cfs);
+	Vector3d getForceOnFoot(RigidBody* foot, const std::vector<ContactPoint>& cfs);
 
 	/**
 		check to see if rb is the same as whichBody or any of its children
@@ -178,7 +178,7 @@ protected:
 	/**
 		This method is used to return the ratio of the weight that is supported by the stance foot.
 	*/
-	double getStanceFootWeightRatio(std::vector<ContactPoint> *cfs);
+	double getStanceFootWeightRatio(const std::vector<ContactPoint>& cfs);
 
 	/**
 		This method is used to compute the torques that need to be applied to the stance and swing hips, given the
@@ -250,7 +250,7 @@ public:
 		used to determine when to transition to a new state. This method returns -1 if the controller does not advance to a new state,
 		or the index of the state that it transitions to otherwise.
 	*/
-	int advanceInTime(double dt, std::vector<ContactPoint> *cfs);
+	int advanceInTime(double dt, const std::vector<ContactPoint>& cfs);
 
 	/**
 		This method is used to return the value of bodyGroundContact

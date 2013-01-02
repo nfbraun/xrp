@@ -47,13 +47,13 @@ CWController::CWController(Character* character, WorldOracle* worldOracle)
     fHighController->requestVelocities(.5, 0.);
 }
 
-RawTorques CWController::performPreTasks(double dt, std::vector<ContactPoint> *cfs)
+RawTorques CWController::performPreTasks(double dt, const std::vector<ContactPoint>& cfs)
 {
     fHighController->simStepPlan(SimGlobals::dt);
     return fLowController->computeTorques(cfs);
 }
 
-void CWController::performPostTasks(double dt, std::vector<ContactPoint> *cfs)
+void CWController::performPostTasks(double dt, const std::vector<ContactPoint>& cfs)
 {
     bool newState = (fLowController->advanceInTime(dt, cfs) != -1);
     fLowController->updateDAndV();
@@ -106,7 +106,7 @@ JointSpTorques CWController::transformTorques(const RawTorques& torques)
     return jt;
 }
 
-JointSpTorques CWController::Run(double dt, std::vector<ContactPoint> *cfs)
+JointSpTorques CWController::Run(double dt, const std::vector<ContactPoint>& cfs)
 {
     performPostTasks(dt, cfs);
     return transformTorques(performPreTasks(dt, cfs));

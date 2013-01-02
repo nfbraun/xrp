@@ -373,7 +373,7 @@ void Cartwheel::Advance()
     for(int i=0; i<fIntPerStep; ++i) {
         //dBodyAddForce(fRobot->fPelvisB, 40.*sin(fT), 40.*cos(fT), 0.);
         
-        JointSpTorques torques = fController->Run(dt, &fContactPoints);
+        JointSpTorques torques = fController->Run(dt, fContactPoints);
         
         fController->requestHeading(fT/4.);
         

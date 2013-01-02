@@ -69,7 +69,7 @@ private:
 	/**
 		determines if there are any heel/toe forces on the given RB
 	*/
-	void getForceInfoOn(RigidBody* rb, std::vector<ContactPoint> *cfs, bool* heelForce, bool* toeForce);
+	void getForceInfoOn(RigidBody* rb, const std::vector<ContactPoint>& cfs, bool* heelForce, bool* toeForce);
 
 public:
 	//desired velocity in the sagittal plane
@@ -147,7 +147,7 @@ public:
 	/**
 		This method is used to compute the torques
 	*/
-	RawTorques computeTorques(std::vector<ContactPoint> *cfs);
+	RawTorques computeTorques(const std::vector<ContactPoint>& cfs);
 
 	/**
 		This method returns a target for the location of the swing foot, based on some state information. It is assumed that the velocity v
@@ -194,9 +194,9 @@ public:
 	/**
 		This method is used to compute torques for the stance leg that help achieve a desired speed in the sagittal and lateral planes
 	*/
-	void computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, std::vector<ContactPoint> *cfs, RawTorques& torques);
+	void computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, const std::vector<ContactPoint>& cfs, RawTorques& torques);
 
-	RawTorques COMJT(std::vector<ContactPoint> *cfs);
+	RawTorques COMJT(const std::vector<ContactPoint>& cfs);
 
 	/**
 		This method is used to compute the force that the COM of the character should be applying.
@@ -207,7 +207,7 @@ public:
 		This method returns performes some pre-processing on the virtual torque. The torque is assumed to be in world coordinates,
 		and it will remain in world coordinates.
 	*/
-	void preprocessAnkleVTorque(int ankleJointIndex, std::vector<ContactPoint> *cfs, Vector3d *ankleVTorque);
+	void preprocessAnkleVTorque(int ankleJointIndex, const std::vector<ContactPoint>& cfs, Vector3d *ankleVTorque);
 	
 	InvPendulum ip;
 	
