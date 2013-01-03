@@ -119,7 +119,7 @@ IKSwingLegTarget IKVMCController::computeIKSwingLegTargets(const Vector3d& swing
     pFuture = transformSwingFootTarget(phi+dt, swingFootPos + swingFootVel*dt,
         comPosition + comVelocity*dt, characterFrame);
         
-    DEBUG_desSwingPos = pNow;
+    dbg->desSwingPos = pNow;
     
     Vector3d parentAxis(character->getJoints()[swingHipIndex]->getChildJointPosition(), character->getJoints()[swingKneeIndex]->getParentJointPosition());
     Vector3d childAxis(character->getJoints()[swingKneeIndex]->getChildJointPosition(), character->getJoints()[swingAnkleIndex]->getParentJointPosition());
@@ -186,12 +186,10 @@ void IKVMCController::bubbleUpTorques(Character* character, RawTorques& torques)
 RawTorques IKVMCController::computeGravityCompensationTorques(Character* character)
 {
     RawTorques torques;
-
-	for (unsigned int i=0;i<J_MAX;i++){
-		if (i != stanceHipIndex && i != stanceKneeIndex && i != stanceAnkleIndex) {
-			VirtualModelController::addJointTorquesEquivalentToForce(character, character->getJoints()[i], Point3d(), Vector3d(0, character->getJoints()[i]->child->getMass()*9.8, 0), NULL, torques);
-		}
-    }
+    
+    VirtualModelController::addJointTorquesEquivalentToForce(character, character->getJoints()[swingHipIndex], Point3d(), Vector3d(0, character->getJoints()[swingHipIndex]->child->getMass()*9.8, 0), NULL, torques);
+    VirtualModelController::addJointTorquesEquivalentToForce(character, character->getJoints()[swingKneeIndex], Point3d(), Vector3d(0, character->getJoints()[swingKneeIndex]->child->getMass()*9.8, 0), NULL, torques);
+    VirtualModelController::addJointTorquesEquivalentToForce(character, character->getJoints()[swingAnkleIndex], Point3d(), Vector3d(0, character->getJoints()[swingAnkleIndex]->child->getMass()*9.8, 0), NULL, torques);
     
     return torques;
 }
@@ -199,13 +197,15 @@ RawTorques IKVMCController::computeGravityCompensationTorques(Character* charact
 /**
 	This method is used to compute the force that the COM of the character should be applying.
 */
-Vector3d IKVMCController::computeVirtualForce(){
+Vector3d IKVMCController::computeVirtualForce()
+{
 	//this is the desired acceleration of the center of mass
 	Vector3d desA = Vector3d();
 	desA.z = (velDSagittal - getV().z) * 30;
 	desA.x = (-getD().x + comOffsetCoronal) * 20 + (velDCoronal - getV().x) * 9;
 	
 	if (doubleStanceMode == true){
+	    assert(false);
 		Vector3d errV = characterFrame.inverseRotate(doubleStanceCOMError*-1);
 		desA.x = (-errV.x + comOffsetCoronal) * 20 + (velDCoronal - getV().x) * 9;
 		desA.z = (-errV.z + comOffsetSagittal) * 10 + (velDSagittal - getV().z) * 150;
@@ -226,29 +226,33 @@ Vector3d IKVMCController::computeVirtualForce(){
 	This method returns performes some pre-processing on the virtual torque. The torque is assumed to be in world coordinates,
 	and it will remain in world coordinates.
 */
-void IKVMCController::preprocessAnkleVTorque(int ankleJointIndex, const std::vector<ContactPoint>& cfs, Vector3d *ankleVTorque){
+Vector3d IKVMCController::preprocessAnkleVTorque(int ankleJointIndex, const std::vector<ContactPoint>& cfs, Vector3d ankleVTorque){
 	bool heelInContact, toeInContact;
 	ArticulatedRigidBody* foot = character->getJoints()[ankleJointIndex]->child;
 	getForceInfoOn(foot, cfs, &heelInContact, &toeInContact);
-	*ankleVTorque = foot->getLocalCoordinatesForVector(*ankleVTorque);
+	ankleVTorque = foot->getLocalCoordinatesForVector(ankleVTorque);
 
-	if (toeInContact == false || phi < 0.2 || phi > 0.8) ankleVTorque->x = 0;
+	if (toeInContact == false || phi < 0.2 || phi > 0.8) ankleVTorque.x = 0;
 
 	Vector3d footRelativeAngularVel = foot->getLocalCoordinatesForVector(foot->getAngularVelocity());
-	if ((footRelativeAngularVel.z < -0.2 && ankleVTorque->z > 0) || (footRelativeAngularVel.z > 0.2 && ankleVTorque->z < 0))
-		ankleVTorque->z = 0;
+	if ((footRelativeAngularVel.z < -0.2 && ankleVTorque.z > 0) || (footRelativeAngularVel.z > 0.2 && ankleVTorque.z < 0))
+		ankleVTorque.z = 0;
 
-	if (fabs(footRelativeAngularVel.z) > 1.0) ankleVTorque->z = 0;
-	if (fabs(footRelativeAngularVel.x) > 1.0) ankleVTorque->x = 0;
+	if (fabs(footRelativeAngularVel.z) > 1.0) ankleVTorque.z = 0;
+	if (fabs(footRelativeAngularVel.x) > 1.0) ankleVTorque.x = 0;
 	
-	boundToRange(&ankleVTorque->z, -20, 20);
+	boundToRange(&ankleVTorque.z, -20, 20);
 
-	*ankleVTorque = foot->getWorldCoordinatesForVector(*ankleVTorque);
+	ankleVTorque = foot->getWorldCoordinatesForVector(ankleVTorque);
+	
+	return ankleVTorque;
 }
 
 /**
 	This method is used to compute torques for the stance leg that help achieve a desired speed in the sagittal and lateral planes
 */
+/*** UNUSED ***/
+#if 0
 void IKVMCController::computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, const std::vector<ContactPoint>& cfs, RawTorques& torques){
 	Vector3d fA = computeVirtualForce();
 
@@ -279,8 +283,9 @@ void IKVMCController::computeLegTorques(int ankleIndex, int kneeIndex, int hipIn
 	r.setToVectorBetween(character->getJoints()[mBackIndex]->child->getWorldCoordinates(character->getJoints()[mBackIndex]->cJPos), p);
 	torques[mBackIndex] += r.crossProductWith(fA) / 10; */
 }
+#endif
 
-RawTorques IKVMCController::COMJT(const std::vector<ContactPoint>& cfs)
+RawTorques IKVMCController::COMJT(const Vector3d& fA, const std::vector<ContactPoint>& cfs, Vector3d& stanceAnkleTorque, Vector3d& stanceKneeTorque, Vector3d& stanceHipTorque)
 {
     RawTorques torques;
 
@@ -298,8 +303,6 @@ RawTorques IKVMCController::COMJT(const std::vector<ContactPoint>& cfs)
 	//total mass...
 	double m = lowerLeg->getMass() + upperLeg->getMass() + pelvis->getMass();
 
-	Vector3d fA = computeVirtualForce();
-
 	Vector3d f1 =	Vector3d(anklePos, lowerLeg->state.position) * lowerLeg->getMass() +
 					Vector3d(anklePos, upperLeg->state.position) * upperLeg->getMass() + 
 					Vector3d(anklePos, pelvis->state.position) * pelvis->getMass(); 
@@ -312,15 +315,9 @@ RawTorques IKVMCController::COMJT(const std::vector<ContactPoint>& cfs)
 	Vector3d f3 =	Vector3d(hipPos, pelvis->state.position) * pelvis->getMass();
 	f3 /= m;
 
-	Vector3d ankleTorque = f1.crossProductWith(fA);
-	preprocessAnkleVTorque(stanceAnkleIndex, cfs, &ankleTorque);
-
-	torques.at(stanceAnkleIndex) += ankleTorque;
-	torques.at(stanceKneeIndex) += f2.crossProductWith(fA);
-	torques.at(stanceHipIndex) += f3.crossProductWith(fA);
-
-	//the torque on the stance hip is cancelled out, so pass it in as a torque that the root wants to see!
-	ffRootTorque -= f3.crossProductWith(fA);
+	stanceAnkleTorque = f1.crossProductWith(fA);
+	stanceKneeTorque = f2.crossProductWith(fA);
+	stanceHipTorque = f3.crossProductWith(fA);
 	
 	return torques;
 }
@@ -377,8 +374,6 @@ RawTorques IKVMCController::computeTorques(const std::vector<ContactPoint>& cfs)
 	torques.at(swingKneeIndex) = poseControl.computePDJointTorque(character, swingKneeIndex,
 	    desiredPose.swingKneeOrient, desiredPose.swingKneeAngVel, false);
 	
-	torques.at(stanceHipIndex) = poseControl.computePDJointTorque(character, stanceHipIndex,
-	    Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), false);
 	torques.at(stanceKneeIndex) = poseControl.computePDJointTorque(character, stanceKneeIndex,
 	    Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), false);
 	
@@ -394,10 +389,6 @@ RawTorques IKVMCController::computeTorques(const std::vector<ContactPoint>& cfs)
 	//we'll also compute the torques that cancel out the effects of gravity, for better tracking purposes
 	torques.add(computeGravityCompensationTorques(character));
 
-	ffRootTorque = Vector3d(0,0,0);
-
-	if (cfs.size() > 0)
-		torques.add(COMJT(cfs));
 //		computeLegTorques(stanceAnkleIndex, stanceKneeIndex, stanceHipIndex, cfs);
 
 	//if (doubleStanceMode && cfs->size() > 0)
@@ -405,7 +396,19 @@ RawTorques IKVMCController::computeTorques(const std::vector<ContactPoint>& cfs)
 	
 
 	//and now separetely compute the torques for the hips - together with the feedback term, this is what defines simbicon
-	computeHipTorques(qRootD, getStanceFootWeightRatio(cfs), ffRootTorque, torques);
+	dbg->StanceFootWeightRatio = getStanceFootWeightRatio(cfs);
+	
+	if(getStanceFootWeightRatio(cfs) > 0.9) {
+	    Vector3d virtualRootForce = computeVirtualForce();
+	    Vector3d virtualRootTorque = computeRootTorque(qRootD);
+	    
+	    Vector3d stanceAnkleTorque, stanceKneeTorque, stanceHipTorque;
+	    COMJT(virtualRootForce, cfs, stanceAnkleTorque, stanceKneeTorque, stanceHipTorque);
+	    
+	    torques.at(stanceAnkleIndex) += preprocessAnkleVTorque(stanceAnkleIndex, cfs, stanceAnkleTorque);
+	    torques.at(stanceKneeIndex) += stanceKneeTorque;
+	    torques.at(stanceHipIndex) = stanceHipTorque - virtualRootTorque - torques.at(swingHipIndex);
+	}
 //	blendOutTorques();
 
     return torques;

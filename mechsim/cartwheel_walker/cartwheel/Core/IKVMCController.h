@@ -5,6 +5,7 @@
 #include <Core/SimBiController.h>
 #include <Core/VirtualModelController.h>
 
+#include "Debug.h"
 #include "InvPendulum.h"
 
 class IKSwingLegTarget {
@@ -63,8 +64,6 @@ private:
 	int stanceAnkleIndex, stanceKneeIndex, swingAnkleIndex;
 	//this is a controller that we will be using to compute gravity-cancelling torques
 	// VirtualModelController* vmc;
-	//some feed-forward torque we want the root to see...
-	Vector3d ffRootTorque;
 
 	/**
 		determines if there are any heel/toe forces on the given RB
@@ -194,9 +193,9 @@ public:
 	/**
 		This method is used to compute torques for the stance leg that help achieve a desired speed in the sagittal and lateral planes
 	*/
-	void computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, const std::vector<ContactPoint>& cfs, RawTorques& torques);
+	// void computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, const std::vector<ContactPoint>& cfs, RawTorques& torques);
 
-	RawTorques COMJT(const std::vector<ContactPoint>& cfs);
+	RawTorques COMJT(const Vector3d& fA, const std::vector<ContactPoint>& cfs, Vector3d& stanceAnkleTorque, Vector3d& stanceKneeTorque, Vector3d& stanceHipTorque);
 
 	/**
 		This method is used to compute the force that the COM of the character should be applying.
@@ -207,10 +206,10 @@ public:
 		This method returns performes some pre-processing on the virtual torque. The torque is assumed to be in world coordinates,
 		and it will remain in world coordinates.
 	*/
-	void preprocessAnkleVTorque(int ankleJointIndex, const std::vector<ContactPoint>& cfs, Vector3d *ankleVTorque);
+	Vector3d preprocessAnkleVTorque(int ankleJointIndex, const std::vector<ContactPoint>& cfs, Vector3d ankleVTorque);
 	
 	InvPendulum ip;
 	
-	Vector3d DEBUG_desSwingPos, DEBUG_desSwingVel;
+	DebugInfo* dbg;
 };
 

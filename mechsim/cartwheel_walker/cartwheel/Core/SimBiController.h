@@ -67,7 +67,6 @@ protected:
 
 	double stanceHipDamping;
 	double stanceHipMaxVelocity;
-	double rootPredictiveTorqueScale;
 
 	//this is the desired orientation for the root
 	Quaternion qRootD;
@@ -118,7 +117,7 @@ protected:
 	bool swingHeelInContact;
 	bool stanceHeelInContact;
 	bool haveToeAndHeelInformation;
-	void computeToeAndHeelForces(const std::vector<ContactPoint>& cfs);
+	// void computeToeAndHeelForces(const std::vector<ContactPoint>& cfs); (UNUSED)
 
 
 	//the phase parameter, phi must have values between 0 and 1, and it indicates the progress through the current state.
@@ -187,7 +186,7 @@ protected:
 		between 0 and 1, and it corresponds to the percentage of the total net vertical force that rests on the stance
 		foot.
 	*/
-	void computeHipTorques(const Quaternion& qRootD, double stanceHipToSwingHipRatio, Vector3d ffRootTorque, RawTorques& torques);
+	Vector3d computeRootTorque(const Quaternion& qRootD);
 	
 	PoseController poseControl;
 

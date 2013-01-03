@@ -50,7 +50,7 @@ public:
 	
 	static Vector3d Zero() { return Vector3d(0., 0., 0.); }
 	
-	Eigen::Vector3d toEigen() { return Eigen::Vector3d(x, y, z); }
+	Eigen::Vector3d toEigen() const { return Eigen::Vector3d(x, y, z); }
 
 	/**
 		addition of two vectors - results in a new vector.

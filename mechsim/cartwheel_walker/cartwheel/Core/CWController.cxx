@@ -37,6 +37,7 @@ CWController::CWController(Character* character, WorldOracle* worldOracle)
     
     fLowController = createLowController(character);
     fLowController->setStance(LEFT_STANCE);
+    fLowController->dbg = &fDbg;
     
     fHighController = new TurnController(character, fLowController, worldOracle);
     fHighController->initializeDefaultParameters();

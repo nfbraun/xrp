@@ -5,6 +5,7 @@
 
 #include "CWRobot.h"
 #include <Core/CWController.h>
+#include <Core/Debug.h>
 #include <Physics/ArticulatedFigure.h>
 #include <ode/ode.h>
 
@@ -60,7 +61,8 @@ class CartState: public SimulationState {
     
     double fPhi;
     int fStance;
-    Eigen::Vector3d fDesSwingPos, fDesSwingVel;
+    
+    DebugInfo fDbg;
     
     bool fContactL, fContactR;
     

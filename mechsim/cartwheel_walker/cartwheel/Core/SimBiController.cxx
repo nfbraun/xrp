@@ -62,8 +62,7 @@ SimBiController::SimBiController(Character* b)
 
 	stanceHipDamping = -1;
 	stanceHipMaxVelocity = 4;
-	rootPredictiveTorqueScale = 0;
-
+	
 	bodyTouchedTheGround = false;
 }
 
@@ -252,11 +251,10 @@ double SimBiController::getStanceFootWeightRatio(const std::vector<ContactPoint>
 /**
 	This method is used to compute the distribution of forces between the two feet
 */
+/*** UNUSED ***/
+#if 0
 void SimBiController::computeToeAndHeelForces(const std::vector<ContactPoint>& cfs)
 {
-    /*** UNUSED ***/
-    assert(false);
-    
 	forceStanceToe.setValues(0,0,0);
 	forceSwingToe.setValues(0,0,0);
 	forceStanceHeel.setValues(0,0,0);
@@ -326,6 +324,7 @@ void SimBiController::computeToeAndHeelForces(const std::vector<ContactPoint>& c
 	if (swingHeelCount > 0)
 		heelSwingPos /= swingHeelCount;
 }
+#endif
 
 void SimBiController::initControlParams()
 {
@@ -361,84 +360,28 @@ void SimBiController::initControlParams()
 	This method is used to compute the torques that need to be applied to the stance and swing hips, given the
 	desired orientation for the root and the swing hip.
 */
-void SimBiController::computeHipTorques(const Quaternion& qRootD, double stanceHipToSwingHipRatio, Vector3d ffRootTorque, RawTorques& torques){
+/* simplified (on 2013-01-02) */
+Vector3d SimBiController::computeRootTorque(const Quaternion& qRootD)
+{
 	//compute the total torques that should be applied to the root and swing hip, keeping in mind that
 	//the desired orientations are expressed in the character frame
 	Vector3d rootTorque;
-	Vector3d swingHipTorque;
-
-	if (stanceHipToSwingHipRatio < 0)
-		rootControlParams.strength = 0;
 
 	//this is the desired orientation in world coordinates
 	Quaternion qRootDW;
 
-//	if (SimGlobals::forceHeadingControl == false){
-		//qRootD is specified in the character frame, so just maintain the current heading
-//		qRootDW = characterFrame * qRootD;
-//	}else{
-		//qRootDW needs to also take into account the desired heading
+	//qRootDW needs to also take into account the desired heading
 	qRootDW = Quaternion::getRotationQuaternion(desiredHeading, PhysicsGlobals::up) * qRootD;
-//	}
-
-	double rootStrength = rootControlParams.strength;
-	if (rootStrength < 0)
-		rootStrength = 0;
-	if (rootStrength > 1)
-		rootStrength = 1;
-
-	rootControlParams.strength = 1;
 
 	//so this is the net torque that the root wants to see, in world coordinates
 	rootTorque = poseControl.computePDTorque(root->getOrientation(), qRootDW, root->getAngularVelocity(), Vector3d(0,0,0), &rootControlParams);
 
-	rootTorque += ffRootTorque;
-
-	RigidBody* swingHip = character->getJoint(swingHipIndex)->getChild();
-
-	swingHipTorque = torques.get(swingHipIndex);
-
-	//we need to compute the total torque that needs to be applied at the hips so that the final net torque on the root is rootTorque
-	Vector3d rootMakeupTorque;
-	for (int i=0;i<jointCount;i++)
-		if (character->getJoint(i)->getParent() == root)
-			rootMakeupTorque -= torques.get(i);
-	rootMakeupTorque -= rootTorque;
-
-	//add to the root makeup torque the predictive torque as well (only consider the effect of the torque in the lateral plane).
-	Vector3d rootPredictiveTorque(0, 0, rootPredictiveTorqueScale*9.8*getD().x);
-	rootMakeupTorque += characterFrame.rotate(rootPredictiveTorque);
-
-	//assume the stance foot is in contact...
-	Vector3d stanceHipTorque = torques.get(stanceHipIndex);
-
 	//now, based on the ratio of the forces the feet exert on the ground, and the ratio of the forces between the two feet, we will compute the forces that need to be applied
 	//to the two hips, to make up the root makeup torque - which means the final torque the root sees is rootTorque!
-	stanceHipTorque += rootMakeupTorque * stanceHipToSwingHipRatio * rootStrength;
-	swingHipTorque += rootMakeupTorque * (1-stanceHipToSwingHipRatio) * rootStrength;
-
-
-	if( stanceHipDamping > 0 ) {
-		Vector3d wRel = root->getAngularVelocity() - character->getJoints()[stanceHipIndex]->child->getAngularVelocity();
-		double wRelLen = wRel.length();
-		if (wRelLen > stanceHipMaxVelocity ) wRel = wRel * (stanceHipMaxVelocity/wRelLen);
-		stanceHipTorque -=  wRel * (stanceHipDamping * wRelLen);
-	}
-
-	//now transform the torque to child coordinates, apply torque limits and then change it back to world coordinates
-	Quaternion qStanceHip = character->getJoint(stanceHipIndex)->getChild()->getOrientation();
-	stanceHipTorque = qStanceHip.getComplexConjugate().rotate(stanceHipTorque);
-	poseControl.limitTorque(&stanceHipTorque, &poseControl.controlParams[stanceHipIndex]);
-	stanceHipTorque = qStanceHip.rotate(stanceHipTorque);
-
-	Quaternion qSwingHip = character->getJoint(swingHipIndex)->getChild()->getOrientation();
-	swingHipTorque = qSwingHip.getComplexConjugate().rotate(swingHipTorque);
-	poseControl.limitTorque(&swingHipTorque, &poseControl.controlParams[swingHipIndex]);
-	swingHipTorque = qSwingHip.rotate(swingHipTorque);
 
 	//and done...
-	torques.at(stanceHipIndex) = stanceHipTorque;
-	torques.at(swingHipIndex) = swingHipTorque;
+	// torques.at(stanceHipIndex) -= torques.get(J_L_HIP) + torques.get(J_R_HIP) + rootTorque;
+	return rootTorque;
 }
 
 

@@ -12,6 +12,8 @@ int main(int argc, char** argv)
     std::cout << "#:" << col++ << ":swv_y\n";
     std::cout << "#:" << col++ << ":swv_z\n";
     
+    std::cout << "#:" << col++ << ":sfwr\n";
+    
     for(unsigned int i=LH0; i<=RA1; i++)
         std::cout << "#:" << col++ << ":p_" << PhiNames[i] << "\n";
     for(unsigned int i=LH0; i<=RA1; i++)
@@ -27,12 +29,14 @@ int main(int argc, char** argv)
         
         std::cout << t*sim.GetTimestep() << " ";
         
-        std::cout << state.fDesSwingPos.x() << " ";
-        std::cout << state.fDesSwingPos.y() << " ";
-        std::cout << state.fDesSwingPos.z() << " ";
-        std::cout << state.fDesSwingVel.x() << " ";
-        std::cout << state.fDesSwingVel.y() << " ";
-        std::cout << state.fDesSwingVel.z() << " ";
+        std::cout << state.fDbg.desSwingPos.x << " ";
+        std::cout << state.fDbg.desSwingPos.y << " ";
+        std::cout << state.fDbg.desSwingPos.z << " ";
+        std::cout << state.fDbg.desSwingVel.x << " ";
+        std::cout << state.fDbg.desSwingVel.y << " ";
+        std::cout << state.fDbg.desSwingVel.z << " ";
+        
+        std::cout << state.fDbg.StanceFootWeightRatio << " ";
         
         for(unsigned int i=LH0; i <= RA1; i++)
             std::cout << state.fRobot.phi[i] << " ";

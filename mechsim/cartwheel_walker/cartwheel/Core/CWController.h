@@ -3,6 +3,7 @@
 #include "IKVMCController.h"
 #include "TurnController.h"
 #include "Controller.h"
+#include "Debug.h"
 
 class CWController {
   public:
@@ -21,4 +22,6 @@ class CWController {
     Character* fCharacter;
     IKVMCController* fLowController;
     TurnController* fHighController;
+    
+    DebugInfo fDbg;
 };

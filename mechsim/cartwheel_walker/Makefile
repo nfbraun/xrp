@@ -48,7 +48,8 @@ cartwheel/Core/TurnController.h \
 cartwheel/Core/TwoLinkIK.h \
 cartwheel/Core/VirtualModelController.h \
 cartwheel/Core/WorldOracle.h \
-cartwheel/Core/CWController.h
+cartwheel/Core/CWController.h \
+cartwheel/Core/Debug.h
 
 OBJS = $(SOURCES:.cxx=.o) $(CW_SOURCES:.cxx=.o)
 CARTWHEEL=cartwheel

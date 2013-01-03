@@ -63,7 +63,7 @@ void CartState::Draw(int mode) const
     glPushMatrix();
     GL::Rotate(Eigen::AngleAxis<double>(M_PI/2., Eigen::Vector3d::UnitX()));
     glColor3f(1., 1., 0.);
-    GL::drawSphere(0.1, fDesSwingPos);
+    GL::drawSphere(0.1, fDbg.desSwingPos.toEigen());
     glPopMatrix();
 }
 
@@ -517,8 +517,8 @@ CartState Cartwheel::GetCurrentState()
     
     state.fPhi = fController->fLowController->getPhase();
     state.fStance = fController->fLowController->getStance();
-    state.fDesSwingPos = fController->fLowController->DEBUG_desSwingPos.toEigen();
-    state.fDesSwingVel = fController->fLowController->DEBUG_desSwingVel.toEigen();
+    
+    state.fDbg = fController->fDbg;
     
     // state.fSwingPos = ODE::JointGetUniversalAnchor(fRobot->fLKneeJ);
     
