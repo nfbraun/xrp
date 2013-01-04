@@ -1,13 +1,54 @@
 #pragma once
 
-#include <Core/BehaviourController.h>
+#include <Core/IKVMCController.h>
+#include <MathLib/Segment.h>
+#include <Core/WorldOracle.h>
+
+#include "InvPendulum.h"
 
 /**
 	A two-step, arbitrary velocity to arbitrary velocity, parameterizable rotation controller.
 */
 
-class TurnController : public BehaviourController{
+class TurnController {
+/* BEGIN BehaviourController */
 protected:
+	Character* bip;
+	IKVMCController* lowLCon;
+	WorldOracle* wo;
+
+	//these are attributes/properties of the motion
+	double desiredHeading;
+	//double ubSagittalLean;
+	//double ubCoronalLean;
+	//double ubTwist;
+	//double duckWalk;
+	double velDSagittal;
+	double velDCoronal;
+	//double kneeBend;
+
+public:
+    void requestStepTime(double t) { stepTime = t; }
+    void requestStepHeight(double h) { stepHeight = h; }
+    
+	void setDesiredHeading(double v);
+	void setVelocities(double velDS, double velDC);
+
+public:
+	void adjustStepHeight();
+
+	void requestVelocities(double velDS, double velDC);
+	void requestCoronalStepWidth(double corSW);
+
+	double getDesiredVelocitySagittal() const { return velDSagittal; }
+	double getCoronalStepWidth() const { return lowLCon->ip.coronalStepWidth; }
+
+/* END BehaviourController */
+
+protected:
+    double stepTime;
+    double stepHeight;
+
 	double initialHeading;
 	double finalHeading;
 	double turnAngle;
@@ -34,30 +75,19 @@ public:
 	TurnController(Character* b, IKVMCController* llc, WorldOracle* w = NULL);
 
 	/**
-		sets a bunch of parameters to some default initial value
-	*/
-	virtual void initializeDefaultParameters();
-
-	/**
 		this method gets called at every simulation time step
 	*/
-	virtual void simStepPlan(double dt);
+	void simStepPlan(double dt);
 
 	/**
 		this method gets called every time the controller transitions to a new state
 	*/
-	virtual void conTransitionPlan();
-
-
-	/**
-		this method determines the degree to which the character should be panicking
-	*/
-	virtual double getPanicLevel();
+	void conTransitionPlan();
 
 	/**
 		ask for a heading...
 	*/
-	virtual void requestHeading(double v);
+	void requestHeading(double v);
 };
 
 

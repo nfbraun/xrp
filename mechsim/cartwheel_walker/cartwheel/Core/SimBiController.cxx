@@ -60,10 +60,10 @@ SimBiController::SimBiController(Character* b)
 	phi = 0;
 	desiredHeading = 0;
 
-	stanceHipDamping = -1;
-	stanceHipMaxVelocity = 4;
+	//stanceHipDamping = -1;
+	//stanceHipMaxVelocity = 4;
 	
-	bodyTouchedTheGround = false;
+	// bodyTouchedTheGround = false;
 }
 
 /**
@@ -206,24 +206,11 @@ int SimBiController::advanceInTime(double dt, const std::vector<ContactPoint>& c
 	if( dt <= 0 )
 		return -1;
 
-	bodyTouchedTheGround = false;
-	//see if anything else other than the feet touch the ground...
-	for (unsigned int i=0;i<cfs.size();i++){
-		//if neither of the bodies involved are articulated, it means they are just props so we can ignore them
-		/* if ((*cfs)[i].rb1->isArticulated() == false && (*cfs)[i].rb2->isArticulated() == false)
-			continue; */
-			
-		if (isFoot(cfs[i].rb1) || isFoot(cfs[i].rb2))
-			continue;
-
-		bodyTouchedTheGround = true;
-	}
-
 	//advance the phase of the controller
 	this->phi += dt/state.getStateTime();
 
 	//see if we have to transition to the next state in the FSM, and do it if so...
-	if (state.needTransition(phi, fabs(getForceOnFoot(swingFoot, cfs).dotProductWith(PhysicsGlobals::up)), fabs(getForceOnFoot(stanceFoot, cfs).dotProductWith(PhysicsGlobals::up)))){
+	if (needTransition(phi, fabs(getForceOnFoot(swingFoot, cfs).dotProductWith(PhysicsGlobals::up)), fabs(getForceOnFoot(stanceFoot, cfs).dotProductWith(PhysicsGlobals::up)))){
 		int newStateIndex = 0; //_states[FSMStateIndex]->getNextStateIndex();
 		transitionToState(0);
 		return newStateIndex;
@@ -340,78 +327,19 @@ void SimBiController::initControlParams()
 	}
 	
 	poseControl.controlParams[J_L_ANKLE].relToFrame = true;
-	poseControl.controlParams[J_L_ANKLE].frame = characterFrame;
+	poseControl.controlParams[J_L_ANKLE].frame = characterFrame();
 	poseControl.controlParams[J_L_ANKLE].frameAngularVelocityInWorld = Vector3d(0,0,0);
 	
 	poseControl.controlParams[J_R_ANKLE].relToFrame = true;
-	poseControl.controlParams[J_R_ANKLE].frame = characterFrame;
+	poseControl.controlParams[J_R_ANKLE].frame = characterFrame();
 	poseControl.controlParams[J_R_ANKLE].frameAngularVelocityInWorld = Vector3d(0,0,0);
 	
 	poseControl.controlParams[swingHipIndex].relToFrame = true;
-	poseControl.controlParams[swingHipIndex].frame = characterFrame;
+	poseControl.controlParams[swingHipIndex].frame = characterFrame();
 	poseControl.controlParams[swingHipIndex].frameAngularVelocityInWorld = Vector3d(0,0,0);
 
 	//and this is the desired orientation for the root
-	qRootD = Quaternion(1, 0, 0, 0);
+	// qRootD = Quaternion(1, 0, 0, 0);
 	rootControlParams.strength = 1.0;
-}
-
-/**
-	This method is used to compute the torques that need to be applied to the stance and swing hips, given the
-	desired orientation for the root and the swing hip.
-*/
-/* simplified (on 2013-01-02) */
-Vector3d SimBiController::computeRootTorque(const Quaternion& qRootD)
-{
-	//compute the total torques that should be applied to the root and swing hip, keeping in mind that
-	//the desired orientations are expressed in the character frame
-	Vector3d rootTorque;
-
-	//this is the desired orientation in world coordinates
-	Quaternion qRootDW;
-
-	//qRootDW needs to also take into account the desired heading
-	qRootDW = Quaternion::getRotationQuaternion(desiredHeading, PhysicsGlobals::up) * qRootD;
-
-	//so this is the net torque that the root wants to see, in world coordinates
-	rootTorque = poseControl.computePDTorque(root->getOrientation(), qRootDW, root->getAngularVelocity(), Vector3d(0,0,0), &rootControlParams);
-
-	//now, based on the ratio of the forces the feet exert on the ground, and the ratio of the forces between the two feet, we will compute the forces that need to be applied
-	//to the two hips, to make up the root makeup torque - which means the final torque the root sees is rootTorque!
-
-	//and done...
-	// torques.at(stanceHipIndex) -= torques.get(J_L_HIP) + torques.get(J_R_HIP) + rootTorque;
-	return rootTorque;
-}
-
-
-/**
-	This method is used to obtain the d and v parameters, using the current postural information of the biped
-*/
-void SimBiController::updateDAndV(){
-	characterFrame = character->getHeading();
-
-	comPosition = character->getCOM();
-
-	comVelocity = character->getCOMVelocity();
-
-	_d = Vector3d(stanceFoot->getCMPosition(), comPosition);
-	//d is now in world coord frame, so we'll represent it in the 'character frame'
-	_d = characterFrame.inverseRotate(_d);
-	//compute v in the 'character frame' as well
-	_v = characterFrame.inverseRotate(comVelocity);
-
-
-	//and now compute the vector from the COM to the center of midpoint between the feet, again expressed in world coordinates
-	Point3d feetMidpoint = (stanceFoot->getCMPosition() + swingFoot->getCMPosition());
-	feetMidpoint /= 2.0;
-
-	//now we have to compute the difference between the current COM and the desired COMPosition, in world coordinates
-	doubleStanceCOMError = Vector3d(comPosition, feetMidpoint);
-	//and add the user specified offset
-//	doubleStanceCOMError += characterFrame.rotate(Vector3d(SimGlobals::COMOffsetX, 0, SimGlobals::COMOffsetZ));
-	doubleStanceCOMError.y = 0;
-
-
 }
 

@@ -1,18 +1,36 @@
 #include "Cartwheel.h"
 
+unsigned int col = 1;
+
+void vectHeader(const std::string& name)
+{
+    std::cout << "#:" << col++ << ":" << name << "_x\n";
+    std::cout << "#:" << col++ << ":" << name << "_y\n";
+    std::cout << "#:" << col++ << ":" << name << "_z\n";
+}
+
+void scalarHeader(const std::string& name)
+{
+    std::cout << "#:" << col++ << ":" << name << "\n";
+}
+
+void printVect(const Vector3d& v)
+{
+    std::cout << v.x << " ";
+    std::cout << v.y << " ";
+    std::cout << v.z << " ";
+}
+
 int main(int argc, char** argv)
 {
     Cartwheel sim(2500, 1);
     
-    unsigned int col = 1;
-    std::cout << "#:" << col++ << ":swp_x\n";
-    std::cout << "#:" << col++ << ":swp_y\n";
-    std::cout << "#:" << col++ << ":swp_z\n";
-    std::cout << "#:" << col++ << ":swv_x\n";
-    std::cout << "#:" << col++ << ":swv_y\n";
-    std::cout << "#:" << col++ << ":swv_z\n";
+    vectHeader("swp");    // desired swing foot pos
+    vectHeader("swv");    // desired swing foot velocity
+    vectHeader("vrf");    // virtual root force
+    vectHeader("vrt");    // virtual root torque
     
-    std::cout << "#:" << col++ << ":sfwr\n";
+    scalarHeader("sfwr"); // swing foot weight ratio
     
     for(unsigned int i=LH0; i<=RA1; i++)
         std::cout << "#:" << col++ << ":p_" << PhiNames[i] << "\n";
@@ -29,12 +47,10 @@ int main(int argc, char** argv)
         
         std::cout << t*sim.GetTimestep() << " ";
         
-        std::cout << state.fDbg.desSwingPos.x << " ";
-        std::cout << state.fDbg.desSwingPos.y << " ";
-        std::cout << state.fDbg.desSwingPos.z << " ";
-        std::cout << state.fDbg.desSwingVel.x << " ";
-        std::cout << state.fDbg.desSwingVel.y << " ";
-        std::cout << state.fDbg.desSwingVel.z << " ";
+        printVect(state.fDbg.desSwingPos);
+        printVect(state.fDbg.desSwingVel);
+        printVect(state.fDbg.virtualRootForce);
+        printVect(state.fDbg.virtualRootTorque);
         
         std::cout << state.fDbg.StanceFootWeightRatio << " ";
         

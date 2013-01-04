@@ -26,6 +26,7 @@
 #include "PoseController.h"
 #include <Physics/RigidBody.h>
 #include "SimBiConState.h"
+#include "StateMachine.h"
 #include <vector>
 
 
@@ -37,7 +38,7 @@
  * and it must also have two feet (lFoot and rFoot) as rigid bodies in the articulated linkage.
  */
 
-class SimBiController {
+class SimBiController: public StateMachine {
 protected:
 	//this is the character that the controller is acting on
 	Character* character;
@@ -47,6 +48,20 @@ public:
 	Character* getCharacter() const {
 		return character;
 	}
+	
+	// this is the world relative position of the COM
+	Point3d getCOMPosition() const { return character->getCOM(); }
+	
+	// this is the world relative velocity of the COM
+	Vector3d getCOMVelocity() const { return character->getCOMVelocity(); }
+	
+	//this quaternion gives the current heading of the character. The complex conjugate of this orientation is used
+	//to transform quantities from world coordinates into a rotation/heading-independent coordinate frame (called the character frame).
+	//I will make the asumption that the character frame is a coordinate frame that is aligned with the vertical axis, but has 0 heading, and
+	//the characterFrame quaternion is used to rotate vectors from the character frame to the real world frame
+	Quaternion characterFrame() const { return character->getHeading(); }
+	Quaternion getCharacterFrame() const { return characterFrame(); }
+
 
 protected:
 /**
@@ -57,19 +72,17 @@ protected:
 	RigidBody* rFoot;
 	//we will also keep a reference to the root of the figure, to be able to identify the semi-global coordinate frame quickly
 	RigidBody* root;
-
-	SimBiConState state;
 	
 
 	//the root is not directly controlled by any joint, so we will store its Kp, Kd and maxTorque separated here.
 	//while the pose controller does not use these values, other types of controllers may need this information
 	ControlParams rootControlParams;
 
-	double stanceHipDamping;
-	double stanceHipMaxVelocity;
+	//double stanceHipDamping;
+	//double stanceHipMaxVelocity;
 
 	//this is the desired orientation for the root
-	Quaternion qRootD;
+	// Quaternion qRootD;
 	//this is the desired heading for the character
 	double desiredHeading;
 
@@ -77,32 +90,15 @@ protected:
 /**
 	these are quantities that get updated throughout the simulation
 */
-	//this value indicates which side is the stance side. 
-	int stance;
+
 	//a pointer to the swing and stance feet
 	RigidBody* stanceFoot;
 	RigidBody* swingFoot;
 	//keep track of the swing and stance hip indices
 	int stanceHipIndex;
 	int swingHipIndex;
-	//this is the index of the controller that is currently active
-	//int FSMStateIndex;
 
-	//this is the world relative velocity of the COM
-	Vector3d comVelocity;
-	//and this is the position
-	Point3d comPosition;
-
-	//this is the vector from the cm of the stance foot to the cm of the character
-	Vector3d _d;
-	//this is the velocity of the cm of the character, in character frame
-	Vector3d _v;
-
-	//this is the distance between the COM and the midpoint between the feet
-	Vector3d doubleStanceCOMError;
-
-
-
+	
 	//now, for each foot (and toes if any), we will keep a summary of the contact points from the previous simulation
 	Vector3d forceStanceToe;
 	Vector3d forceSwingToe;
@@ -119,20 +115,6 @@ protected:
 	bool haveToeAndHeelInformation;
 	// void computeToeAndHeelForces(const std::vector<ContactPoint>& cfs); (UNUSED)
 
-
-	//the phase parameter, phi must have values between 0 and 1, and it indicates the progress through the current state.
-	double phi;
-
-	//this quaternion gives the current heading of the character. The complex conjugate of this orientation is used
-	//to transform quantities from world coordinates into a rotation/heading-independent coordinate frame (called the character frame).
-	//I will make the asumption that the character frame is a coordinate frame that is aligned with the vertical axis, but has 0 heading, and
-	//the characterFrame quaternion is used to rotate vectors from the character frame to the real world frame
-	Quaternion characterFrame;
-
-	//this variable, updated everytime the controller state is advanced in time, is set to true if any body other than the feet are in contact
-	//with the ground, false otherwise. A higer level process can determine if the controller failed or not, based on this information.
-	bool bodyTouchedTheGround;
-	
 /**
 	A list of private methods...
 */
@@ -179,14 +161,6 @@ protected:
 	*/
 	double getStanceFootWeightRatio(const std::vector<ContactPoint>& cfs);
 
-	/**
-		This method is used to compute the torques that need to be applied to the stance and swing hips, given the
-		desired orientation for the root and the swing hip. The coordinate frame that these orientations are expressed
-		relative to is computed in this method. It is assumed that the stanceHipToSwingHipRatio variable is
-		between 0 and 1, and it corresponds to the percentage of the total net vertical force that rests on the stance
-		foot.
-	*/
-	Vector3d computeRootTorque(const Quaternion& qRootD);
 	
 	PoseController poseControl;
 
@@ -205,26 +179,11 @@ public:
 		poseControl.addControlParams(jIndex, params);
 	}
 	
-	SimBiConState* getState() { return &state; }
+	// SimBiConState* getState() { return &state; }
 	
 	void setDesiredHeading(double head) { desiredHeading = head; }
 
-	const Vector3d& getDoubleStanceCOMError() const { return doubleStanceCOMError; }
-
-	inline void setStanceHipDamping( double damping ) {
-		stanceHipDamping = damping;
-	}
-
-	inline double getStanceHipDamping() const { return stanceHipDamping; }
-
-
-	inline void setStanceHipMaxVelocity( double velocity ) {
-		stanceHipMaxVelocity = velocity;
-	}
-
-
-	inline double getStanceHipMaxVelocity() const { return stanceHipMaxVelocity; }
-
+	// const Vector3d& getDoubleStanceCOMError() const { return doubleStanceCOMError; }
 
 	/**
 		This method is used to set the stance 
@@ -237,9 +196,6 @@ public:
 	void setRootControlParams(const ControlParams& params) {
 	    rootControlParams = params;
 	}
-	
-	Point3d getCOMPosition() const { return comPosition; }
-	Vector3d getCOMVelocity() const { return comVelocity; }
 
 	void initControlParams();
 
@@ -252,13 +208,6 @@ public:
 	int advanceInTime(double dt, const std::vector<ContactPoint>& cfs);
 
 	/**
-		This method is used to return the value of bodyGroundContact
-	*/
-	inline bool isBodyInContactWithTheGround(){
-		return bodyTouchedTheGround;
-	}
-
-	/**
 		This method is used to return the value of the phase (phi) in the current FSM state.
 	*/
 	inline double getPhase(){
@@ -266,8 +215,14 @@ public:
 	}
 	inline void setPhase( double phi ) { this->phi = phi; }
 
-	Vector3d getV() const { return _v; }
-	Vector3d getD() const { return _d; }
+	
+	// this is the vector from the cm of the stance foot to the cm of the character
+	Vector3d getD() const
+	    { return characterFrame().inverseRotate(character->getCOM() - stanceFoot->getCMPosition()); }
+	
+	// this is the velocity of the cm of the character, in character frame
+	Vector3d getV() const
+	    { return characterFrame().inverseRotate(character->getCOMVelocity()); }
 
 	/**
 		This method returns the position of the CM of the stance foot, in world coordinates
@@ -302,19 +257,7 @@ public:
 	}
 	
 	inline const RigidBody* getSwingFoot() const { return swingFoot; }
-
-	/**
-		This method returns the character frame orientation
-	*/
-	Quaternion getCharacterFrame(){
-		return characterFrame;
-	}
-
-	/**
-		This method is used to update the d and v parameters, as well as recompute the character coordinate frame.
-	*/
-	void updateDAndV();
-
+	
 	/**
 		this method returns the stance of the character
 	*/

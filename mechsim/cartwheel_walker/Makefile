@@ -9,7 +9,6 @@ cartwheel/Physics/ArticulatedFigure.cxx \
 cartwheel/Physics/Joint.cxx \
 cartwheel/Physics/PhysicsGlobals.cxx \
 cartwheel/Physics/RigidBody.cxx \
-cartwheel/Core/BehaviourController.cxx \
 cartwheel/Core/Character.cxx \
 cartwheel/Core/IKVMCController.cxx \
 cartwheel/Core/InvPendulum.cxx \
@@ -19,7 +18,8 @@ cartwheel/Core/SimGlobals.cxx \
 cartwheel/Core/TurnController.cxx \
 cartwheel/Core/TwoLinkIK.cxx \
 cartwheel/Core/VirtualModelController.cxx \
-cartwheel/Core/CWController.cxx
+cartwheel/Core/CWController.cxx \
+cartwheel/Core/StateMachine.cxx
 
 CW_HEADERS = \
 cartwheel/MathLib/MathLib.h \
@@ -35,7 +35,6 @@ cartwheel/Physics/Joint.h \
 cartwheel/Physics/PhysicsGlobals.h \
 cartwheel/Physics/RBState.h \
 cartwheel/Physics/RigidBody.h \
-cartwheel/Core/BehaviourController.h \
 cartwheel/Core/Character.h \
 cartwheel/Core/Controller.h \
 cartwheel/Core/IKVMCController.h \
@@ -49,6 +48,7 @@ cartwheel/Core/TwoLinkIK.h \
 cartwheel/Core/VirtualModelController.h \
 cartwheel/Core/WorldOracle.h \
 cartwheel/Core/CWController.h \
+cartwheel/Core/StateMachine.h \
 cartwheel/Core/Debug.h
 
 OBJS = $(SOURCES:.cxx=.o) $(CW_SOURCES:.cxx=.o)

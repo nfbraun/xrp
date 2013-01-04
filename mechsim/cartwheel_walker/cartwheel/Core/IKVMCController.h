@@ -200,7 +200,16 @@ public:
 	/**
 		This method is used to compute the force that the COM of the character should be applying.
 	*/
-	Vector3d computeVirtualForce();
+	Vector3d computeVirtualForce(double desOffCoronal, double desVSagittal, double desVCoronal);
+	
+	/**
+		This method is used to compute the torques that need to be applied to the stance and swing hips, given the
+		desired orientation for the root and the swing hip. The coordinate frame that these orientations are expressed
+		relative to is computed in this method. It is assumed that the stanceHipToSwingHipRatio variable is
+		between 0 and 1, and it corresponds to the percentage of the total net vertical force that rests on the stance
+		foot.
+	*/
+	Vector3d computeRootTorque(double desHeading);
 
 	/**
 		This method returns performes some pre-processing on the virtual torque. The torque is assumed to be in world coordinates,

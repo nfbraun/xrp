@@ -1,6 +1,5 @@
 #include "IKVMCController.h"
 
-#include <Core/BehaviourController.h>
 #include <Core/TwoLinkIK.h>
 
 /**
@@ -115,9 +114,9 @@ IKSwingLegTarget IKVMCController::computeIKSwingLegTargets(const Vector3d& swing
     const double dt = 0.001;
 
     Point3d pNow, pFuture;
-    pNow = transformSwingFootTarget(phi, swingFootPos, comPosition, characterFrame);
+    pNow = transformSwingFootTarget(phi, swingFootPos, getCOMPosition(), characterFrame());
     pFuture = transformSwingFootTarget(phi+dt, swingFootPos + swingFootVel*dt,
-        comPosition + comVelocity*dt, characterFrame);
+        getCOMPosition() + getCOMVelocity()*dt, characterFrame());
         
     dbg->desSwingPos = pNow;
     
@@ -197,19 +196,20 @@ RawTorques IKVMCController::computeGravityCompensationTorques(Character* charact
 /**
 	This method is used to compute the force that the COM of the character should be applying.
 */
-Vector3d IKVMCController::computeVirtualForce()
+Vector3d IKVMCController::computeVirtualForce(double desOffCoronal, double desVSagittal, double desVCoronal)
 {
 	//this is the desired acceleration of the center of mass
-	Vector3d desA = Vector3d();
-	desA.z = (velDSagittal - getV().z) * 30;
-	desA.x = (-getD().x + comOffsetCoronal) * 20 + (velDCoronal - getV().x) * 9;
+	Vector3d desA;
+	desA.z = (desVSagittal - getV().z) * 30;
+	desA.y = 0.;
+	desA.x = (desOffCoronal - getD().x) * 20 + (desVCoronal - getV().x) * 9;
 	
-	if (doubleStanceMode == true){
+	/* if (doubleStanceMode == true){
 	    assert(false);
 		Vector3d errV = characterFrame.inverseRotate(doubleStanceCOMError*-1);
 		desA.x = (-errV.x + comOffsetCoronal) * 20 + (velDCoronal - getV().x) * 9;
 		desA.z = (-errV.z + comOffsetSagittal) * 10 + (velDSagittal - getV().z) * 150;
-	}
+	} */
 
 	//and this is the force that would achieve that - make sure it's not too large...
 	Vector3d fA = (desA) * character->getMass();
@@ -217,9 +217,37 @@ Vector3d IKVMCController::computeVirtualForce()
 	boundToRange(&fA.z, -60, 60);
 
 	//now change this quantity to world coordinates...
-	fA = characterFrame.rotate(fA);
+	fA = characterFrame().rotate(fA);
 
 	return fA;
+}
+
+/**
+	This method is used to compute the torques that need to be applied to the stance and swing hips, given the
+	desired orientation for the root and the swing hip.
+*/
+/* simplified (on 2013-01-02) */
+Vector3d IKVMCController::computeRootTorque(double desHeading)
+{
+	//compute the total torques that should be applied to the root and swing hip, keeping in mind that
+	//the desired orientations are expressed in the character frame
+	Vector3d rootTorque;
+	
+	//this is the desired orientation in world coordinates
+	Quaternion qRootDW;
+
+	//qRootDW needs to also take into account the desired heading
+	qRootDW = Quaternion::getRotationQuaternion(desHeading, PhysicsGlobals::up);
+
+	//so this is the net torque that the root wants to see, in world coordinates
+	rootTorque = poseControl.computePDTorque(root->getOrientation(), qRootDW, root->getAngularVelocity(), Vector3d(0,0,0), &rootControlParams);
+
+	//now, based on the ratio of the forces the feet exert on the ground, and the ratio of the forces between the two feet, we will compute the forces that need to be applied
+	//to the two hips, to make up the root makeup torque - which means the final torque the root sees is rootTorque!
+
+	//and done...
+	// torques.at(stanceHipIndex) -= torques.get(J_L_HIP) + torques.get(J_R_HIP) + rootTorque;
+	return rootTorque;
 }
 
 /**
@@ -342,8 +370,9 @@ void IKVMCController::updateSwingAndStanceReferences(){
 */
 RawTorques IKVMCController::computeTorques(const std::vector<ContactPoint>& cfs)
 {
+    updateSwingAndStanceReferences();
+
 	//d and v are specified in the rotation (heading) invariant coordinate frame
-	updateDAndV();
 
 	//evaluate the target orientation for every joint, using the SIMBICON state information
 	initControlParams();
@@ -386,7 +415,7 @@ RawTorques IKVMCController::computeTorques(const std::vector<ContactPoint>& cfs)
 	bubbleUpTorques(character, torques);
 	
 
-	//we'll also compute the torques that cancel out the effects of gravity, for better tracking purposes
+	//we'll also compute the torques that cancel out the effects of gravity, for better tracking purposes (swing leg only)
 	torques.add(computeGravityCompensationTorques(character));
 
 //		computeLegTorques(stanceAnkleIndex, stanceKneeIndex, stanceHipIndex, cfs);
@@ -399,8 +428,11 @@ RawTorques IKVMCController::computeTorques(const std::vector<ContactPoint>& cfs)
 	dbg->StanceFootWeightRatio = getStanceFootWeightRatio(cfs);
 	
 	if(getStanceFootWeightRatio(cfs) > 0.9) {
-	    Vector3d virtualRootForce = computeVirtualForce();
-	    Vector3d virtualRootTorque = computeRootTorque(qRootD);
+	    Vector3d virtualRootForce = computeVirtualForce(comOffsetCoronal, velDSagittal, velDCoronal);
+	    Vector3d virtualRootTorque = computeRootTorque(desiredHeading);
+	    
+	    dbg->virtualRootForce = virtualRootForce;
+	    dbg->virtualRootTorque = virtualRootTorque;
 	    
 	    Vector3d stanceAnkleTorque, stanceKneeTorque, stanceHipTorque;
 	    COMJT(virtualRootForce, cfs, stanceAnkleTorque, stanceKneeTorque, stanceHipTorque);

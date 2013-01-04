@@ -196,7 +196,7 @@ double InvPendulum::adjustCoronalStepLocation(double IPPrediction)
 	stepWidth = (lowLCon->getStance() == LEFT_STANCE)?(-stepWidth):(stepWidth);
 
 	//now for the step in the coronal direction - figure out if the character is still doing well - panic = 0 is good, panic = 1 is bad...
-	double panicLevel = 1;
+	double panicLevel;
 	if (lowLCon->getStance() == LEFT_STANCE){
 		panicLevel = getValueInFuzzyRange(lowLCon->getD().x, 1.15 * stepWidth, 0.5 * stepWidth, 0.25 * stepWidth, -0.25 * stepWidth);
 		panicLevel += getValueInFuzzyRange(lowLCon->getV().x, 2*stepWidth, stepWidth, -stepWidth, -stepWidth*1.5);

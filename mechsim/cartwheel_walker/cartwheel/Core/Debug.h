@@ -7,4 +7,6 @@ class DebugInfo {
     Vector3d desSwingPos, desSwingVel;
     
     double StanceFootWeightRatio;
+    
+    Vector3d virtualRootTorque, virtualRootForce;
 };

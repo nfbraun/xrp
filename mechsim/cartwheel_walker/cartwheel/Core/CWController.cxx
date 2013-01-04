@@ -40,27 +40,11 @@ CWController::CWController(Character* character, WorldOracle* worldOracle)
     fLowController->dbg = &fDbg;
     
     fHighController = new TurnController(character, fLowController, worldOracle);
-    fHighController->initializeDefaultParameters();
     
     fHighController->requestHeading(0.);
     fHighController->conTransitionPlan();
     fHighController->requestCoronalStepWidth(.3);
     fHighController->requestVelocities(.5, 0.);
-}
-
-RawTorques CWController::performPreTasks(double dt, const std::vector<ContactPoint>& cfs)
-{
-    fHighController->simStepPlan(SimGlobals::dt);
-    return fLowController->computeTorques(cfs);
-}
-
-void CWController::performPostTasks(double dt, const std::vector<ContactPoint>& cfs)
-{
-    bool newState = (fLowController->advanceInTime(dt, cfs) != -1);
-    fLowController->updateDAndV();
-    if( newState ) {
-        fHighController->conTransitionPlan();
-    }
 }
 
 JointSpTorques CWController::transformTorques(const RawTorques& torques)
@@ -109,6 +93,12 @@ JointSpTorques CWController::transformTorques(const RawTorques& torques)
 
 JointSpTorques CWController::Run(double dt, const std::vector<ContactPoint>& cfs)
 {
-    performPostTasks(dt, cfs);
-    return transformTorques(performPreTasks(dt, cfs));
+    bool newState = (fLowController->advanceInTime(dt, cfs) != -1);
+    
+    if( newState ) {
+        fHighController->conTransitionPlan();
+    }
+    
+    fHighController->simStepPlan(SimGlobals::dt);
+    return transformTorques(fLowController->computeTorques(cfs));
 }

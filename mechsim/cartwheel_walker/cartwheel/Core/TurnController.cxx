@@ -1,12 +1,57 @@
 #include "TurnController.h"
 
-TurnController::TurnController(Character* b, IKVMCController* llc, WorldOracle* w) : BehaviourController(b, llc, w){
+TurnController::TurnController(Character* b, IKVMCController* llc, WorldOracle* w)
+{
+	this->bip = b;
+	this->lowLCon = llc;
+	this->wo = w;
+	
+	requestStepTime(0.6);
+	requestStepHeight(0.);
+
+	desiredHeading = 0;
+	velDSagittal = 0;
+	velDCoronal = 0;
+
 	headingRequested = false;
 	stillTurning = false;
 	requestedHeadingValue = 0;
-	turningBodyTwist = 0;
 	initialTiming = 0;
 }
+
+/* BEGIN BehaviourController */
+void TurnController::requestVelocities(double velDS, double velDC){
+	velDSagittal = velDS;
+	velDCoronal = velDC;
+}
+
+void TurnController::setVelocities(double velDS, double velDC){
+	lowLCon->velDSagittal = velDS;
+	lowLCon->velDCoronal = velDC;
+}
+
+void TurnController::setDesiredHeading(double v){
+	lowLCon->setDesiredHeading(v);
+}
+
+void TurnController::requestCoronalStepWidth(double corSW) {
+	lowLCon->ip.coronalStepWidth = corSW;
+}
+
+void TurnController::adjustStepHeight(){
+	lowLCon->unplannedForHeight = 0;
+	if (wo != NULL)
+		//the trajectory of the foot was generated without taking the environment into account, so check to see if there are any un-planned bumps (at somepoint in the near future)
+		lowLCon->unplannedForHeight = wo->getWorldHeightAt(lowLCon->getSwingFootPos() + lowLCon->getSwingFootVel() * 0.1) * 1.5;
+
+	//if the foot is high enough, we shouldn't do much about it... also, if we're close to the start or end of the
+	//walk cycle, we don't need to do anything... the thing below is a quadratic that is 1 at 0.5, 0 at 0 and 1...
+	double panicIntensity = -4 * lowLCon->getPhase() * lowLCon->getPhase() + 4 * lowLCon->getPhase();
+	panicIntensity *= lowLCon->ip.getPanicLevel();
+	lowLCon->panicHeight = panicIntensity * 0.05;
+}
+
+/* END BehaviourController */
 
 /**
 	ask for a heading...
@@ -32,18 +77,34 @@ void TurnController::requestHeading(double v){
 /**
 	this method gets called at every simulation time step
 */
-void TurnController::simStepPlan(double dt){
-	BehaviourController::simStepPlan(dt);
+void TurnController::simStepPlan(double dt)
+{
+	/* BEGIN BehaviourController::simStepPlan(dt); */
+	// lowLCon->updateSwingAndStanceReferences();
+	//if (lowLCon->getPhase() <= 0.01)
+	//	lowLCon->ip.swingFootStartPos = lowLCon->getSwingFoot()->getWorldCoordinatesForPoint(bip->getJoints()[lowLCon->getSwingAnkleIndex()]->getChildJointPosition());
+
+	setDesiredHeading(desiredHeading);
+	setVelocities(velDSagittal, velDCoronal);
+
+	//adjust for panic mode or unplanned terrain...
+	adjustStepHeight();
+
+	//and see if we're really in trouble...
+    //	if (shouldAbort()) onAbort();
+	/* END */
 	if (stillTurning == false)
 		return;
 
 	//this is this guy's equivalent of panic management...
 	double vLength = lowLCon->getV().length();
 	if (vLength > 1.5*initialVelocity.length() && vLength > 1.5*desiredVelocity.length() && vLength > 0.5){
-		lowLCon->getState()->setStateTime(lowLCon->getState()->getStateTime() * 0.99);
+		std::cerr << "Panic in TurnController::simStepPlan" << std::endl;
+		lowLCon->setStepTime(lowLCon->getStepTime() * 0.99);
 //		tprintf("velocity is too large... changing transition time to: %lf\n", lowLCon->states[lowLCon->FSMStateIndex]->stateTime);
-	}else
-		lowLCon->getState()->setStateTime(initialTiming);
+	} else {
+		lowLCon->setStepTime(initialTiming);
+	}
 
 	//2 rads per second...
 	double turnRate = dt * 2;
@@ -54,16 +115,10 @@ void TurnController::simStepPlan(double dt){
 	currentHeadingQ = bip->getHeading();
 	currentDesiredHeadingQ.setToRotationQuaternion(turningDesiredHeading, PhysicsGlobals::up);
 	finalHeadingQ.setToRotationQuaternion(finalHeading, PhysicsGlobals::up);
-	//the *3 below is because the head rotates thrice more than the body, and we don't want it to go past the target...
-	upperBodyTwistQ.setToRotationQuaternion(turningBodyTwist * 3, PhysicsGlobals::up);
 
 	//this is the angle between the current heading and the final desired heading...
 	tmpQ.setToProductOf(currentHeadingQ, finalHeadingQ, false, true);
 	double curToFinal = tmpQ.getRotationAngle(PhysicsGlobals::up);
-	//this is the difference between the current and final orientation, offset by the current turningBodyTwist - to know how much more we
-	//should twist into the rotation...
-	tmpQ2.setToProductOf(tmpQ, upperBodyTwistQ, false, true);
-	double deltaTwist = tmpQ2.getRotationAngle(PhysicsGlobals::up);
 	//this is the angle between the set desired heading and the final heading - adding this to the current desired heading would reach finalHeading in one go...
 	tmpQ.setToProductOf(finalHeadingQ, currentDesiredHeadingQ, false, true);
 	double desToFinal = tmpQ.getRotationAngle(PhysicsGlobals::up);
@@ -74,39 +129,25 @@ void TurnController::simStepPlan(double dt){
 		turningDesiredHeading += desToFinal;
 	}
 
-	boundToRange(&deltaTwist, -turnRate*4, turnRate*4);
-	turningBodyTwist += deltaTwist;
-	boundToRange(&turningBodyTwist, -0.5, 0.5);
-	double footAngleRelToBody = (lowLCon->getStance() == LEFT_STANCE)?(-duckWalk):(duckWalk);
 	double t = (lowLCon->getPhase()) - 0.2;
 	boundToRange(&t, 0, 1);
-	double twistCoef = 2*(desiredVelocity.length() + 0.5);
-	boundToRange(&twistCoef, 0, 2.5);
-	footAngleRelToBody = (1-t) * footAngleRelToBody + t * -turningBodyTwist*twistCoef;
-	//setDuckWalkDegree(footAngleRelToBody);
-	//setUpperBodyPose(ubSagittalLean + 0.01, ubCoronalLean - turningBodyTwist/10, turningBodyTwist);
 
 	//are we there yet (or close enough)?
 	if (fabs(curToFinal) < 0.2){
 		//printf("done turning!\n");
-		turningBodyTwist = 0;
 		desiredHeading = turningDesiredHeading = finalHeading;
 		//reset everything...
-		//setUpperBodyPose(ubSagittalLean, ubCoronalLean, ubTwist);
 		setDesiredHeading(desiredHeading);
-		//setDuckWalkDegree(duckWalk);
 		setVelocities(velDSagittal, velDCoronal);
-		lowLCon->getState()->setStateTime(initialTiming);
+		lowLCon->setStepTime(initialTiming);
 		stillTurning = false;
 	}else{
 		//still turning... so we need to still specify the desired velocity, in character frame...
 		t = fabs(curToFinal/turnAngle) - 0.3;
 		boundToRange(&t, 0, 1);
 		Vector3d vD = initialVelocity*t + desiredVelocity*(1-t);
-		//Vector3d vD = desiredVelocity;
 		vD = lowLCon->getCharacterFrame().inverseRotate(vD);
-		lowLCon->velDSagittal = vD.z;
-		lowLCon->velDCoronal = vD.x;
+		setVelocities(vD.z, vD.x);
 	}
 
 	setDesiredHeading(turningDesiredHeading);
@@ -115,17 +156,23 @@ void TurnController::simStepPlan(double dt){
 /**
 	this method gets called every time the controller transitions to a new state
 */
-void TurnController::conTransitionPlan(){
-	BehaviourController::conTransitionPlan();
+void TurnController::conTransitionPlan()
+{
+    //we should estimate these from the character info...
+    const double ankleBaseHeight = 0.04;
+    
+    lowLCon->setStepTime(stepTime);
+    lowLCon->ip.swingFootStartPos = lowLCon->getSwingFootPos();
+    
+    //now prepare the step information for the following step:
+    lowLCon->swingFootHeightTrajectory.clear();
+    
+    lowLCon->swingFootHeightTrajectory.addKnot(0, ankleBaseHeight);
+    lowLCon->swingFootHeightTrajectory.addKnot(0.5, ankleBaseHeight + 0.01 + 0.1 + 0 + stepHeight);
+    lowLCon->swingFootHeightTrajectory.addKnot(1, ankleBaseHeight + 0.01);
+    
 	if (headingRequested)
 		initiateTurn(requestedHeadingValue);
-}
-
-/**
-	sets a bunch of parameters to some default initial value
-*/
-void TurnController::initializeDefaultParameters(){
-	BehaviourController::initializeDefaultParameters();
 }
 
 
@@ -134,7 +181,6 @@ void TurnController::initializeDefaultParameters(){
 */
 void TurnController::initiateTurn(double finalDHeading){
 	if (stillTurning == false){
-		turningBodyTwist = 0;
 		turningDesiredHeading = bip->getHeadingAngle();;
 	}
 
@@ -169,16 +215,5 @@ void TurnController::initiateTurn(double finalDHeading){
 		headingRequested = true;
 		requestedHeadingValue = finalDHeading;
 	}
-}
-
-/**
-	this method determines the degree to which the character should be panicking
-*/
-double TurnController::getPanicLevel(){
-	//don't panic during turning, if the vel's are not there yet... or at least, panic in a different way.
-	if (stillTurning)
-		return 0;
-
-	return lowLCon->ip.getPanicLevel();
 }
 

@@ -14,9 +14,6 @@ class CWController {
     JointSpTorques Run(double dt, const std::vector<ContactPoint>& cfs);
     
   public:
-    RawTorques performPreTasks(double dt, const std::vector<ContactPoint>& cfs);
-    void performPostTasks(double dt, const std::vector<ContactPoint>& cfs);
-    
     JointSpTorques transformTorques(const RawTorques& torques);
     
     Character* fCharacter;
