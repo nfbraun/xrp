@@ -63,6 +63,13 @@ public:
 		return *this;
 	}
 
+	static Quaternion QFromAngleAndAxis(double angle, const Vector3d& axis) {
+		const double s = cos(angle/2.);
+		const Vector3d v = axis * sin(angle/2.);
+		
+		return Quaternion(s, v);
+	}
+	
 	/**
 		this method is used to set the current quaternion to the product of the two quaternions passed in as parameters.
 		the bool parameters invA and invB indicate wether or not, the quaternion a or b should be inverted (well, complex conjugate really)
@@ -75,7 +82,7 @@ public:
 		Because you can always consider a rotation to be of x degrees around axis v, or by -x degrees around axis -v,
 		we need to know the base rotation axis.
 	*/
-	inline double getRotationAngle(const Vector3d& positiveRotAxis){
+	inline double getRotationAngle(const Vector3d& positiveRotAxis) const {
 		int sinSign = SGN(positiveRotAxis.dotProductWith(v));
 		double result = 2 * safeACOS(s);
 		if (sinSign < 0)

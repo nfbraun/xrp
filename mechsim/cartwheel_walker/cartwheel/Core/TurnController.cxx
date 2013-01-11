@@ -65,9 +65,9 @@ void TurnController::requestHeading(const RobotInfo& rinfo, double v)
 	requestedHeadingValue = v;
 
 	//if the turn angle is pretty small, then just turn right away (or the old way... who knows).
-	currentHeadingQ = rinfo.characterFrame();
-	finalHeadingQ.setToRotationQuaternion(v, PhysicsGlobals::up);
-	tmpQ.setToProductOf(finalHeadingQ, currentHeadingQ, false, true);
+	const Quaternion currentHeadingQ = rinfo.characterFrame();
+	const Quaternion finalHeadingQ = Quaternion::QFromAngleAndAxis(v, PhysicsGlobals::up);
+	const Quaternion tmpQ = finalHeadingQ * currentHeadingQ.getComplexConjugate();
 	turnAngle = tmpQ.getRotationAngle(PhysicsGlobals::up);
 	//printf("turnAngle: %lf\n", turnAngle);
 
@@ -115,16 +115,18 @@ void TurnController::calcStepPlan(const RobotInfo& rinfo, double dt)
 	//TODO: get all those limits on the twisting deltas to be related to dt, so that we get uniform turning despite the
 	//having different dts
 
-	currentHeadingQ = rinfo.characterFrame();
-	currentDesiredHeadingQ.setToRotationQuaternion(turningDesiredHeading, PhysicsGlobals::up);
-	finalHeadingQ.setToRotationQuaternion(finalHeading, PhysicsGlobals::up);
+	const Quaternion currentHeadingQ = rinfo.characterFrame();
+	const Quaternion currentDesiredHeadingQ =
+	    Quaternion::QFromAngleAndAxis(turningDesiredHeading, PhysicsGlobals::up);
+	const Quaternion finalHeadingQ =
+	    Quaternion::QFromAngleAndAxis(finalHeading, PhysicsGlobals::up);
 
 	//this is the angle between the current heading and the final desired heading...
-	tmpQ.setToProductOf(currentHeadingQ, finalHeadingQ, false, true);
+	const Quaternion tmpQ = currentHeadingQ * finalHeadingQ.getComplexConjugate();
 	double curToFinal = tmpQ.getRotationAngle(PhysicsGlobals::up);
 	//this is the angle between the set desired heading and the final heading - adding this to the current desired heading would reach finalHeading in one go...
-	tmpQ.setToProductOf(finalHeadingQ, currentDesiredHeadingQ, false, true);
-	double desToFinal = tmpQ.getRotationAngle(PhysicsGlobals::up);
+	const Quaternion tmpQ2 = finalHeadingQ * currentDesiredHeadingQ.getComplexConjugate();
+	double desToFinal = tmpQ2.getRotationAngle(PhysicsGlobals::up);
 
 	//do we still need to increase the desired heading?
 	if (fabs(desToFinal) > 0.01){
@@ -209,10 +211,9 @@ void TurnController::initiateTurn(const RobotInfo& rinfo, double finalDHeading)
 	headingRequested = false;
 	stillTurning = true;
 
-	currentHeadingQ = rinfo.characterFrame();
-	finalHeadingQ.setToRotationQuaternion(finalDHeading, PhysicsGlobals::up);
-	tmpQ.setToProductOf(finalHeadingQ, currentHeadingQ, false, true);
-
+	const Quaternion currentHeadingQ = rinfo.characterFrame();
+	const Quaternion finalHeadingQ = Quaternion::QFromAngleAndAxis(finalDHeading, PhysicsGlobals::up);
+	const Quaternion tmpQ = finalHeadingQ * currentHeadingQ.getComplexConjugate();
 	turnAngle = tmpQ.getRotationAngle(PhysicsGlobals::up);
 	finalHeading = finalHeadingQ.getRotationAngle(PhysicsGlobals::up);
 	initialHeading = currentHeadingQ.getRotationAngle(PhysicsGlobals::up);

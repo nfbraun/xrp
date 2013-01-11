@@ -59,14 +59,11 @@ class TurnController {
 	bool stillTurning;
 	Vector3d desiredVelocity;
 	Vector3d initialVelocity;
-	//some quaternions that will be useful..
-	Quaternion currentHeadingQ, currentDesiredHeadingQ, finalHeadingQ, upperBodyTwistQ, tmpQ, tmpQ2;
 
 	bool headingRequested;
 	double requestedHeadingValue;
 
 	//keep a copy of the body twist and desired heading here, so that they can't be messed with somewhere else...
-	double turningBodyTwist;
 	double turningDesiredHeading;
 	double initialTiming;
 	    
