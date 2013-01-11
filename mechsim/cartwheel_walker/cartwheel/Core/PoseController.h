@@ -4,6 +4,7 @@
 #include <string>
 #include <stdexcept>
 #include <Core/Controller.h>
+#include <Core/RobotInfo.h>
 #include "Character.h"
 
 /**
@@ -11,8 +12,6 @@
 */
 class ControlParams {
 public:
-	//this variable is set to true if the current joint is being actively controlled, false otherwise
-	bool controlled;
 	//these two variables are the proporitonal and derivative gains for the PD controller used to compute the torque
 	double kp, kd;
 	//this is the maximum absolute value torque allowed at this joint
@@ -21,23 +20,13 @@ public:
 	//of the child
 	Vector3d scale;
 
-	double strength;
-
-	//this variable, if true, indicates that the desired orientation is specified in the custom coordinate frame
-	bool relToFrame;
-
-	//and this is the coordinate frame (and its angular velocity) that the desired orientation is specified in, if relToFrame is true
-	Quaternion frame;
-	Vector3d   frameAngularVelocityInWorld;
-
 public:
 
 	/**
 		This constructor initializes the variables to some safe, default values
 	*/
 	ControlParams( )
-	    : controlled(false), kp(0.), kd(0.), maxAbsTorque(0.),
-	        scale(0., 0., 0.), strength(1.), relToFrame(false)
+	    : kp(0.), kd(0.), maxAbsTorque(0.), scale(0., 0., 0.)
 	{ }
 
 	void setKp( double kp ) {
@@ -63,18 +52,6 @@ public:
 	}
 
 	const Vector3d& getScale() const { return scale; }
-
-	void setStrength( double strength ) {
-		this->strength = strength;
-	}
-
-	double getStrength() const { return strength; }
-
-	void setRelToFrame( bool relToFrame ) {
-		this->relToFrame = relToFrame;
-	}
-
-	bool getRelToFrame() const { return relToFrame; }
 };
 
 /**
@@ -86,31 +63,16 @@ public:
 class PoseController {
 public:
 	//this is the array of joint properties used to specify the 
-	std::vector<ControlParams> controlParams;
+	ControlParams controlParams[J_MAX];
 
 public:
 	/**
-		Constructor - expects a character that it will work on
-	*/
-	PoseController();
-	
-	//void setDesiredPose(const ReducedCharacterState& dp)
-	//    { desiredPose = dp; }
-
-	void addControlParams( int jIndex, const ControlParams& params ) {
-		controlParams[jIndex] = params;
-	}
-
-	ControlParams* getControlParams( int index ) {
-		return &controlParams[index];
-	}
-
-	/**
 		This method is used to compute the torques, based on the current and desired poses
 	*/
-	Vector3d computePDJointTorque(Character* character, int jid,
+	Vector3d computePDJointTorque(const RobotInfo& rinfo, int jid,
         Quaternion desiredOrientationInFrame,
-        Vector3d desiredRelativeAngularVelocityInFrame, bool relToFrame);
+        Vector3d desiredRelativeAngularVelocityInFrame, bool relToFrame,
+        Quaternion characterFrame = Quaternion(0., 0., 0., 0.));
 
 	/**
 		This method is used to compute the PD torque, given the current relative orientation of two coordinate frames (child and parent),
@@ -131,11 +93,6 @@ public:
 		the torque is already represented in the correct coordinate frame
 	*/
 	static void limitTorque(Vector3d* torque, const ControlParams* cParams);
-
-	/**
-		sets the targets to match the current state of the character
-	*/
-	//void setTargetsFromState();
 };
 
 

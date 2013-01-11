@@ -31,6 +31,8 @@ int main(int argc, char** argv)
     vectHeader("vrt");    // virtual root torque
     
     scalarHeader("sfwr"); // swing foot weight ratio
+    scalarHeader("stance");
+    scalarHeader("phi");
     
     for(unsigned int i=LH0; i<=RA1; i++)
         std::cout << "#:" << col++ << ":p_" << PhiNames[i] << "\n";
@@ -53,6 +55,8 @@ int main(int argc, char** argv)
         printVect(state.fDbg.virtualRootTorque);
         
         std::cout << state.fDbg.StanceFootWeightRatio << " ";
+        std::cout << state.fDbg.stance << " ";
+        std::cout << state.fDbg.phi << " ";
         
         for(unsigned int i=LH0; i <= RA1; i++)
             std::cout << state.fRobot.phi[i] << " ";

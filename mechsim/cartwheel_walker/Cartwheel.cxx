@@ -373,9 +373,8 @@ void Cartwheel::Advance()
     for(int i=0; i<fIntPerStep; ++i) {
         //dBodyAddForce(fRobot->fPelvisB, 40.*sin(fT), 40.*cos(fT), 0.);
         
-        JointSpTorques torques = fController->Run(dt, fContactPoints);
-        
-        fController->requestHeading(fT/4.);
+        const double desiredHeading = fT/4.;
+        JointSpTorques torques = fController->Run(dt, fContactPoints, desiredHeading);
         
         AdvanceInTime(dt, torques);
         fT += dt;
@@ -514,9 +513,6 @@ CartState Cartwheel::GetCurrentState()
     state.fTorques[RK]  = fDebugJTorques.fRightLeg[3];
     state.fTorques[RA0] = fDebugJTorques.fRightLeg[4];
     state.fTorques[RA1] = fDebugJTorques.fRightLeg[5];
-    
-    state.fPhi = fController->fLowController->getPhase();
-    state.fStance = fController->fLowController->getStance();
     
     state.fDbg = fController->fDbg;
     

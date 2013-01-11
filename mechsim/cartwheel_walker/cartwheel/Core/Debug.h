@@ -4,6 +4,9 @@
 
 class DebugInfo {
   public:
+    int stance;
+    double phi;
+  
     Vector3d desSwingPos, desSwingVel;
     
     double StanceFootWeightRatio;

@@ -17,13 +17,11 @@ ArticulatedFigure::~ArticulatedFigure(void){
 void ArticulatedFigure::setRoot( ArticulatedRigidBody* root ) {
 	if(this->arbs[R_ROOT] != 0)
 		throw std::runtime_error("This articulated figure already has a root");
-    root->setAFParent( this );
 	this->arbs[R_ROOT] = root;
 }
 
 void ArticulatedFigure::addArticulatedRigidBody( ArticulatedRigidBody* arb, ArbID id)
 {
-    arb->setAFParent( this );
     if(id < 0 || id >= R_MAX)
         throw std::runtime_error("Add invalid ARB");
     arbs[id] = arb;

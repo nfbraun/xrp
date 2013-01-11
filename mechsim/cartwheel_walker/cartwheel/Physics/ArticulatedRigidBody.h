@@ -13,37 +13,15 @@ class ArticulatedRigidBody : public RigidBody{
 public:
 	//this is the parent joint.
 	KTJoint* pJoint;
-	//and these are the child joints - it can have as many as it wants.
-	std::vector<KTJoint*> cJoints;
-	//this is the articulated figure that the rigid body belongs to
-	ArticulatedFigure* AFParent;
+	
 public:
 	/**
 		Default constructor
 	*/
-	ArticulatedRigidBody() : pJoint(0), AFParent(0) {}
+	ArticulatedRigidBody() : pJoint(0) {}
 
 	/**
 		returns the parent joint for the current articulated body
 	*/
 	inline KTJoint* getParentJoint(){return pJoint;};
-	inline int getChildJointCount() const { return cJoints.size(); }
-	inline KTJoint* getChildJoint(int i) { return cJoints[i]; }
-
-	/**
-		this method always returns true
-	*/
-	/* virtual bool isArticulated(){
-		return true;
-	} */
-
-	void setAFParent(ArticulatedFigure* parent){
-		AFParent = parent;
-	}
-
-	ArticulatedFigure* getAFParent(){
-		return AFParent;
-	}
-
-
 };

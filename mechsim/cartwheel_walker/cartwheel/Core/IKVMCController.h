@@ -2,17 +2,14 @@
 
 #include <MathLib/Trajectory.h>
 
-#include <Core/SimBiController.h>
 #include <Core/VirtualModelController.h>
+
+#include <Core/TorqueController.h>
+
+#include "ContactInfo.h"
 
 #include "Debug.h"
 #include "InvPendulum.h"
-
-class IKSwingLegTarget {
-  public:
-    Quaternion swingHipOrient, swingKneeOrient;
-    Vector3d swingHipAngVel, swingKneeAngVel;
-};
 
 /**
 	Controller Inspired by Simbicon and Virtual Model Control ideas. Uses IK to control swing foot placement. It assumes
@@ -55,88 +52,24 @@ class IKSwingLegTarget {
 			- maybe com J'?
 */
 
-class IKVMCController: public SimBiController {
-private:
-	//keep track of the swing knee and swing hip
-	int swingKneeIndex;
-	KTJoint *swingKnee, *swingHip;
-	//keep track of the stance ankle, stance knee and stance hip
-	int stanceAnkleIndex, stanceKneeIndex, swingAnkleIndex;
-	//this is a controller that we will be using to compute gravity-cancelling torques
-	// VirtualModelController* vmc;
+class HighLevelTarget {
+  public:
+    double velDSagittal, velDCoronal;
+    double desiredHeading;
+    double swingFootHeight, swingFootHeightVel;
+};
 
-	/**
-		determines if there are any heel/toe forces on the given RB
-	*/
-	void getForceInfoOn(RigidBody* rb, const std::vector<ContactPoint>& cfs, bool* heelForce, bool* toeForce);
-
-public:
-	//desired velocity in the sagittal plane
-	double velDSagittal;
-	//desired velocity in the coronal plane...
-	double velDCoronal;
-	//this is a desired foot trajectory that we may wish to follow, expressed separately, for the 3 components,
-	//and relative to the current location of the CM
-	Trajectory1d swingFootHeightTrajectory;
-	
-	// unused for now (NB)
-	/* Trajectory1d swingFootTrajectoryDeltaSagittal;
-	Trajectory1d swingFootTrajectoryDeltaCoronal;
-	Trajectory1d swingFootTrajectoryDeltaHeight; */
-	
-	//if the controller is in double-stance mode, then the swing foot won't have an IK target
-	bool doubleStanceMode;
-	//desired offset of the CM relative to the stance foot/midpoint of the feet
-	double comOffsetSagittal;
-	double comOffsetCoronal;
-	//this variable can be used to quickly alter the desired height, if panic ensues...
-	double panicHeight;
-	//and this should be used to add height for the leg (i.e. if it needs to step over an obstacle that wasn't planned for).
-	double unplannedForHeight;
-
-public:
-	/**
-		constructor
-	*/
-	IKVMCController(Character* b);
-
-	/**
-		destructor
-	*/
-	~IKVMCController() {}
-	
-	inline int getSwingAnkleIndex() const { return swingAnkleIndex; }
-
-	// unused for now (NB)
-	/* inline void setSwingFootTrajectoryDeltaSagittal( const Trajectory1d& traj ) {
-		swingFootTrajectoryDeltaSagittal.copy( traj );
-	}
-	inline const Trajectory1d& getSwingFootTrajectoryDeltaSagittal() const {
-		return swingFootTrajectoryDeltaSagittal;
-	}
-
-	inline void setSwingFootTrajectoryDeltaCoronal( const Trajectory1d& traj ) {
-		swingFootTrajectoryDeltaCoronal.copy( traj );
-	}
-	inline const Trajectory1d& getSwingFootTrajectoryDeltaCoronal() const {
-		return swingFootTrajectoryDeltaCoronal;
-	}
-
-	inline void setSwingFootTrajectoryDeltaHeight( const Trajectory1d& traj ) {
-		swingFootTrajectoryDeltaHeight.copy( traj );
-	}
-	inline const Trajectory1d& getSwingFootTrajectoryDeltaHeight() const {
-		return swingFootTrajectoryDeltaHeight;
-	} */
-	
-	Vector3d computeSwingFootDelta( double phiToUse = -1, int stanceToUse = -1 );
-
+class IKVMCController {
+  public:
 	/**
 		This method is used to compute the target angles for the swing hip and swing knee that help 
 		to ensure (approximately) precise foot-placement control.
 	*/
-	IKSwingLegTarget computeIKSwingLegTargets(const Vector3d& swingFootPos, const Vector3d& swingFootVel);
-
+	IKSwingLegTarget computeIKSwingLegTargets(const RobotInfo& rinfo, const Vector3d& swingFootPos, const Vector3d& swingFootVel, double swingFootHeight, double swingFootHeightVel);
+	
+	DebugInfo* dbg;
+	
+  private:
 	/**
 		This method computes the desired target location for the swing ankle. It also returns an estimate of the desired
 		foot location some time dt later. This method returns the points expressed in world coordinates.
@@ -144,27 +77,11 @@ public:
 //	void getDesiredSwingAngleLocation(Point3d* target, Point3d* futureTarget, double dt);
 
 	/**
-		This method is used to compute the torques
-	*/
-	RawTorques computeTorques(const std::vector<ContactPoint>& cfs);
-
-	/**
 		This method returns a target for the location of the swing foot, based on some state information. It is assumed that the velocity v
 		is expressed in character-relative coordinates (i.e. the sagittal component is the z-component), while the com position, and the
 		initial swing foot position is expressed in world coordinates. The resulting desired foot position is also expressed in world coordinates.
 	*/
-    Vector3d transformSwingFootTarget(double t, Vector3d step, const Point3d& com, const Quaternion& charFrameToWorld);
-
-	/**
-		This method computes the torques that cancel out the effects of gravity, 
-		for better tracking purposes
-	*/
-	RawTorques computeGravityCompensationTorques(Character* character);
-
-	/**
-		updates the indexes of the swing and stance hip, knees and ankles
-	*/
-	void updateSwingAndStanceReferences();
+    Vector3d transformSwingFootTarget(Vector3d step, const Point3d& com, const Quaternion& charFrameToWorld, double height);
 
 	/**
 		This method is used to compute the desired orientation and angular velocity for a parent RB and a child RB, relative to the grandparent RB and
@@ -182,43 +99,6 @@ public:
 
 			- an estimate of the desired position of the end effector, in world coordinates, some dt later - used to compute desired angular velocities
 	*/
-	IKSwingLegTarget computeIKQandW(const Vector3d& parentAxis, const Vector3d& parentNormal, const Vector3d& childNormal, const Vector3d& childEndEffector, const Point3d& wP, bool computeAngVelocities, const Point3d& futureWP, double dt);
-
-	/**
-		This method is used to ensure that each RB sees the net torque that the PD controller computed for it.
-		Without it, an RB sees also the sum of -t of every child.
-	*/
-	void bubbleUpTorques(Character* character, RawTorques& torques);
-
-	/**
-		This method is used to compute torques for the stance leg that help achieve a desired speed in the sagittal and lateral planes
-	*/
-	// void computeLegTorques(int ankleIndex, int kneeIndex, int hipIndex, const std::vector<ContactPoint>& cfs, RawTorques& torques);
-
-	RawTorques COMJT(const Vector3d& fA, const std::vector<ContactPoint>& cfs, Vector3d& stanceAnkleTorque, Vector3d& stanceKneeTorque, Vector3d& stanceHipTorque);
-
-	/**
-		This method is used to compute the force that the COM of the character should be applying.
-	*/
-	Vector3d computeVirtualForce(double desOffCoronal, double desVSagittal, double desVCoronal);
-	
-	/**
-		This method is used to compute the torques that need to be applied to the stance and swing hips, given the
-		desired orientation for the root and the swing hip. The coordinate frame that these orientations are expressed
-		relative to is computed in this method. It is assumed that the stanceHipToSwingHipRatio variable is
-		between 0 and 1, and it corresponds to the percentage of the total net vertical force that rests on the stance
-		foot.
-	*/
-	Vector3d computeRootTorque(double desHeading);
-
-	/**
-		This method returns performes some pre-processing on the virtual torque. The torque is assumed to be in world coordinates,
-		and it will remain in world coordinates.
-	*/
-	Vector3d preprocessAnkleVTorque(int ankleJointIndex, const std::vector<ContactPoint>& cfs, Vector3d ankleVTorque);
-	
-	InvPendulum ip;
-	
-	DebugInfo* dbg;
+	IKSwingLegTarget computeIKQandW(const RobotInfo& rinfo, const Vector3d& parentAxis, const Vector3d& parentNormal, const Vector3d& childNormal, const Vector3d& childEndEffector, const Point3d& wP, bool computeAngVelocities, const Point3d& futureWP, double dt);
 };
 

@@ -2,13 +2,6 @@
 #include <MathLib/Quaternion.h>
 #include <algorithm>
 
-PoseController::PoseController()
-{
-	for (int i=0;i<J_MAX;i++){
-		controlParams.push_back(ControlParams());
-	}
-}
-
 /**
 	This method is used to compute the PD torque that aligns a child coordinate frame to a parent coordinate frame.
 	Given: the current relative orientation of two coordinate frames (child and parent), the relative angular velocity,
@@ -46,7 +39,6 @@ Vector3d PoseController::computePDTorque(const Quaternion& qRel, const Quaternio
 	torque = qRel.rotate(torque);
 	//the angular velocities are stored in parent coordinates, so it is ok to add this term now
 	torque += (wRelD - wRel) * (-cParams->kd);
-	torque *= cParams->strength;
 
 	//now the torque is stored in parent coordinates - we need to scale it and apply torque limits
 	scaleAndLimitTorque(&torque, cParams, qRel.getComplexConjugate());
@@ -91,13 +83,15 @@ void PoseController::scaleAndLimitTorque(Vector3d* torque, const ControlParams* 
 /**
 	This method is used to compute the torques that are to be applied at the next step.
 */
-Vector3d PoseController::computePDJointTorque(Character* character, int jid,
+Vector3d PoseController::computePDJointTorque(const RobotInfo& rinfo, int jid,
     Quaternion desiredOrientationInFrame, Vector3d desiredRelativeAngularVelocityInFrame,
-    bool relToFrame)
+    bool relToFrame, Quaternion characterFrame)
 {
     Vector3d torque;
     
-    assert(relToFrame == controlParams[jid].relToFrame);
+    // assert(controlParams[jid].strength == 1.0);
+    
+    // assert(relToFrame == controlParams[jid].relToFrame);
 
     //ReducedCharacterState rs(&desiredPose);
 
@@ -107,10 +101,10 @@ Vector3d PoseController::computePDJointTorque(Character* character, int jid,
     Quaternion qRel;
     Vector3d wRel;
 
-    assert(controlParams[jid].controlled);
+    // assert(controlParams[jid].controlled);
 
-    RigidBody* parentRB = character->getJoint(jid)->getParent();
-    RigidBody* childRB = character->getJoint(jid)->getChild();
+    const RigidBody* parentRB = rinfo.character()->getJoint(jid)->getParent();
+    const RigidBody* childRB = rinfo.character()->getJoint(jid)->getChild();
     Quaternion parentQworld = parentRB->getOrientation().getComplexConjugate();			
 
     Quaternion frameQworld;
@@ -122,8 +116,10 @@ Vector3d PoseController::computePDJointTorque(Character* character, int jid,
         frameAngularVelocityInFrame = parentQworld.rotate( parentRB->getAngularVelocity() );
     } else {
         // std::cout << "relToFrame[" << i << "] = true" << std::endl;
-        frameQworld = controlParams[jid].frame.getComplexConjugate();
-        frameAngularVelocityInFrame = frameQworld.rotate( controlParams[jid].frameAngularVelocityInWorld );
+        //Quaternion test = (controlParams[jid].frame * characterFrame.getComplexConjugate());
+        //std::cout << test.s << " " << test.v.x << " " << test.v.y << " " << test.v.z << std::endl;
+        frameQworld = characterFrame.getComplexConjugate();
+        frameAngularVelocityInFrame = frameQworld.rotate( Vector3d(0., 0., 0.) );
     }
 
     Quaternion currentOrientationInFrame = frameQworld * childRB->getOrientation();
@@ -160,19 +156,3 @@ Vector3d PoseController::computePDJointTorque(Character* character, int jid,
     return torque;
 }
 
-/**
-	sets the targets to match the current state of the character
-*/
-#if 0
-void PoseController::setTargetsFromState()
-
-{
-    std::cout << "setTargetsFromState()" << std::endl;
-	ReducedCharacterState rs(&desiredPose);
-	Quaternion qTemp;
-	for (int i=0;i<jointCount;i++){
-		character->getRelativeOrientation(i, &qTemp);
-		rs.setJointRelativeOrientation(qTemp, i);
-	}
-}
-#endif

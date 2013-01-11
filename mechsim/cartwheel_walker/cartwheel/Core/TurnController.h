@@ -11,41 +11,45 @@
 */
 
 class TurnController {
-/* BEGIN BehaviourController */
-protected:
-	Character* bip;
-	IKVMCController* lowLCon;
-	WorldOracle* wo;
+  public:
+	TurnController(WorldOracle* w = NULL);
+	
+	// this method gets called at every simulation time step
+	HighLevelTarget simStepPlan(const RobotInfo& rinfo, double dt);
+	
+	// this method gets called every time the controller transitions to a new state
+	void conTransitionPlan(const RobotInfo& rinfo);
+	
+	// ask for a heading...
+	void requestHeading(const RobotInfo& rinfo, double v);
+	void requestVelocities(double velDS, double velDC);
+	
+	double getStepTime() const { return ll_stepTime; }
 
-	//these are attributes/properties of the motion
-	double desiredHeading;
-	//double ubSagittalLean;
-	//double ubCoronalLean;
-	//double ubTwist;
-	//double duckWalk;
-	double velDSagittal;
-	double velDCoronal;
-	//double kneeBend;
-
-public:
-    void requestStepTime(double t) { stepTime = t; }
+  private:
+	void calcStepPlan(const RobotInfo& rinfo, double dt);
+	
+	// commence the turn...
+	void initiateTurn(const RobotInfo& rinfo, double finalHeading);
+	
+	void requestStepTime(double t) { stepTime = t; }
     void requestStepHeight(double h) { stepHeight = h; }
     
 	void setDesiredHeading(double v);
 	void setVelocities(double velDS, double velDC);
 
-public:
-	void adjustStepHeight();
-
-	void requestVelocities(double velDS, double velDC);
-	void requestCoronalStepWidth(double corSW);
+	void adjustStepHeight(const RobotInfo& rinfo);
 
 	double getDesiredVelocitySagittal() const { return velDSagittal; }
-	double getCoronalStepWidth() const { return lowLCon->ip.coronalStepWidth; }
 
-/* END BehaviourController */
+  private:
+	WorldOracle* wo;
 
-protected:
+	//these are attributes/properties of the motion
+	double desiredHeading;
+	double velDSagittal;
+	double velDCoronal;
+
     double stepTime;
     double stepHeight;
 
@@ -65,29 +69,23 @@ protected:
 	double turningBodyTwist;
 	double turningDesiredHeading;
 	double initialTiming;
-
-	/**
-		commence the turn...
-	*/
-	void initiateTurn(double finalHeading);
-
-public:
-	TurnController(Character* b, IKVMCController* llc, WorldOracle* w = NULL);
-
-	/**
-		this method gets called at every simulation time step
-	*/
-	void simStepPlan(double dt);
-
-	/**
-		this method gets called every time the controller transitions to a new state
-	*/
-	void conTransitionPlan();
-
-	/**
-		ask for a heading...
-	*/
-	void requestHeading(double v);
+	    
+    /*** "output vars" ***/
+    //desired velocity in the sagittal plane
+    double ll_velDSagittal;
+    //desired velocity in the coronal plane...
+    double ll_velDCoronal;
+	
+	double ll_desiredHeading;
+	double ll_stepTime;
+	
+	//this is a desired foot trajectory that we may wish to follow, expressed separately, for the 3 components,
+	//and relative to the current location of the CM
+	Trajectory1d ll_swingFootHeightTrajectory;
+	
+	//this variable can be used to quickly alter the desired height, if panic ensues...
+	double ll_panicHeight;
+	//and this should be used to add height for the leg (i.e. if it needs to step over an obstacle that wasn't planned for).
+	double ll_unplannedForHeight;
 };
-
 

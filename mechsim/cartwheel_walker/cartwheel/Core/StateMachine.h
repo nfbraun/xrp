@@ -1,23 +1,29 @@
 #pragma once
 
-#include "SimBiConState.h"
+#include "SimGlobals.h"
+#include <Core/RobotInfo.h>
+#include <Core/ContactInfo.h>
 
 class StateMachine {
   public:
-    //this value indicates which side is the stance side. 
-    int stance;
+    StateMachine(int startStance) : fStance(startStance), fPhi(0.) {}
+    
+    int stance() const { return fStance; }
+    double phi() const { return fPhi; }
+    
+    bool advanceInTime(double dt, double stepTime, const RobotInfo& rinfo, const ContactInfo& cfs);
+    
+  private:
+    // this value indicates which side is the stance side. 
+    int fStance;
     
     //the phase parameter, phi must have values between 0 and 1, and it indicates the progress through the current state.
-    double phi;
+    double fPhi;
     
-    SimBiConState state;
-    
-    void setStepTime(double t) {
-        state.setStateTime(t);
-    }
-    
-    double getStepTime() {
-        return state.getStateTime();
+    void setStance(int newStance) { fStance = newStance; }
+    void toggleStance() {
+        if(fStance == LEFT_STANCE) setStance(RIGHT_STANCE);
+        else setStance(LEFT_STANCE);
     }
     
     bool needTransition(double phi, double swingFootVerticalForce, double stanceFootVerticalForce);

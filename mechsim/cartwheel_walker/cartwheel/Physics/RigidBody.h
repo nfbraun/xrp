@@ -85,14 +85,14 @@ public:
 	/**
 		This method returns the world coordinates of the position of the center of mass of the object
 	*/
-	inline Point3d getCMPosition(){
+	inline Point3d getCMPosition() const {
 		return state.position;
 	}
 
 	/**
 		This method returns the body's center of mass velocity
 	*/
-	inline Vector3d getCMVelocity(){
+	inline Vector3d getCMVelocity() const {
 		return state.velocity;
 	}
 
@@ -112,14 +112,14 @@ public:
 	/**
 		this method returns the body's orientation
 	*/
-	inline Quaternion getOrientation(){
+	inline Quaternion getOrientation() const {
 		return state.orientation;
 	}
 
 	/**
 		this method returns the body's angular velocity
 	*/
-	inline Vector3d getAngularVelocity(){
+	inline Vector3d getAngularVelocity() const {
 		return state.angularVelocity;
 	}
 

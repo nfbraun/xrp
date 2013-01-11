@@ -40,6 +40,6 @@ public:
 			origin of link 1 to p, and the second entry is the vector (in pBase coordinates) from
 			the origin of link 2 to p (and therein lies the general way of writing this).
 	*/
-	static void addJointTorquesEquivalentToForce(const Character* character, KTJoint* start, const Point3d& pLocal, const Vector3d& fGlobal, KTJoint* end, RawTorques& torques);
+	static void addJointTorquesEquivalentToForce(KTJoint* start, const Point3d& pLocal, const Vector3d& fGlobal, KTJoint* end, RawTorques& torques);
 
 };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "RobotInfo.h"
+#include "StateMachine.h"
 #include "IKVMCController.h"
 #include "TurnController.h"
 #include "Controller.h"
@@ -8,17 +10,17 @@
 class CWController {
   public:
     CWController(Character* character, WorldOracle* worldOracle);
-    
-    void requestHeading(double v) { fHighController->requestHeading(v); }
-    
-    JointSpTorques Run(double dt, const std::vector<ContactPoint>& cfs);
+    void Init();
+    JointSpTorques Run(double dt, const std::vector<ContactPoint>& cfs, double desiredHeading);
     
   public:
-    JointSpTorques transformTorques(const RawTorques& torques);
-    
     Character* fCharacter;
-    IKVMCController* fLowController;
-    TurnController* fHighController;
+    
+    StateMachine fStateMachine;
+    TorqueController fTorqueCtrl;
+    InvPendulum fInvPendCtrl;
+    IKVMCController fIKVMCCtrl;
+    TurnController fTurnCtrl;
     
     DebugInfo fDbg;
 };

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <MathLib/Point3d.h>
+#include <MathLib/Vector3d.h>
+
 class RigidBody;
 /**
 	This class is mainly a container for a Contact Point. It holds information such as the world coordinates of the contact point, 

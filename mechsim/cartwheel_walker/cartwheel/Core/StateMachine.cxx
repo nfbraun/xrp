@@ -21,3 +21,21 @@ bool StateMachine::needTransition(double phi, double swingFootVerticalForce, dou
         return false;
     }
 }
+
+/**
+	This method is used to advance the controller in time. It takes in a list of the contact points, since they might be used to determine when to transition to a new state. This method returns -1 if the controller does not advance to a new state, or the index of the state that it transitions to otherwise.
+*/
+bool StateMachine::advanceInTime(double dt, double stepTime, const RobotInfo& rinfo, const ContactInfo& cfs)
+{
+    //advance the phase of the controller
+    fPhi += dt/stepTime;
+
+    //see if we have to transition to the next state in the FSM, and do it if so...
+    if (needTransition(fPhi, fabs(cfs.getForceOn(rinfo.swingFoot()).dotProductWith(PhysicsGlobals::up)), fabs(cfs.getForceOn(rinfo.stanceFoot()).dotProductWith(PhysicsGlobals::up)))){
+        toggleStance();
+        fPhi = 0;
+        return true;
+    }
+    
+    return false;
+}

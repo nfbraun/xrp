@@ -109,7 +109,7 @@ public:
 	/**
 		Returns a pointer to the character's ith joint
 	*/
-	KTJoint* getJoint(int i){
+	const KTJoint* getJoint(int i) const {
 		if (i < 0 || i >= J_MAX)
 			return 0;
 		return joints[i];

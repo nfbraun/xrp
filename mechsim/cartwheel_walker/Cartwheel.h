@@ -59,9 +59,6 @@ class CartState: public SimulationState {
     
     RobotState fRobot;
     
-    double fPhi;
-    int fStance;
-    
     DebugInfo fDbg;
     
     bool fContactL, fContactR;

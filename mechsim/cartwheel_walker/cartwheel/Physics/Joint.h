@@ -79,7 +79,7 @@ public:
 	/**
 		retrieves the reference to the body's parent
 	*/
-	inline ArticulatedRigidBody* getParent(){return parent;}
+	inline const ArticulatedRigidBody* getParent() const {return parent;}
 
 	/**
 		set the parent
@@ -88,7 +88,7 @@ public:
 	/**
 		retrieves the reference to the child's parent
 	*/
-	inline ArticulatedRigidBody* getChild(){return child;}
+	inline const ArticulatedRigidBody* getChild() const {return child;}
 
 	/**
 		set the child

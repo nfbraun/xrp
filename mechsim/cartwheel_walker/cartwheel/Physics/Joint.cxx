@@ -40,7 +40,6 @@ void KTJoint::setParent( ArticulatedRigidBody* parent ){
 	if (this->parent != NULL)
 		throw std::runtime_error("This joint already has a parent");
 	this->parent = parent;
-	parent->cJoints.push_back(this);
 }
 
 /**
