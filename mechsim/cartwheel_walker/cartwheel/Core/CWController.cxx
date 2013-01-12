@@ -28,17 +28,23 @@ void CWController::Init()
     fTurnCtrl.requestVelocities(.5, 0.);
 }
 
-JointSpTorques CWController::Run(double dt, const std::vector<ContactPoint>& cfs, double desiredHeading)
+JointSpTorques CWController::Run(double dt, const ContactData& cdata, double desiredHeading)
 {
     RobotInfo rinfo(fCharacter, fStateMachine.stance(), fStateMachine.phi());
+    ContactInfo cinfo(cdata);
     
-    bool newState = fStateMachine.advanceInTime(dt, fTurnCtrl.getStepTime(), rinfo, cfs);
+    bool newState = fStateMachine.advanceInTime(dt, fTurnCtrl.getStepTime(), rinfo, cinfo);
     
     rinfo.setStance(fStateMachine.stance());
     rinfo.setPhi(fStateMachine.phi());
     
     fDbg.stance = fStateMachine.stance();
     fDbg.phi = fStateMachine.phi();
+    
+    fDbg.lFootNF = cinfo.getNormalForceOnFoot(R_L_FOOT);
+    fDbg.lFootTF = cinfo.getTangentialForceOnFoot(R_L_FOOT);
+    fDbg.rFootNF = cinfo.getNormalForceOnFoot(R_R_FOOT);
+    fDbg.rFootTF = cinfo.getTangentialForceOnFoot(R_R_FOOT);
     
     fTurnCtrl.requestHeading(rinfo, desiredHeading);
     
@@ -58,7 +64,7 @@ JointSpTorques CWController::Run(double dt, const std::vector<ContactPoint>& cfs
         desiredPos, desiredVel, highTarget.swingFootHeight, highTarget.swingFootHeightVel);
     
     const double comOffsetCoronal = fInvPendCtrl.calcComOffsetCoronal(rinfo);
-    return fTorqueCtrl.computeTorques(rinfo, cfs, swingLegTarget,
+    return fTorqueCtrl.computeTorques(rinfo, cinfo, swingLegTarget,
         comOffsetCoronal, highTarget.velDSagittal, highTarget.velDCoronal,
         highTarget.desiredHeading);
 }

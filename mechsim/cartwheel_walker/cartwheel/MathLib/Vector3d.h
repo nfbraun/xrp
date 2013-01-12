@@ -230,9 +230,11 @@ public:
 	/**
 		computes the two norm (length) of the current vector
 	*/
-	inline double length() const{
-		return sqrt(x*x+y*y+z*z);
+	double norm() const {
+	    return sqrt(x*x+y*y+z*z);
 	}
+	
+	double length() const { return norm(); }   // FIXME
 
 	/**
 		computes the projection of the current vector on the vector v.

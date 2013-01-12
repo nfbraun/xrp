@@ -57,12 +57,12 @@ public:
 	/**
 		This method is used to return the local coordinates of the point that is passed in as a parameter (expressed in global coordinates)
 	*/
-	Point3d getLocalCoordinatesForPoint(const Point3d& globalPoint);
+	Point3d getLocalCoordinatesForPoint(const Point3d& globalPoint) const;
 
 	/**
 		This method is used to return the local coordinates of the vector that is passed in as a parameter (expressed in global coordinates)
 	*/
-	Vector3d getLocalCoordinatesForVector(const Vector3d& globalVector);
+	Vector3d getLocalCoordinatesForVector(const Vector3d& globalVector) const;
 
 	/**
 		This method returns the vector that is passed in as a parameter(expressed in local coordinates), in world coordinates.

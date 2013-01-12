@@ -236,13 +236,16 @@ Cartwheel::~Cartwheel()
     dWorldDestroy(fWorld);
 }
 
-bool Cartwheel::Collide(dGeomID g1, dGeomID g2, RigidBody* rb1, RigidBody* rb2)
+unsigned int Cartwheel::Collide(dGeomID g1, dGeomID g2, std::vector<ContactPoint>& cps,
+    dJointFeedback* feedback)
 {
-    const int MAX_CONTACTS = 4;
     dContact contact[MAX_CONTACTS];
     
     int num_contacts = dCollide(g1, g2, MAX_CONTACTS, &contact[0].geom, sizeof(dContact));
-
+    
+    cps.clear();
+    cps.reserve(num_contacts);
+    
     for(int i=0; i<num_contacts; ++i) {
         contact[i].surface.mode = dContactBounce | dContactApprox1;
         contact[i].surface.bounce = 0.0;
@@ -250,20 +253,12 @@ bool Cartwheel::Collide(dGeomID g1, dGeomID g2, RigidBody* rb1, RigidBody* rb2)
         dJointID c = dJointCreateContact(fWorld, fContactGroup, &contact[i]);
         dJointAttach(c, dGeomGetBody(g1), dGeomGetBody(g2));
         
-        if (fJointFeedbackCount >= MAX_CONTACT_FEEDBACK) {
-            printf("Warning: too many contacts are established. Some of them will not be reported.\n");
-        } else {
-            fContactPoints.push_back(ContactPoint());
-            //now we'll set up the feedback for this contact joint
-            fContactPoints[fJointFeedbackCount].rb1 = rb1;
-            fContactPoints[fJointFeedbackCount].rb2 = rb2;
-            fContactPoints[fJointFeedbackCount].cp = Point3d(contact[i].geom.pos[0], contact[i].geom.pos[1], contact[i].geom.pos[2]);
-            dJointSetFeedback(c,&(fJointFeedback[fJointFeedbackCount]));
-            fJointFeedbackCount++;
-        }
+        cps.push_back(ContactPoint());
+        cps.at(i).cp = Point3d(contact[i].geom.pos[0], contact[i].geom.pos[1], contact[i].geom.pos[2]);
+        dJointSetFeedback(c,&(feedback[i]));
     }
     
-    return (num_contacts > 0);
+    return num_contacts;
 }
 
 Eigen::Vector3d invTransformTorque(const dReal* R, double t0, double t1, double t2)
@@ -298,21 +293,15 @@ void Cartwheel::ApplyTorques(const JointSpTorques& jt)
 
 void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
 {
-    //restart the counter for the joint feedback terms
-    fJointFeedbackCount = 0;
-    
     //go through all the joints in the world, and apply their torques to the parent and child rb's
     ApplyTorques(torques);
-    
-    //clear the previous list of contact forces
-    fContactPoints.clear();
     
     //we need to determine the contact points first - delete the previous contacts
     dJointGroupEmpty(fContactGroup);
     //initiate the collision detection
     #ifndef DEBUG_FIXED_TORSO
-    fDebugContactL = Collide(fFloorG, fRobot->fLFootG, fFloorRB, fRobot->fLFootRB);
-    fDebugContactR = Collide(fFloorG, fRobot->fRFootG, fFloorRB, fRobot->fRFootRB);
+    Collide(fRobot->fLFootG, fFloorG, fCData.pLeft, fLeftFeedback);
+    Collide(fRobot->fRFootG, fFloorG, fCData.pRight, fRightFeedback);
     #endif
     
     //advance the simulation
@@ -322,20 +311,18 @@ void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
     for(int rid=0; rid<R_MAX; rid++)
     {
         ArticulatedRigidBody* rb = fCharacter->getARBs()[rid];
-        //setRBStateFromODE((*rb)->ODEBodyID, *rb);
         setRBStateFromODE(rb);
     }
     
     //copy over the force information for the contact forces
-    for (int i=0;i<fJointFeedbackCount;i++){
-        fContactPoints[i].f = Vector3d(fJointFeedback[i].f1[0], fJointFeedback[i].f1[1], fJointFeedback[i].f1[2]);
-        //make sure that the force always points away from the static objects
-        //if (fContactPoints[i].rb1->isLocked() && !fContactPoints[i].rb2->isLocked()){
-            fContactPoints[i].f = fContactPoints[i].f * (-1);
-            RigidBody* tmpBdy = fContactPoints[i].rb1;
-            fContactPoints[i].rb1 = fContactPoints[i].rb2;
-            fContactPoints[i].rb2 = tmpBdy;
-        //}
+    assert(fCData.pLeft.size() < MAX_CONTACTS);
+    assert(fCData.pRight.size() < MAX_CONTACTS);
+    
+    for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
+        fCData.pLeft[i].f = Vector3d(fLeftFeedback[i].f1[0], fLeftFeedback[i].f1[1], fLeftFeedback[i].f1[2]);
+    }
+    for (unsigned int i=0; i<fCData.pRight.size(); i++) {
+        fCData.pRight[i].f = Vector3d(fRightFeedback[i].f1[0], fRightFeedback[i].f1[1], fRightFeedback[i].f1[2]);
     }
 }
 
@@ -374,7 +361,7 @@ void Cartwheel::Advance()
         //dBodyAddForce(fRobot->fPelvisB, 40.*sin(fT), 40.*cos(fT), 0.);
         
         const double desiredHeading = fT/4.;
-        JointSpTorques torques = fController->Run(dt, fContactPoints, desiredHeading);
+        JointSpTorques torques = fController->Run(dt, fCData, desiredHeading);
         
         AdvanceInTime(dt, torques);
         fT += dt;
@@ -517,9 +504,6 @@ CartState Cartwheel::GetCurrentState()
     state.fDbg = fController->fDbg;
     
     // state.fSwingPos = ODE::JointGetUniversalAnchor(fRobot->fLKneeJ);
-    
-    state.fContactL = fDebugContactL;
-    state.fContactR = fDebugContactR;
     
     return state;
 }

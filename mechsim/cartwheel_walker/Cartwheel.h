@@ -61,8 +61,6 @@ class CartState: public SimulationState {
     
     DebugInfo fDbg;
     
-    bool fContactL, fContactR;
-    
     void Draw(int mode) const;
     void DrawRobotOutline() const;
     void DrawRobot(bool shadowmode) const;
@@ -114,8 +112,8 @@ class CartState: public SimulationState {
             case 34: return fTorques[RA0];
             case 35: return fTorques[RA1];
             
-            case 36: return fContactL;
-            case 37: return fContactR;
+            //case 36: return fContactL;
+            //case 37: return fContactR;
             
             default: return std::numeric_limits<double>::quiet_NaN();
         }
@@ -140,7 +138,7 @@ class Cartwheel: public Simulation {
     
     const char* GetTitle() { return TITLE; }
     
-    virtual int GetNDataCh() const { return 38; }
+    virtual int GetNDataCh() const { return 36; }
     virtual const char* GetChName(int ch) const {
         switch(ch) {
             case 0: return "p_LH0";
@@ -185,8 +183,8 @@ class Cartwheel: public Simulation {
             case 34: return "t_RA0";
             case 35: return "t_RA1";
             
-            case 36: return "con_L";
-            case 37: return "con_R";
+            //case 36: return "con_L";
+            //case 37: return "con_R";
             
             default: return "<undefined>";
         }
@@ -204,7 +202,7 @@ class Cartwheel: public Simulation {
     void Advance();
     CartState GetCurrentState();
     
-    bool Collide(dGeomID g1, dGeomID g2, RigidBody* rb1, RigidBody* rb2);
+    unsigned int Collide(dGeomID g1, dGeomID g2, std::vector<ContactPoint>& cps, dJointFeedback* feedback);
     
     dWorldID fWorld;
     dJointGroupID fContactGroup;
@@ -225,17 +223,16 @@ class Cartwheel: public Simulation {
     
     void BodyAddTorque(dBodyID body, Vector3d torque);
     
-    static const int MAX_CONTACT_FEEDBACK = 16;
-    dJointFeedback fJointFeedback[MAX_CONTACT_FEEDBACK];
-    int fJointFeedbackCount;
-    std::vector<ContactPoint> fContactPoints;
+    static const unsigned int MAX_CONTACTS = 4;
+    dJointFeedback fLeftFeedback[MAX_CONTACTS];
+    dJointFeedback fRightFeedback[MAX_CONTACTS];
+    ContactData fCData;
     
     Character* fCharacter;
     CWRobot *fRobot;
     CWController *fController;
     
     JointSpTorques fDebugJTorques;
-    bool fDebugContactL, fDebugContactR;
     
     RigidBody* fFloorRB;
     dGeomID fFloorG;

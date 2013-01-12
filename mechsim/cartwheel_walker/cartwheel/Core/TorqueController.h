@@ -53,7 +53,7 @@ class TorqueController {
     /**
     This method returns performes some pre-processing on the virtual torque. The torque is assumed to be in world coordinates, and it will remain in world coordinates.
     */
-    Vector3d preprocessAnkleVTorque(const RobotInfo& rinfo, int ankleJointIndex, const ContactInfo& cfs, Vector3d ankleVTorque, double phi);
+    Vector3d preprocessAnkleVTorque(const RobotInfo& rinfo, const ContactInfo& cfs, Vector3d ankleVTorque, double phi);
     
     /**
     This method is used to compute the torques that need to be applied to the stance and swing hips, given the desired orientation for the root and the swing hip. The coordinate frame that these orientations are expressed relative to is computed in this method. It is assumed that the stanceHipToSwingHipRatio variable is between 0 and 1, and it corresponds to the percentage of the total net vertical force that rests on the stance foot.

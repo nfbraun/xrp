@@ -2,14 +2,17 @@
 
 #include <vector>
 #include <Physics/ContactPoint.h>
+#include <Physics/RigidBody.h>
 
 class ContactInfo {
   public:
-    ContactInfo(const std::vector<ContactPoint>& cdata);
+    ContactInfo(const ContactData& cdata);
     
-    Vector3d getForceOn(RigidBody* rb) const;
-    bool toeInContact(RigidBody* rb) const;
+    Vector3d getForceOnFoot(unsigned int rb_id) const;
+    double getNormalForceOnFoot(unsigned int rb_id) const;
+    double getTangentialForceOnFoot(unsigned int rb_id) const;
+    bool toeInContact(unsigned int rb_id, const RigidBody* rb) const;
     
   private:
-    std::vector<ContactPoint> fCData;
+    ContactData fCData;
 };

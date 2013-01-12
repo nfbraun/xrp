@@ -21,6 +21,16 @@ void printVect(const Vector3d& v)
     std::cout << v.z << " ";
 }
 
+void printScalar(double x)
+{
+    std::cout << x << " ";
+}
+
+void printScalar(int x)
+{
+    std::cout << x << " ";
+}
+
 int main(int argc, char** argv)
 {
     Cartwheel sim(2500, 1);
@@ -33,6 +43,11 @@ int main(int argc, char** argv)
     scalarHeader("sfwr"); // swing foot weight ratio
     scalarHeader("stance");
     scalarHeader("phi");
+    
+    scalarHeader("lfn");  // left foot normal force
+    scalarHeader("lft");  // left foot tangential force
+    scalarHeader("rfn");  // right foot normal force
+    scalarHeader("rft");  // right foot tangential force
     
     for(unsigned int i=LH0; i<=RA1; i++)
         std::cout << "#:" << col++ << ":p_" << PhiNames[i] << "\n";
@@ -57,6 +72,11 @@ int main(int argc, char** argv)
         std::cout << state.fDbg.StanceFootWeightRatio << " ";
         std::cout << state.fDbg.stance << " ";
         std::cout << state.fDbg.phi << " ";
+        
+        printScalar(state.fDbg.lFootNF);
+        printScalar(state.fDbg.lFootTF);
+        printScalar(state.fDbg.rFootNF);
+        printScalar(state.fDbg.rFootTF);
         
         for(unsigned int i=LH0; i <= RA1; i++)
             std::cout << state.fRobot.phi[i] << " ";

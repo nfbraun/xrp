@@ -11,7 +11,7 @@ class CWController {
   public:
     CWController(Character* character, WorldOracle* worldOracle);
     void Init();
-    JointSpTorques Run(double dt, const std::vector<ContactPoint>& cfs, double desiredHeading);
+    JointSpTorques Run(double dt, const ContactData& cdata, double desiredHeading);
     
   public:
     Character* fCharacter;

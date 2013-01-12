@@ -43,7 +43,8 @@ Vector3d RigidBody::getWorldCoordinatesForVector(const Vector3d& localVector) co
 /**
 	This method is used to return the local coordinates of the point that is passed in as a parameter (expressed in global coordinates)
 */
-Point3d RigidBody::getLocalCoordinatesForPoint(const Point3d& globalPoint){
+Point3d RigidBody::getLocalCoordinatesForPoint(const Point3d& globalPoint) const
+{
 	Vector3d v = getLocalCoordinatesForVector(Vector3d(globalPoint)) - getLocalCoordinatesForVector(Vector3d(this->state.position));
 	return Point3d(0,0,0) + v;
 }
@@ -51,7 +52,8 @@ Point3d RigidBody::getLocalCoordinatesForPoint(const Point3d& globalPoint){
 /**
 	This method is used to return the local coordinates of the vector that is passed in as a parameter (expressed in global coordinates)
 */
-Vector3d RigidBody::getLocalCoordinatesForVector(const Vector3d& globalVector){
+Vector3d RigidBody::getLocalCoordinatesForVector(const Vector3d& globalVector) const
+{
 	//the rigid body's orientation is a unit quaternion. Using this, we can obtain the global coordinates of a local vector
 	return this->state.orientation.getComplexConjugate().rotate(globalVector);
 }

@@ -12,4 +12,7 @@ class DebugInfo {
     double StanceFootWeightRatio;
     
     Vector3d virtualRootTorque, virtualRootForce;
+    
+    double lFootNF, lFootTF;
+    double rFootNF, rFootTF;
 };

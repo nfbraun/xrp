@@ -90,8 +90,8 @@ void TorqueController::bubbleUpTorques(const RobotInfo& rinfo, RawTorques& torqu
 */
 double TorqueController::getStanceFootWeightRatio(const RobotInfo& rinfo, const ContactInfo& cfs)
 {
-	Vector3d stanceFootForce = cfs.getForceOn(rinfo.stanceFoot());
-	Vector3d swingFootForce = cfs.getForceOn(rinfo.swingFoot());
+	Vector3d stanceFootForce = cfs.getForceOnFoot(rinfo.stanceFootIndex());
+	Vector3d swingFootForce = cfs.getForceOnFoot(rinfo.swingFootIndex());
 	double totalYForce = (stanceFootForce + swingFootForce).dotProductWith(PhysicsGlobals::up);
 
 	if (IS_ZERO(totalYForce))
@@ -104,13 +104,12 @@ double TorqueController::getStanceFootWeightRatio(const RobotInfo& rinfo, const 
 	This method returns performes some pre-processing on the virtual torque. The torque is assumed to be in world coordinates,
 	and it will remain in world coordinates.
 */
-Vector3d TorqueController::preprocessAnkleVTorque(const RobotInfo& rinfo, int ankleJointIndex, const ContactInfo& cfs, Vector3d ankleVTorque, double phi)
+Vector3d TorqueController::preprocessAnkleVTorque(const RobotInfo& rinfo, const ContactInfo& cfs, Vector3d ankleVTorque, double phi)
 {
-    // FIXME
-	ArticulatedRigidBody* foot = rinfo.character()->getJoints()[ankleJointIndex]->child;
+	ArticulatedRigidBody* foot = rinfo.character()->getARBs()[rinfo.stanceFootIndex()];
 	ankleVTorque = foot->getLocalCoordinatesForVector(ankleVTorque);
-
-	if (cfs.toeInContact(foot) == false || phi < 0.2 || phi > 0.8) ankleVTorque.x = 0;
+	
+	if (cfs.toeInContact(rinfo.stanceFootIndex(), foot) == false || phi < 0.2 || phi > 0.8) ankleVTorque.x = 0;
 
 	Vector3d footRelativeAngularVel = foot->getLocalCoordinatesForVector(foot->getAngularVelocity());
 	if ((footRelativeAngularVel.z < -0.2 && ankleVTorque.z > 0) || (footRelativeAngularVel.z > 0.2 && ankleVTorque.z < 0))
@@ -269,7 +268,7 @@ JointSpTorques TorqueController::computeTorques(const RobotInfo& rinfo, const Co
 	    Vector3d stanceAnkleTorque, stanceKneeTorque, stanceHipTorque;
 	    COMJT(rinfo, virtualRootForce, stanceAnkleTorque, stanceKneeTorque, stanceHipTorque);
 	    
-	    torques.at(rinfo.stanceAnkleIndex()) += preprocessAnkleVTorque(rinfo, rinfo.stanceAnkleIndex(), cfs, stanceAnkleTorque, rinfo.phi());
+	    torques.at(rinfo.stanceAnkleIndex()) += preprocessAnkleVTorque(rinfo, cfs, stanceAnkleTorque, rinfo.phi());
 	    torques.at(rinfo.stanceKneeIndex()) += stanceKneeTorque;
 	    torques.at(rinfo.stanceHipIndex()) = stanceHipTorque - virtualRootTorque - torques.at(rinfo.swingHipIndex());
 	}

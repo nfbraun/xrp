@@ -31,7 +31,7 @@ bool StateMachine::advanceInTime(double dt, double stepTime, const RobotInfo& ri
     fPhi += dt/stepTime;
 
     //see if we have to transition to the next state in the FSM, and do it if so...
-    if (needTransition(fPhi, fabs(cfs.getForceOn(rinfo.swingFoot()).dotProductWith(PhysicsGlobals::up)), fabs(cfs.getForceOn(rinfo.stanceFoot()).dotProductWith(PhysicsGlobals::up)))){
+    if (needTransition(fPhi, fabs(cfs.getNormalForceOnFoot(rinfo.swingFootIndex())), fabs(cfs.getNormalForceOnFoot(rinfo.stanceFootIndex())))) {
         toggleStance();
         fPhi = 0;
         return true;
