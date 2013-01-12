@@ -15,8 +15,6 @@ ArticulatedFigure::~ArticulatedFigure(void){
 	Sets the root
 */
 void ArticulatedFigure::setRoot( ArticulatedRigidBody* root ) {
-	if(this->arbs[R_ROOT] != 0)
-		throw std::runtime_error("This articulated figure already has a root");
 	this->arbs[R_ROOT] = root;
 }
 

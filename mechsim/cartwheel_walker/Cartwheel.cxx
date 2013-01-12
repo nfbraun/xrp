@@ -249,6 +249,7 @@ unsigned int Cartwheel::Collide(dGeomID g1, dGeomID g2, std::vector<ContactPoint
     for(int i=0; i<num_contacts; ++i) {
         contact[i].surface.mode = dContactBounce | dContactApprox1;
         contact[i].surface.bounce = 0.0;
+        contact[i].surface.bounce_vel = 1000.0;
         contact[i].surface.mu = 1000.0;
         dJointID c = dJointCreateContact(fWorld, fContactGroup, &contact[i]);
         dJointAttach(c, dGeomGetBody(g1), dGeomGetBody(g2));
