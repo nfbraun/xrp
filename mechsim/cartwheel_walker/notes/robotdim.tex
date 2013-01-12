@@ -1,0 +1,197 @@
+\documentclass[a4paper]{article}
+\usepackage{tikz}
+\title{Cartwheel character model: dimensions and DoFs}
+\begin{document}
+% Parameters
+\pgfmathsetmacro{\footSizeX}{0.12}
+\pgfmathsetmacro{\footSizeY}{0.05}
+\pgfmathsetmacro{\footSizeZ}{0.2}
+\pgfmathsetmacro{\legDiameter}{0.1}
+\pgfmathsetmacro{\lowerLegDiameter}{0.1}
+\pgfmathsetmacro{\upperLegDiameter}{0.1}
+\pgfmathsetmacro{\legSizeY}{1.0}
+\pgfmathsetmacro{\kneeRelativePosY}{0.5}
+\pgfmathsetmacro{\legRelativeAnchorX}{0.6}
+    
+\pgfmathsetmacro{\pelvisSizeX}{0.45}
+\pgfmathsetmacro{\pelvisSizeY}{0.3}
+\pgfmathsetmacro{\pelvisSizeZ}{0.25}
+    
+\pgfmathsetmacro{\pelvisDiameter}{0.45}
+\pgfmathsetmacro{\pelvisRadius}{\pelvisDiameter/2.0}
+    
+\pgfmathsetmacro{\lowerLegSizeY}{\legSizeY * \kneeRelativePosY}
+\pgfmathsetmacro{\upperLegSizeY}{\legSizeY - \lowerLegSizeY}
+    
+\pgfmathsetmacro{\footPosY}{\footSizeY/2.}
+\pgfmathsetmacro{\anklePosY}{\footSizeY}
+\pgfmathsetmacro{\lowerLegPosY}{\anklePosY + \lowerLegSizeY/2.}
+\pgfmathsetmacro{\kneePosY}{\anklePosY + \legSizeY * \kneeRelativePosY}
+\pgfmathsetmacro{\upperLegPosY}{\kneePosY + \upperLegSizeY/2.}
+\pgfmathsetmacro{\hipPosY}{\anklePosY + \legSizeY}
+\pgfmathsetmacro{\pelvisPosY}{\hipPosY + \pelvisSizeY/2.}
+    
+\pgfmathsetmacro{\legPosXL}{\pelvisSizeX/2.0*\legRelativeAnchorX}
+\pgfmathsetmacro{\legPosXR}{-\pelvisSizeX/2.0*\legRelativeAnchorX}
+
+\maketitle
+\textbf{Notes:}
+\begin{itemize}
+\item This document describes the \textit{current} Cartwheel character model, which will probably be changed in the near future!
+\item \textit{Character frame:} $y$ axis is up, $z$ axis is character facing direction (unlike what is mentioned in the paper!)
+\item In practice, the character frame is computed from the orientation of the pelvis (also called the \textit{root}).
+\item For vectors in the character frame (like the center of mass velocity), the $z$ component is called the \textit{sagittal} component and the $x$ component is called the \textit{coronal} component.
+\end{itemize}
+
+\begin{center}
+\begin{tikzpicture}[scale=5]
+\pgfmathsetmacro{\isqrttwo}{1/sqrt(2)}
+
+\newcommand{\cmpos}[2]{
+    \fill (#1,#2) -- (#1-0.02,#2) arc(180:90:0.02) -- cycle;
+    \fill (#1,#2) -- (#1+0.02,#2) arc(0:-90:0.02) -- cycle;
+    \draw (#1,#2) circle(0.02);
+}
+
+\newcommand{\rect}[4]{
+\draw (#1-#3/2, #2-#4/2) -- (#1-#3/2, #2+#4/2) -- (#1+#3/2, #2+#4/2) -- (#1+#3/2, #2-#4/2) -- cycle;
+}
+
+\newcommand{\arect}[4]{
+\draw (#1-#3/2, #2-#4/2+0.01) -- (#1, #2-#4/2) -- (#1+#3/2, #2-#4/2+0.01) -- (#1+#3/2, #2+#4/2-0.01) -- (#1, #2+#4/2) -- (#1-#3/2,#2+#4/2-0.01) -- cycle;
+}
+
+\newcommand{\arrowfront}[2]{
+\draw (#1,#2) circle(0.02);
+\fill (#1,#2) circle(0.005);
+}
+
+\newcommand{\arrowback}[2]{
+\draw (#1,#2) circle(0.02);
+\draw (#1+0.02*\isqrttwo, #2+0.02*\isqrttwo) -- (#1-0.02*\isqrttwo, #2-0.02*\isqrttwo);
+\draw (#1-0.02*\isqrttwo, #2+0.02*\isqrttwo) -- (#1+0.02*\isqrttwo, #2-0.02*\isqrttwo);
+}
+
+\begin{scope}[xshift=-20]
+
+\begin{scope}[xshift=-10, yshift=-5]
+\draw [->] (0.03,0) -- (0.15,0) node[anchor=west]{$z$};
+\draw [->] (0,0.03) -- (0,0.15) node[anchor=south]{$y$};
+\arrowback{0}{0}
+\draw (-0.01,-0.01) node[anchor=north east]{$x$};
+\end{scope}
+
+\draw (-0.1,0) -- (-0.12,0) node[anchor=east]{0};
+\draw (0,-0.05) -- (0,-0.07) node[anchor=north]{0};
+
+\draw(0, \pelvisPosY+\pelvisSizeY/2+0.05) node[anchor=south] {\textbf{Side view}};
+
+% Pelvis (torso, really)
+\rect{0}{\pelvisPosY}{\pelvisSizeZ}{\pelvisSizeY}
+\cmpos{0}{\pelvisPosY}
+
+% Upper leg (thigh)
+\arect{0}{\upperLegPosY}{\upperLegDiameter}{\upperLegSizeY}
+\cmpos{0}{\upperLegPosY}
+
+% Lower leg (shank)
+\arect{0}{\lowerLegPosY}{\lowerLegDiameter}{\lowerLegSizeY}
+\cmpos{0}{\lowerLegPosY}
+
+% Foot
+\rect{0.016}{\footPosY}{\footSizeZ}{\footSizeY}
+\cmpos{0.016}{\footPosY}
+\end{scope}
+
+\begin{scope}[xshift=20]
+\begin{scope}[xshift=-10, yshift=-5]
+\draw [->] (0.03,0) -- (0.15,0) node[anchor=west]{$x$};
+\draw [->] (0,0.03) -- (0,0.15) node[anchor=south]{$y$};
+\arrowfront{0}{0}
+\draw (-0.01,-0.01) node[anchor=north east]{$z$};
+\end{scope}
+
+\draw (0.2,0) -- (0.22,0) node[anchor=west]{0};
+\draw (0,-0.05) -- (0,-0.07) node[anchor=north]{0};
+
+\draw(0, \pelvisPosY+\pelvisSizeY/2+0.05) node[anchor=south] {\textbf{Front view}};
+
+% Pelvis
+\rect{0}{\pelvisPosY}{\pelvisSizeX}{\pelvisSizeY}
+\cmpos{0}{\pelvisPosY}
+
+% Upper leg (thigh)
+\arect{\legPosXL}{\upperLegPosY}{\upperLegDiameter}{\upperLegSizeY}
+\cmpos{\legPosXL}{\upperLegPosY}
+\arect{\legPosXR}{\upperLegPosY}{\upperLegDiameter}{\upperLegSizeY}
+\cmpos{\legPosXR}{\upperLegPosY}
+
+% Lower leg (shank)
+\arect{\legPosXL}{\lowerLegPosY}{\lowerLegDiameter}{\lowerLegSizeY}
+\cmpos{\legPosXL}{\lowerLegPosY}
+\arect{\legPosXR}{\lowerLegPosY}{\lowerLegDiameter}{\lowerLegSizeY}
+\cmpos{\legPosXR}{\lowerLegPosY}
+
+% Foot
+\rect{\legPosXL}{\footPosY}{\footSizeX}{\footSizeY}
+\cmpos{\legPosXL}{\footPosY}
+\rect{\legPosXR}{\footPosY}{\footSizeX}{\footSizeY}
+\cmpos{\legPosXR}{\footPosY}
+
+\draw (\legPosXL, -0.02) node[anchor=north]{L};
+\draw (\legPosXR, -0.02) node[anchor=north]{R};
+
+\end{scope}
+
+\begin{scope}[xshift=0]
+\draw (0,\pelvisPosY) node[anchor=center]{Pelvis};
+\draw (0,\hipPosY) node[anchor=center]{Hip};
+\draw (0,\upperLegPosY) node[anchor=center]{Upper leg};
+\draw (0,\kneePosY) node[anchor=center]{Knee};
+\draw (0,\lowerLegPosY) node[anchor=center]{Lower leg};
+\draw (0,\anklePosY) node[anchor=center]{Ankle};
+\draw (0,\footPosY) node[anchor=north]{Foot};
+\end{scope}
+
+\end{tikzpicture}
+\end{center}
+
+\begin{center}
+\begin{tabular}{ll}
+\hline
+footSizeX & \footSizeX \\
+footSizeY & \footSizeY \\
+footSizeZ & \footSizeZ \\
+legDiameter & \legDiameter \\
+lowerLegDiameter & \lowerLegDiameter \\
+upperLegDiameter & \upperLegDiameter \\
+legSizeY & \legSizeY \\
+kneeRelativePosY & \kneeRelativePosY \\
+legRelativeAnchorX & \legRelativeAnchorX \\
+\hline
+pelvisSizeX & \pelvisSizeX \\
+pelvisSizeY & \pelvisSizeY \\
+pelvisSizeZ & \pelvisSizeZ \\
+\hline
+pelvisDiameter & \pelvisDiameter \\
+pelvisRadius$^*$ & \pelvisRadius \\
+\hline
+lowerLegSizeY$^*$ & \lowerLegSizeY \\
+upperLegSizeY$^*$ & \upperLegSizeY \\
+\hline
+footPosY$^*$ & \footPosY \\
+anklePosY$*$ & \anklePosY \\
+lowerLegPosY$^*$ & \lowerLegPosY \\
+kneePosY $^*$ & \kneePosY \\
+upperLegPosY$^*$ & \upperLegPosY \\
+hipPosY$^*$ & \hipPosY \\
+pelvisPosY$^*$ & \pelvisPosY \\
+\hline
+legPosX\_L$^*$ & \legPosXL \\
+legPosX\_R$^*$ & \legPosXR \\
+\hline
+\end{tabular}
+
+\noindent Note: Quantities marked with an asterisk (*) are computed.
+\end{center}
+\end{document}
