@@ -21,7 +21,7 @@ Point3d solve(const Point3d& p1, const Point3d& p2, const Vector3d& n, double r1
 	
 	//this is the distance between p1 and p2. If it is > r1+r2, then we have no solutions. To be nice about it,
 	//we will set r to r1+r2 - the behaviour will be to reach as much as possible, even though you don't hit the target
-	double r = Vector3d(p1, p2).length();
+	double r = (p2 - p1).norm();
 	if (r > (r1+r2) * 0.993)
 		r = (r1 + r2) * 0.993;
 	//this is the length of the vector starting at p1 and going to the midpoint between p1 and p2
@@ -32,8 +32,8 @@ Point3d solve(const Point3d& p1, const Point3d& p2, const Vector3d& n, double r1
 	//and this is the distance from the midpoint of p1-p2 to the intersection point
 	double h = sqrt(tmp);
 	//now we need to get the two directions needed to reconstruct the intersection point
-	Vector3d d1 = Vector3d(p1, p2).toUnit();
-	Vector3d d2 = d1.crossProductWith(n).toUnit();
+	Vector3d d1 = (p2 - p1).unit();
+	Vector3d d2 = d1.cross(n).toUnit();
 
 	//and now get the intersection point
 	Point3d p = p1 + d1 * a + d2 * (-h);
@@ -62,7 +62,7 @@ Quaternion getParentOrientation(const Vector3d& vGlobal, const Vector3d& nGlobal
 	Quaternion q;
 
 	//first off, compute the quaternion that rotates nLocal into nGlobal
-	Vector3d axis = nLocal.crossProductWith(nGlobal);
+	Vector3d axis = nLocal.cross(nGlobal);
 	axis.toUnit();
 	double ang = nLocal.angleWith(nGlobal);
 
@@ -73,7 +73,7 @@ Quaternion getParentOrientation(const Vector3d& vGlobal, const Vector3d& nGlobal
 	//nLocal is perpendicular to vLocal so q*nLocal is perpendicular to q*vLocal. Also, q*nLocal is equal to nGlobal,
 	//so nGlobal is perpendicular to both q*vLocal and vGlobal, which means that this rotation better be about vGlobal!!!
 	vLocal = q.rotate(vLocal);
-	axis = vLocal.crossProductWith(vGlobal);
+	axis = vLocal.cross(vGlobal);
 	axis.toUnit();
 	ang = vLocal.angleWith(vGlobal);
 
@@ -96,7 +96,7 @@ double getChildRotationAngle(const Vector3d& vParent, const Vector3d& vChild, co
 {
 	//compute the angle between the vectors (p1, p) and (p, p2), and that's our result
 	double angle = vParent.angleWith(vChild);
-	if (vParent.crossProductWith(vChild).dotProductWith(n)<0)
+	if (vParent.cross(vChild).dot(n)<0)
 		angle = -angle;
 
 	return angle;
@@ -124,15 +124,15 @@ double getChildRotationAngle(const Vector3d& vParent, const Vector3d& vChild, co
 void getIKOrientations(const Point3d& p1, const Point3d& p2, const Vector3d& n, const Vector3d& vParent, const Vector3d& nParent, const Vector3d& vChild, Quaternion* qP, Quaternion* qC)
 {
 	//modify n so that it's perpendicular to the vector (p1, p2), and still as close as possible to n
-	Vector3d line = Vector3d(p1, p2);
-	Vector3d temp = n.crossProductWith(line);
-	Vector3d nG = line.crossProductWith(temp);
+	Vector3d line = p2 - p1;
+	Vector3d temp = n.cross(line);
+	Vector3d nG = line.cross(temp);
 	nG.toUnit();
 
 	//now compute the location of the child origin, in "global" coordinates
-	Vector3d solvedJointPosW = solve(p1, p2, nG, vParent.length(), vChild.length());
-	Vector3d vParentG = Vector3d(p1, solvedJointPosW);
-	Vector3d vChildG = Vector3d(solvedJointPosW, p2);
+	Vector3d solvedJointPosW = solve(p1, p2, nG, vParent.norm(), vChild.norm());
+	Vector3d vParentG = solvedJointPosW - p1;
+	Vector3d vChildG = p2 - solvedJointPosW;
 	
 
 	//now we need to solve for the orientations of the parent and child

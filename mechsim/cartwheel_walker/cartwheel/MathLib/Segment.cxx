@@ -40,16 +40,16 @@ Segment& Segment::operator = (const Segment& other){
 void Segment::getClosestPointTo(const Point3d& c, Point3d* result) const{
 	//we'll return the point d that belongs to the segment, such that: cd . ab = 0
 	//BUT, we have to make sure that this point belongs to the segment. Otherwise, we'll return the segment's end point that is closest to D.
-	Vector3d v(a, b);
+	Vector3d v = b - a;
 
-	double len_squared = v.dotProductWith(v);
+	double len_squared = v.dot(v);
 	//if a==b, it means either of the points can qualify as the closest point
 	if (IS_ZERO(len_squared)){
 		*result = a;
 		return;
 	}
 	
-	double mu = Vector3d(a, c).dotProductWith(v) / len_squared;
+	double mu = (c - a).dot(v) / len_squared;
 	if (mu<0)
 		mu = 0;
 	if (mu>1)
@@ -70,14 +70,14 @@ void Segment::getShortestSegmentTo(const Segment& other, Segment* result) const{
 
 	//unfortunately, there are quite a few cases we need to take care of. Here it is:
 	Vector3d tmp1, tmp2, tmp3;
-	tmp1.setToVectorBetween(this->a, other.a);
-	tmp2.setToVectorBetween(this->a, this->b);
-	tmp3.setToVectorBetween(other.a, other.b);
-	double A = tmp1.dotProductWith(tmp2);
-	double B = tmp2.dotProductWith(tmp3);
-	double C = tmp2.dotProductWith(tmp2);
-	double D = tmp3.dotProductWith(tmp3);
-	double E = tmp1.dotProductWith(tmp3);
+	tmp1 = other.a - this->a;
+	tmp2 = this->b - this->a;
+	tmp3 = other.b - other.a;
+	double A = tmp1.dot(tmp2);
+	double B = tmp2.dot(tmp3);
+	double C = tmp2.dot(tmp2);
+	double D = tmp3.dot(tmp3);
+	double E = tmp1.dot(tmp3);
 
 	//now a few special cases:
 	if (IS_ZERO(C)){
@@ -98,8 +98,8 @@ void Segment::getShortestSegmentTo(const Segment& other, Segment* result) const{
 		//multiple segments that are perpendicular to the two segments (lines before the truncation really).
 
 		//we need to get the projection of the other segment's end point on the current segment
-		double mu_a2 = tmp1.dotProductWith(tmp2) / (tmp2.dotProductWith(tmp2));
-		double mu_b2 = Vector3d(a, other.b).dotProductWith(tmp2) / (tmp2.dotProductWith(tmp2));
+		double mu_a2 = tmp1.dot(tmp2) / (tmp2.dot(tmp2));
+		double mu_b2 = (other.b - a).dot(tmp2) / (tmp2.dot(tmp2));
 
 
 		//we are now interested in the parts of the segments that are in common between the two input segments

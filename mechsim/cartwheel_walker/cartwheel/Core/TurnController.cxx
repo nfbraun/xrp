@@ -100,8 +100,8 @@ void TurnController::calcStepPlan(const RobotInfo& rinfo, double dt)
 		return;
 
 	//this is this guy's equivalent of panic management...
-	double vLength = rinfo.getV().length();
-	if (vLength > 1.5*initialVelocity.length() && vLength > 1.5*desiredVelocity.length() && vLength > 0.5){
+	double vLength = rinfo.getV().norm();
+	if (vLength > 1.5*initialVelocity.norm() && vLength > 1.5*desiredVelocity.norm() && vLength > 0.5){
 		std::cerr << "Panic in TurnController::simStepPlan" << std::endl;
 		ll_stepTime *= 0.99;
 //		tprintf("velocity is too large... changing transition time to: %lf\n", lowLCon->states[lowLCon->FSMStateIndex]->stateTime);
@@ -152,7 +152,7 @@ void TurnController::calcStepPlan(const RobotInfo& rinfo, double dt)
 		boundToRange(&t, 0, 1);
 		Vector3d vD = initialVelocity*t + desiredVelocity*(1-t);
 		vD = rinfo.characterFrame().inverseRotate(vD);
-		setVelocities(vD.z, vD.x);
+		setVelocities(vD.z(), vD.x());
 	}
 
 	setDesiredHeading(turningDesiredHeading);

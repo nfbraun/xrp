@@ -9,18 +9,18 @@ dBodyID CWRobot::makeODEARB(dWorldID world, ArticulatedRigidBody* arb)
     dBodyID id = dBodyCreate(world);
     dMass ODEmass;
     ODEmass.setParameters(arb->getMass(), 0, 0, 0, 
-            arb->moi.x, arb->moi.y, arb->moi.z,
+            arb->moi.x(), arb->moi.y(), arb->moi.z(),
             0, 0, 0);
 
     dBodySetMass(id, &ODEmass);
     
     dQuaternion tempQ;
     tempQ[0] = arb->getState().orientation.s;
-    tempQ[1] = arb->getState().orientation.v.x;
-    tempQ[2] = arb->getState().orientation.v.y;
-    tempQ[3] = arb->getState().orientation.v.z;
+    tempQ[1] = arb->getState().orientation.v.x();
+    tempQ[2] = arb->getState().orientation.v.y();
+    tempQ[3] = arb->getState().orientation.v.z();
     
-    dBodySetPosition(id, arb->getState().position.x, arb->getState().position.y, arb->getState().position.z);
+    dBodySetPosition(id, arb->getState().position.x(), arb->getState().position.y(), arb->getState().position.z());
     dBodySetQuaternion(id, tempQ);
 
     fODEMap[arb] = id;
@@ -40,7 +40,7 @@ ArticulatedRigidBody* createBox(const char* name,
                                 double moiScale = 1,
                                 double density=1, bool havecdp=false)
 {
-    const double mass = density * size.x*size.y*size.z;
+    const double mass = density * size.x()*size.y()*size.z();
     
     //std::cout << "Mass: " << mass << "kg" << std::endl;
 
@@ -48,9 +48,9 @@ ArticulatedRigidBody* createBox(const char* name,
     box->state.position = pos;
     box->setMass(mass);
     
-    box->moi = Vector3d( size.y*size.y + size.z*size.z,
-                  size.x*size.x + size.z*size.z,
-                  size.x*size.x + size.y*size.y ) * 1.0/12.0 * mass * moiScale;
+    box->moi = Vector3d( size.y()*size.y() + size.z()*size.z(),
+                  size.x()*size.x() + size.z()*size.z(),
+                  size.x()*size.x() + size.y()*size.y() ) * 1.0/12.0 * mass * moiScale;
     
     return box;
 }

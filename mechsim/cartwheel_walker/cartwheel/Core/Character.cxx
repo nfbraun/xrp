@@ -31,7 +31,7 @@ double Character::getHeadingAngle(){
 		q.v = -q.v;
 	}
 	double currentHeading = 2 * safeACOS(q.s);
-	if (q.v.dotProductWith(PhysicsGlobals::up) < 0)
+	if (q.v.dot(PhysicsGlobals::up) < 0)
 		currentHeading = -currentHeading;
 	return currentHeading;
 }
@@ -47,7 +47,7 @@ Vector3d Character::getCOM()
 	for (unsigned int i=0; i < J_MAX; i++){
 		curMass = joints[i]->child->getMass();
 		totalMass += curMass;
-		COM.addScaledVector(joints[i]->child->getCMPosition() , curMass);
+		COM += curMass * joints[i]->child->getCMPosition();
 	}
 
 	COM /= totalMass;
@@ -66,7 +66,7 @@ Vector3d Character::getCOMVelocity()
 	for (unsigned int i=0; i < J_MAX; i++){
 		curMass = joints[i]->child->getMass();
 		totalMass += curMass;
-		COMVel.addScaledVector(joints[i]->child->getCMVelocity() , curMass);
+		COMVel += curMass * joints[i]->child->getCMVelocity();
 	}
 
 	COMVel /= totalMass;

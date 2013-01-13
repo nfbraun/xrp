@@ -19,14 +19,14 @@ Quaternion Quaternion::getInverse() const {
 	Returns the length of a quaternion.
 */
 double Quaternion::getLength() const{
-	return sqrt(s*s + v.dotProductWith(v));
+	return sqrt(s*s + v.dot(v));
 }
 
 /**
 	Computes the dot product between the current quaternion and the one given as parameter.
 */
 double Quaternion::dotProductWith(const Quaternion &other) const{
-	return (this->s * other.s + this->v.dotProductWith(other.v));
+	return (this->s * other.s + this->v.dot(other.v));
 }
 
 /**
@@ -50,8 +50,8 @@ Quaternion Quaternion::linearlyInterpolateWith(const Quaternion &other, double t
 Vector3d Quaternion::rotate(const Vector3d& u) const{
 	//uRot = q * (0, u) * q' = (s, v) * (0, u) * (s, -v)
 	//working it out manually, we get:
-	Vector3d t = u * s + v.crossProductWith(u);
-	return v*u.dotProductWith(v) + t * s + v.crossProductWith(t);
+	Vector3d t = u * s + v.cross(u);
+	return v*u.dot(v) + t * s + v.cross(t);
 }
 
 
@@ -62,8 +62,8 @@ Vector3d Quaternion::rotate(const Vector3d& u) const{
 Vector3d Quaternion::inverseRotate(const Vector3d& u) const{
 	//uRot = q * (0, u) * q' = (s, -v) * (0, u) * (s, v)
 	//working it out manually, we get:
-	Vector3d t = u * s + u.crossProductWith(v);
-	return v*u.dotProductWith(v) + t * s + t.crossProductWith(v);
+	Vector3d t = u * s + u.cross(v);
+	return v*u.dot(v) + t * s + t.cross(v);
 }
 
 /**
@@ -132,7 +132,7 @@ Quaternion Quaternion::getRotationQuaternion(double angle, const Vector3d &axis)
 	a rotation by q2 followed by a rotation by q1!!!!
 */
 Quaternion Quaternion::operator * (const Quaternion &other) const{
-	return Quaternion(this->s * other.s - this->v.dotProductWith(other.v), other.v * this->s + this->v * other.s + this->v.crossProductWith(other.v));
+	return Quaternion(this->s * other.s - this->v.dot(other.v), other.v * this->s + this->v * other.s + this->v.cross(other.v));
 }
 
 /**
@@ -143,12 +143,12 @@ Quaternion Quaternion::operator * (const Quaternion &other) const{
 void Quaternion::setToProductOf(const Quaternion& a, const Quaternion& b, bool invA, bool invB){
 	double multA = (invA==false)?(1):(-1);
 	double multB = (invB==false)?(1):(-1);
-	this->s = a.s*b.s - a.v.dotProductWith(b.v) * multA * multB;
-	this->v.setToCrossProduct(a.v, b.v);
-	this->v.multiplyBy(multA * multB);
+	this->s = a.s*b.s - a.v.dot(b.v) * multA * multB;
+	this->v = a.v.cross(b.v);
+	this->v *= (multA * multB);
 
-	this->v.addScaledVector(a.v, b.s*multA);
-	this->v.addScaledVector(b.v, a.s*multB);
+	this->v += b.s*multA * a.v;
+	this->v += a.s*multB * b.v;
 }
 
 
@@ -156,8 +156,8 @@ void Quaternion::setToProductOf(const Quaternion& a, const Quaternion& b, bool i
 	This operator multiplies the current quaternion by the rhs one. Keep in mind the note RE quaternion multiplication.
 */
 Quaternion& Quaternion::operator *= (const Quaternion &other){
-	double newS = this->s * other.s - this->v.dotProductWith(other.v);
-	Vector3d newV = other.v * this->s + this->v * other.s + this->v.crossProductWith(other.v);
+	double newS = this->s * other.s - this->v.dot(other.v);
+	Vector3d newV = other.v * this->s + this->v * other.s + this->v.cross(other.v);
 	this->s = newS;
 	this->v = newV;
 	return *this;
@@ -229,9 +229,9 @@ Quaternion Quaternion::decomposeRotation(const Vector3d vB) const{
 	double temp = 0;
 
 	//compute the rotation that aligns the vector v in the two coordinate frames (A and T)
-	Vector3d rotAxis = vA.crossProductWith(vB);
+	Vector3d rotAxis = vA.cross(vB);
 	rotAxis.toUnit();
-	double rotAngle = -safeACOS(vA.dotProductWith(vB));
+	double rotAngle = -safeACOS(vA.dot(vB));
 
 	Quaternion TqA = Quaternion::getRotationQuaternion(rotAngle, rotAxis*(-1));
 	return TqA * (*this);
@@ -259,9 +259,9 @@ void Quaternion::decomposeRotation(Quaternion* qA, Quaternion* qB, const Vector3
 
 	//compute the rotation that alligns the vector v in the two coordinate frames (P and T - remember that v has the same coordinates in C and in T)
 	Vector3d rotAxis;
-	rotAxis.setToCrossProduct(vP, vC);
+	rotAxis = vP.cross(vC);
 	rotAxis.toUnit();
-	double rotAngle = -safeACOS(vP.dotProductWith(vC));
+	double rotAngle = -safeACOS(vP.dot(vC));
 
 	qA->setToRotationQuaternion(rotAngle, rotAxis);
 	//now qB = qAinv * PqC

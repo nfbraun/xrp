@@ -16,9 +16,9 @@ void scalarHeader(const std::string& name)
 
 void printVect(const Vector3d& v)
 {
-    std::cout << v.x << " ";
-    std::cout << v.y << " ";
-    std::cout << v.z << " ";
+    std::cout << v.x() << " ";
+    std::cout << v.y() << " ";
+    std::cout << v.z() << " ";
 }
 
 void printScalar(double x)

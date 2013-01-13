@@ -49,8 +49,8 @@ public:
 	
 	// Only works if v1 and v2 are unit length
 	Quaternion(const Vector3d& v1, const Vector3d& v2) {
-		v = v1.crossProductWith(v2);
-		s = 1 + v1.dotProductWith(v2);
+		v = v1.cross(v2);
+		s = 1 + v1.dot(v2);
 		toUnit();
 	}
 
@@ -83,7 +83,7 @@ public:
 		we need to know the base rotation axis.
 	*/
 	inline double getRotationAngle(const Vector3d& positiveRotAxis) const {
-		int sinSign = SGN(positiveRotAxis.dotProductWith(v));
+		int sinSign = SGN(positiveRotAxis.dot(v));
 		double result = 2 * safeACOS(s);
 		if (sinSign < 0)
 			result = -result;
@@ -224,13 +224,12 @@ public:
 //		Vector3d t = u * s + v.crossProductWith(u);
 //		*result = v*u.dotProductWith(v) + t * s + v.crossProductWith(t);
 
-		result->setToCrossProduct(v, u);
-		result->addScaledVector(u, s);
-		Vector3d tmp;
-		tmp.setToCrossProduct(v, *result);
-		result->multiplyBy(s);
-		result->addVector(tmp);
-		result->addScaledVector(v, u.dotProductWith(v));
+		*result = v.cross(u);
+		*result += s * u;
+		Vector3d tmp = v.cross(*result);
+		*result *= s;
+		*result += tmp;
+		*result += u.dot(v) * v;
 
 	}
 
@@ -239,8 +238,7 @@ public:
 	*/
 	inline void setToRotationQuaternion(double angle, const Vector3d& axis){
 		s = cos(angle/2);
-		v.setValues(axis.x, axis.y, axis.z);
-		v.multiplyBy(sin(angle/2));
+		v = axis * sin(angle/2);
 	}
 
 	/**
@@ -304,7 +302,7 @@ public:
 */
 
 inline double distanceBetweenOrientations(const Quaternion &a, const Quaternion &b){
-	double temp = (a.getComplexConjugate() * b).v.length();
+	double temp = (a.getComplexConjugate() * b).v.norm();
 	if (temp>1)
 		temp = 1;
 	return 2*asin(temp);

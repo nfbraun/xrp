@@ -34,8 +34,8 @@ double InvPendulum::getPanicLevel(const RobotInfo& rinfo, double velDSagittal, d
 {
 	//the estimate of the panic is given, roughly speaking by the difference between the desired and actual velocities
 	double panicEstimate = 0;
-	panicEstimate += getValueInFuzzyRange(rinfo.getV().z, velDSagittal-0.4, velDSagittal-0.3, velDSagittal+0.3, velDSagittal+0.4);
-	panicEstimate += getValueInFuzzyRange(rinfo.getV().x, velDCoronal-0.3, velDCoronal-0.2, velDCoronal+0.2, velDCoronal+0.3);
+	panicEstimate += getValueInFuzzyRange(rinfo.getV().z(), velDSagittal-0.4, velDSagittal-0.3, velDSagittal+0.3, velDSagittal+0.4);
+	panicEstimate += getValueInFuzzyRange(rinfo.getV().x(), velDCoronal-0.3, velDCoronal-0.2, velDCoronal+0.2, velDCoronal+0.3);
 //	boundToRange(&panicEstimate, 0, 1);
 	return panicEstimate/2;
 }
@@ -67,14 +67,14 @@ bool InvPendulum::detectPossibleLegCrossing(const RobotInfo& rinfo, const Vector
 	//now, this is the segment that starts at the current swing foot pos and ends at the final
 	//swing foot position
 
-	Segment swingFootTraj(rinfo.swingFootPos(), desSwingFootPos); swingFootTraj.a.y = 0; swingFootTraj.b.y = 0;
+	Segment swingFootTraj(rinfo.swingFootPos(), desSwingFootPos); swingFootTraj.a.y() = 0; swingFootTraj.b.y() = 0;
 	
 	//and now compute the segment originating at the stance foot that we don't want the swing foot trajectory to pass...
 	Vector3d segDir = Vector3d(100, 0, 0);
-	if (rinfo.stance() == RIGHT_STANCE) segDir.x = -segDir.x;
-	segDir = rinfo.stanceFoot()->getWorldCoordinatesForVector(segDir); segDir.y = 0;
+	if (rinfo.stance() == RIGHT_STANCE) segDir.x() = -segDir.x();
+	segDir = rinfo.stanceFoot()->getWorldCoordinatesForVector(segDir); segDir.y() = 0;
 	Segment stanceFootSafety(rinfo.stanceFootPos(), rinfo.stanceFootPos() + segDir);
-	stanceFootSafety.a.y = 0; stanceFootSafety.b.y = 0;
+	stanceFootSafety.a.y() = 0; stanceFootSafety.b.y() = 0;
 
 	//now check to see if the two segments intersect...
 	Segment intersect;
@@ -89,15 +89,15 @@ bool InvPendulum::detectPossibleLegCrossing(const RobotInfo& rinfo, const Vector
 
 	//now, if this is too small, then it means the swing leg will cross the stance leg...
 	double safeDist = 0.02;
-	if (Vector3d(intersect.a, intersect.b).length() < safeDist){
+	if ((intersect.b - intersect.a).norm() < safeDist){
 		if (viaPoint != NULL){
 			*viaPoint = rinfo.stanceFootPos() + segDir.unit() * -0.05;
 			(*viaPoint) -= Vector3d(rinfo.comPos());
 			*viaPoint = rinfo.characterFrame().inverseRotate(*viaPoint);
-			viaPoint->y = 0;
+			viaPoint->y() = 0;
 /*
 			viaPointSuggestedDebug = lowLCon->characterFrame.rotate(*viaPoint) + lowLCon->comPosition;
-			viaPointSuggestedDebug.y = 0;
+			viaPointSuggestedDebug.y() = 0;
 */
 		}
 		return true;
@@ -114,10 +114,10 @@ bool InvPendulum::detectPossibleLegCrossing(const RobotInfo& rinfo, const Vector
 Vector3d InvPendulum::computeIPStepLocation(const RobotInfo& rinfo)
 {
 	Vector3d step;
-	double h = fabs(rinfo.comPos().y - rinfo.stanceFootPos().y);
-	step.x = rinfo.getV().x * sqrt(h/9.8 + rinfo.getV().x * rinfo.getV().x / (4*9.8*9.8)) * 1.3;
-	step.z = rinfo.getV().z * sqrt(h/9.8 + rinfo.getV().z * rinfo.getV().z / (4*9.8*9.8)) * 1.1;	
-	step.y = 0;
+	double h = fabs(rinfo.comPos().y() - rinfo.stanceFootPos().y());
+	step.x() = rinfo.getV().x() * sqrt(h/9.8 + rinfo.getV().x() * rinfo.getV().x() / (4*9.8*9.8)) * 1.3;
+	step.z() = rinfo.getV().z() * sqrt(h/9.8 + rinfo.getV().z() * rinfo.getV().z() / (4*9.8*9.8)) * 1.1;	
+	step.y() = 0;
 	return step;
 }
 
@@ -130,15 +130,15 @@ Vector3d InvPendulum::computeSwingFootLocationEstimate(const RobotInfo& rinfo, c
 
 	//applying the IP prediction would make the character stop, so take a smaller step if you want it to walk faster, or larger
 	//if you want it to go backwards
-	step.z -= velDSagittal / 20;
+	step.z() -= velDSagittal / 20;
 	//and adjust the stepping in the coronal plane in order to account for desired step width...
-	step.x = adjustCoronalStepLocation(rinfo, step.x);
+	step.x() = adjustCoronalStepLocation(rinfo, step.x());
 
-	boundToRange(&step.z, -0.4 * legLength, 0.4 * legLength);
-	boundToRange(&step.x, -0.4 * legLength, 0.4 * legLength);
+	boundToRange(&step.z(), -0.4 * legLength, 0.4 * legLength);
+	boundToRange(&step.x(), -0.4 * legLength, 0.4 * legLength);
 
 	Vector3d result;
-	Vector3d initialStep(comPos, swingFootStartPos);
+	Vector3d initialStep = swingFootStartPos - comPos;
 	initialStep = rinfo.characterFrame().inverseRotate(initialStep);
 	//when phi is small, we want to be much closer to where the initial step is - so compute this quantity in character-relative coordinates
 	//now interpolate between this position and initial foot position - but provide two estimates in order to provide some gradient information
@@ -153,11 +153,13 @@ Vector3d InvPendulum::computeSwingFootLocationEstimate(const RobotInfo& rinfo, c
 		needToStepAroundStanceAnkle = detectPossibleLegCrossing(rinfo, step, &suggestedViaPoint);
 	if (needToStepAroundStanceAnkle){
 		//use the via point...
-		Vector3d currentSwingStepPos(comPos, rinfo.swingFootPos());
-		currentSwingStepPos = rinfo.characterFrame().inverseRotate(initialStep);currentSwingStepPos.y = 0;		
+		Vector3d currentSwingStepPos = rinfo.swingFootPos() - comPos;
+		currentSwingStepPos = rinfo.characterFrame().inverseRotate(initialStep);currentSwingStepPos.y() = 0;		
 		//compute the phase for the via point based on: d1/d2 = 1-x / x-phase, where d1 is the length of the vector from
 		//the via point to the final location, and d2 is the length of the vector from the swing foot pos to the via point...
-		double d1 = (step - suggestedViaPoint).length(); double d2 = (suggestedViaPoint - currentSwingStepPos).length(); if (d2 < 0.0001) d2 = d1 + 0.001;
+		double d1 = (step - suggestedViaPoint).norm();
+		double d2 = (suggestedViaPoint - currentSwingStepPos).norm();
+		if (d2 < 0.0001) d2 = d1 + 0.001;
 		double c =  d1/d2;
 		double viaPointPhase = (1+phase*c)/(1+c);
 		//now create the trajectory...
@@ -168,11 +170,11 @@ Vector3d InvPendulum::computeSwingFootLocationEstimate(const RobotInfo& rinfo, c
 		result = alternateFootTraj.evaluate_catmull_rom(1-t);
 //		tprintf("t: %lf\n", 1-t);
 	}else{
-		result.addScaledVector(step, 1-t);
-		result.addScaledVector(initialStep, t);
+		result += (1-t)* step;
+		result += t * initialStep;
 	}
 
-	result.y = 0;
+	result.y() = 0;
 
 /*
 	suggestedFootPosDebug = result;
@@ -188,12 +190,12 @@ double InvPendulum::getCoronalPanicLevel(const RobotInfo& rinfo)
 	//now for the step in the coronal direction - figure out if the character is still doing well - panic = 0 is good, panic = 1 is bad...
     double panicLevel;
 	if (rinfo.stance() == LEFT_STANCE){
-		panicLevel = getValueInFuzzyRange(rinfo.getD().x, 1.15 * stepWidth, 0.5 * stepWidth, 0.25 * stepWidth, -0.25 * stepWidth);
-		panicLevel += getValueInFuzzyRange(rinfo.getV().x, 2*stepWidth, stepWidth, -stepWidth, -stepWidth*1.5);
+		panicLevel = getValueInFuzzyRange(rinfo.getD().x(), 1.15 * stepWidth, 0.5 * stepWidth, 0.25 * stepWidth, -0.25 * stepWidth);
+		panicLevel += getValueInFuzzyRange(rinfo.getV().x(), 2*stepWidth, stepWidth, -stepWidth, -stepWidth*1.5);
 	}
 	else{
-		panicLevel = getValueInFuzzyRange(rinfo.getD().x, -0.25 * stepWidth, 0.25 * stepWidth, 0.5 * stepWidth, 1.15 * stepWidth);
-		panicLevel += getValueInFuzzyRange(rinfo.getV().x, -stepWidth*1.5, -stepWidth, stepWidth, 2*stepWidth);
+		panicLevel = getValueInFuzzyRange(rinfo.getD().x(), -0.25 * stepWidth, 0.25 * stepWidth, 0.5 * stepWidth, 1.15 * stepWidth);
+		panicLevel += getValueInFuzzyRange(rinfo.getV().x(), -stepWidth*1.5, -stepWidth, stepWidth, 2*stepWidth);
 	}
 	boundToRange(&panicLevel, 0, 1);
 	

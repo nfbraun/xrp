@@ -22,7 +22,7 @@ Vector3d PoseController::computePDTorque(const Quaternion& qRel, const Quaternio
 	qErr *= qRelD;
 
 	//qErr.v also contains information regarding the axis of rotation and the angle (sin(theta)), but I want to scale it by theta instead
-	double sinTheta = qErr.v.length();
+	double sinTheta = qErr.v.norm();
 	if (sinTheta>1)
 		sinTheta = 1;
 	if (IS_ZERO(sinTheta)){
@@ -52,12 +52,12 @@ Vector3d PoseController::computePDTorque(const Quaternion& qRel, const Quaternio
 	the torque is already represented in the correct coordinate frame
 */
 void PoseController::limitTorque(Vector3d* torque, const ControlParams* cParams){
-	if (torque->x < -cParams->scale.x * cParams->maxAbsTorque) torque->x = -cParams->scale.x * cParams->maxAbsTorque;
-	if (torque->x > cParams->scale.x * cParams->maxAbsTorque) torque->x = cParams->scale.x * cParams->maxAbsTorque;
-	if (torque->y < -cParams->scale.y * cParams->maxAbsTorque) torque->y = -cParams->scale.y * cParams->maxAbsTorque;
-	if (torque->y > cParams->scale.y * cParams->maxAbsTorque) torque->y = cParams->scale.y * cParams->maxAbsTorque;
-	if (torque->z < -cParams->scale.z * cParams->maxAbsTorque) torque->z = -cParams->scale.z * cParams->maxAbsTorque;
-	if (torque->z > cParams->scale.z * cParams->maxAbsTorque) torque->z = cParams->scale.z * cParams->maxAbsTorque;
+	if (torque->x() < -cParams->scale.x() * cParams->maxAbsTorque) torque->x() = -cParams->scale.x() * cParams->maxAbsTorque;
+	if (torque->x() > cParams->scale.x() * cParams->maxAbsTorque) torque->x() = cParams->scale.x() * cParams->maxAbsTorque;
+	if (torque->y() < -cParams->scale.y() * cParams->maxAbsTorque) torque->y() = -cParams->scale.y() * cParams->maxAbsTorque;
+	if (torque->y() > cParams->scale.y() * cParams->maxAbsTorque) torque->y() = cParams->scale.y() * cParams->maxAbsTorque;
+	if (torque->z() < -cParams->scale.z() * cParams->maxAbsTorque) torque->z() = -cParams->scale.z() * cParams->maxAbsTorque;
+	if (torque->z() > cParams->scale.z() * cParams->maxAbsTorque) torque->z() = cParams->scale.z() * cParams->maxAbsTorque;
 }
 
 /**
@@ -70,9 +70,9 @@ void PoseController::scaleAndLimitTorque(Vector3d* torque, const ControlParams* 
 	*torque = qToChild.rotate(*torque);
 
 	//and scale it differently along the main axis...
-	torque->x *= cParams->scale.x;
-	torque->y *= cParams->scale.y;
-	torque->z *= cParams->scale.z;
+	torque->x() *= cParams->scale.x();
+	torque->y() *= cParams->scale.y();
+	torque->z() *= cParams->scale.z();
 
 	limitTorque(torque, cParams);
 

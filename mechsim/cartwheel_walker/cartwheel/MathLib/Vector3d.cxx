@@ -5,9 +5,9 @@
 */
 Vector3d Vector3d::rotate(double alpha, const Vector3d &axis){
 	//ok... this is fairly hard - check the red book for details.
-	double xP = axis.x;
-	double yP = axis.y;
-	double zP = axis.z;
+	double xP = axis.x();
+	double yP = axis.y();
+	double zP = axis.z();
 	double cosa = cos(alpha);
 	double sina = sin(alpha);
 
@@ -25,9 +25,9 @@ Vector3d Vector3d::rotate(double alpha, const Vector3d &axis){
 			R[i][j] = UUT[i][j] + cosa*(I[i][j] - UUT[i][j]) + sina*s[i][j];
 
 	//now that we finally have the transformation matrix set up, we can rotate the vector
-	Vector3d result(R[0][0]*x + R[0][1]*y + R[0][2]*z,
-	                R[1][0]*x + R[1][1]*y + R[1][2]*z,
-                    R[2][0]*x + R[2][1]*y + R[2][2]*z);
+	Vector3d result(R[0][0]*x() + R[0][1]*y() + R[0][2]*z(),
+	                R[1][0]*x() + R[1][1]*y() + R[1][2]*z(),
+                    R[2][0]*x() + R[2][1]*y() + R[2][2]*z());
 
 	return result;
 }

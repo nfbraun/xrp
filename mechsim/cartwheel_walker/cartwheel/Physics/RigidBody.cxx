@@ -64,9 +64,9 @@ Vector3d RigidBody::getLocalCoordinatesForVector(const Vector3d& globalVector) c
 */
 Vector3d RigidBody::getAbsoluteVelocityForLocalPoint(const Point3d& localPoint){
 	//we need to compute the vector r, from the origin of the body to the point of interest
-	Vector3d r(Point3d(), localPoint);
+	Vector3d r = localPoint;
 	//the velocity is given by omega x r + v. omega and v are already expressed in world coordinates, so we need to express r in world coordinates first.
-	return state.angularVelocity.crossProductWith(getWorldCoordinatesForVector(r)) + state.velocity;
+	return state.angularVelocity.cross(getWorldCoordinatesForVector(r)) + state.velocity;
 }
 
 /**
@@ -75,8 +75,8 @@ Vector3d RigidBody::getAbsoluteVelocityForLocalPoint(const Point3d& localPoint){
 */
 Vector3d RigidBody::getAbsoluteVelocityForGlobalPoint(const Point3d& globalPoint){
 	//we need to compute the vector r, from the origin of the body to the point of interest
-	Vector3d r(state.position, globalPoint);
+	Vector3d r = globalPoint - state.position;
 	//the velocity is given by omega x r + v. omega and v are already expressed in world coordinates, so we need to express r in world coordinates first.
-	return state.angularVelocity.crossProductWith(r) + state.velocity;
+	return state.angularVelocity.cross(r) + state.velocity;
 }
 

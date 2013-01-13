@@ -48,7 +48,7 @@ inline double trajectoryAbs(const double& value) {
 
 template<>
 inline double trajectoryAbs(const Vector3d& value) {
-	return value.length();
+	return value.norm();
 }
 
 template <class T> 

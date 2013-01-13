@@ -68,12 +68,12 @@ IKSwingLegTarget IKVMCController::computeIKQandW(const RobotInfo& rinfo, const V
         wChildD = qDiff.v * 2/dt;
 
         //make sure we don't go overboard with the estimates, in case there are discontinuities in the trajectories...
-        boundToRange(&wChildD.x, -5, 5);
-        boundToRange(&wChildD.y, -5, 5);
-        boundToRange(&wChildD.z, -5, 5);
-        boundToRange(&wParentD.x, -5, 5);
-        boundToRange(&wParentD.y, -5, 5);
-        boundToRange(&wParentD.z, -5, 5);
+        boundToRange(&wChildD.x(), -5, 5);
+        boundToRange(&wChildD.y(), -5, 5);
+        boundToRange(&wChildD.z(), -5, 5);
+        boundToRange(&wParentD.x(), -5, 5);
+        boundToRange(&wParentD.y(), -5, 5);
+        boundToRange(&wParentD.z(), -5, 5);
     }
 
     //desiredPose.setJointRelativeAngVelocity(wChildD, swingKneeIndex);
@@ -105,9 +105,8 @@ IKSwingLegTarget IKVMCController::computeIKSwingLegTargets(const RobotInfo& rinf
         
     dbg->desSwingPos = pNow;
     
-    // FIXME
-    Vector3d parentAxis(rinfo.character()->getJoints()[rinfo.swingHipIndex()]->getChildJointPosition(), rinfo.character()->getJoints()[rinfo.swingKneeIndex()]->getParentJointPosition());
-    Vector3d childAxis(rinfo.character()->getJoints()[rinfo.swingKneeIndex()]->getChildJointPosition(), rinfo.character()->getJoints()[rinfo.swingAnkleIndex()]->getParentJointPosition());
+    Vector3d parentAxis = rinfo.character()->getJoints()[rinfo.swingKneeIndex()]->getParentJointPosition() - rinfo.character()->getJoints()[rinfo.swingHipIndex()]->getChildJointPosition();
+    Vector3d childAxis = rinfo.character()->getJoints()[rinfo.swingAnkleIndex()]->getParentJointPosition() - rinfo.character()->getJoints()[rinfo.swingKneeIndex()]->getChildJointPosition();
 
     return computeIKQandW(rinfo, parentAxis, swingLegPlaneOfRotation, Vector3d(-1,0,0), childAxis, pNow, true, pFuture, dt);
     // computeIKQandW(swingHipIndex, swingKneeIndex, Vector3d(0, -0.355, 0), Vector3d(1,0,0), Vector3d(1,0,0), Vector3d(0, -0.36, 0), pNow, true, pFuture, dt);
@@ -125,7 +124,7 @@ Vector3d IKVMCController::transformSwingFootTarget(Vector3d step, const Point3d&
 	//add it to the com location
 	step = com + step;
 	//finally, set the desired height of the foot
-	step.y = height;
+	step.y() = height;
 
 	// step += computeSwingFootDelta(t);
 	

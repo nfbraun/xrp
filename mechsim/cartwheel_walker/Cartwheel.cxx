@@ -330,28 +330,19 @@ void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
 void Cartwheel::setRBStateFromODE(RigidBody* rb)
 {
     dBodyID body = fRobot->getODEBody(rb);
+    
+    rb->state.position = ODE::BodyGetPosition(body);
+    
     const dReal *tempData;
-    
-    tempData = dBodyGetPosition(body);
-    rb->state.position.x = tempData[0];
-    rb->state.position.y = tempData[1];
-    rb->state.position.z = tempData[2];
-    
     tempData = dBodyGetQuaternion(body);
     rb->state.orientation.s = tempData[0];
-    rb->state.orientation.v.x = tempData[1];
-    rb->state.orientation.v.y = tempData[2];
-    rb->state.orientation.v.z = tempData[3];
+    rb->state.orientation.v.x() = tempData[1];
+    rb->state.orientation.v.y() = tempData[2];
+    rb->state.orientation.v.z() = tempData[3];
     
-    tempData = dBodyGetLinearVel(body);
-    rb->state.velocity.x = tempData[0];
-    rb->state.velocity.y = tempData[1];
-    rb->state.velocity.z = tempData[2];
+    rb->state.velocity = ODE::BodyGetLinearVel(body);
     
-    tempData = dBodyGetAngularVel(body);
-    rb->state.angularVelocity.x = tempData[0];
-    rb->state.angularVelocity.y = tempData[1];
-    rb->state.angularVelocity.z = tempData[2];
+    rb->state.angularVelocity = ODE::BodyGetAngularVel(body);
 }
 
 void Cartwheel::Advance()
@@ -448,7 +439,7 @@ CartState Cartwheel::GetCurrentState()
     state.fJPos[J_R_HIP] = Eigen::Vector3d(tmp);
     
     Vector3d com = fRobot->fCharacter->getCOM();
-    state.fCoM = Eigen::Vector3d(com.x, com.y, com.z);
+    state.fCoM = Eigen::Vector3d(com.x(), com.y(), com.z());
     
     /*** left leg ***/
     Eigen::Vector3d lKneeAxis = ODE::JointGetHingeAxis(fRobot->fLKneeJ);

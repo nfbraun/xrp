@@ -52,12 +52,12 @@ bool ContactInfo::toeInContact(unsigned int rb_id, const RigidBody* rb) const
     if(rb_id == R_L_FOOT) {
         for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
             Point3d tmpP = rb->getLocalCoordinatesForPoint(fCData.pLeft[i].cp);
-            if (tmpP.z > 0) toeForce = true;
+            if (tmpP.z() > 0) toeForce = true;
         }
     } else if(rb_id == R_R_FOOT) {
         for (unsigned int i=0; i<fCData.pRight.size(); i++) {
             Point3d tmpP = rb->getLocalCoordinatesForPoint(fCData.pRight[i].cp);
-            if (tmpP.z > 0) toeForce = true;
+            if (tmpP.z() > 0) toeForce = true;
         }
     } else {
         assert(false);   // invalid argument
