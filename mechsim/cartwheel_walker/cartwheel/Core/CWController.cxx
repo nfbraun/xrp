@@ -8,7 +8,12 @@ void labelJoints(Character* character)
 }
 
 CWController::CWController(Character* character, WorldOracle* worldOracle)
-    : fCharacter(character), fStateMachine(LEFT_STANCE), fTurnCtrl(worldOracle)
+    : fCharacter(character), fStateMachine(LEFT_STANCE),
+#ifdef USE_WALK_CONTROLLER
+      fHighCtrl(.5, 0.)
+#else
+      fHighCtrl(worldOracle)
+#endif
 {
     labelJoints(character);
     
@@ -22,10 +27,14 @@ void CWController::Init()
 {
     RobotInfo rinfo(fCharacter, fStateMachine.stance(), fStateMachine.phi());
     
-    fTurnCtrl.requestHeading(rinfo, 0.);
-    fTurnCtrl.conTransitionPlan(rinfo);
+#ifndef USE_WALK_CONTROLLER
+    fHighCtrl.requestHeading(rinfo, 0.);
+    fHighCtrl.conTransitionPlan(rinfo);
+#endif
     fInvPendCtrl.setCoronalStepWidth(.3);
-    fTurnCtrl.requestVelocities(.5, 0.);
+#ifndef USE_WALK_CONTROLLER
+    fHighCtrl.requestVelocities(.5, 0.);
+#endif
 }
 
 JointSpTorques CWController::Run(double dt, const ContactData& cdata, double desiredHeading)
@@ -33,7 +42,7 @@ JointSpTorques CWController::Run(double dt, const ContactData& cdata, double des
     RobotInfo rinfo(fCharacter, fStateMachine.stance(), fStateMachine.phi());
     ContactInfo cinfo(cdata);
     
-    bool newState = fStateMachine.advanceInTime(dt, fTurnCtrl.getStepTime(), rinfo, cinfo);
+    bool newState = fStateMachine.advanceInTime(dt, fHighCtrl.getStepTime(), rinfo, cinfo);
     
     rinfo.setStance(fStateMachine.stance());
     rinfo.setPhi(fStateMachine.phi());
@@ -46,14 +55,18 @@ JointSpTorques CWController::Run(double dt, const ContactData& cdata, double des
     fDbg.rFootNF = cinfo.getNormalForceOnFoot(R_R_FOOT);
     fDbg.rFootTF = cinfo.getTangentialForceOnFoot(R_R_FOOT);
     
-    fTurnCtrl.requestHeading(rinfo, desiredHeading);
+#ifndef USE_WALK_CONTROLLER
+    fHighCtrl.requestHeading(rinfo, desiredHeading);
+#endif
     
     if( newState ) {
         fInvPendCtrl.setSwingFootStartPos(rinfo.swingFootPos());
-        fTurnCtrl.conTransitionPlan(rinfo);
+#ifndef USE_WALK_CONTROLLER
+        fHighCtrl.conTransitionPlan(rinfo);
+#endif
     }
     
-    HighLevelTarget highTarget = fTurnCtrl.simStepPlan(rinfo, SimGlobals::dt);
+    HighLevelTarget highTarget = fHighCtrl.simStepPlan(rinfo, SimGlobals::dt);
     
     //compute desired swing foot location and velocity
     Vector3d desiredPos, desiredVel;

@@ -17,6 +17,7 @@ cartwheel/Core/InvPendulum.cxx \
 cartwheel/Core/PoseController.cxx \
 cartwheel/Core/SimGlobals.cxx \
 cartwheel/Core/TurnController.cxx \
+cartwheel/Core/WalkController.cxx \
 cartwheel/Core/TwoLinkIK.cxx \
 cartwheel/Core/VirtualModelController.cxx \
 cartwheel/Core/CWController.cxx \
@@ -46,6 +47,7 @@ cartwheel/Core/InvPendulum.h \
 cartwheel/Core/PoseController.h \
 cartwheel/Core/SimGlobals.h \
 cartwheel/Core/TurnController.h \
+cartwheel/Core/WalkController.h \
 cartwheel/Core/TwoLinkIK.h \
 cartwheel/Core/VirtualModelController.h \
 cartwheel/Core/WorldOracle.h \
