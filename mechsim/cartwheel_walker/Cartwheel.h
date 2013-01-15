@@ -223,6 +223,10 @@ class Cartwheel: public Simulation {
     
     void BodyAddTorque(dBodyID body, Vector3d torque);
     
+    void LockStanceFoot(int stance);
+    void SetFakeContactData(int stance);
+    void SetFakeContactDataForFoot(std::vector<ContactPoint>& cpts, const Vector3d& pos);
+    
     static const unsigned int MAX_CONTACTS = 4;
     dJointFeedback fLeftFeedback[MAX_CONTACTS];
     dJointFeedback fRightFeedback[MAX_CONTACTS];
@@ -236,6 +240,10 @@ class Cartwheel: public Simulation {
     
     RigidBody* fFloorRB;
     dGeomID fFloorG;
+    
+    int fStance;
+    double fLastStanceSwitchTime;
+    dJointID fLFootStickyJ, fRFootStickyJ;
 };
 
 #endif

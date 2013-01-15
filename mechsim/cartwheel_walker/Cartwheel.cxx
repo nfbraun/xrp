@@ -13,7 +13,12 @@
 const char* PhiNames[] = { "LH0", "LH1", "LH2", "LK", "LA0", "LA1",
                            "RH0", "RH1", "RH2", "RK", "RA0", "RA1" };
 
-//#define DEBUG_FIXED_TORSO
+// ** Simulation parameters **
+// Generate contact joints between the feet and the ground
+//#define USE_FOOT_COLLISION
+
+// Lock stance foot once it reaches the ground
+#define USE_STANCE_FOOT_LOCKING
 
 // ** Title **
 const char Cartwheel::TITLE[] = "Cartwheel Walker";
@@ -228,6 +233,14 @@ Cartwheel::Cartwheel(unsigned int stepPerSec, unsigned int intPerStep)
     fController = new CWController(fCharacter, worldOracle);
     
     fContactGroup = dJointGroupCreate(0);
+    
+    #ifdef USE_STANCE_FOOT_LOCKING
+    fStance = LEFT_STANCE;
+    fLastStanceSwitchTime = 0.;
+    fLFootStickyJ = fRFootStickyJ = 0;
+    
+    LockStanceFoot(LEFT_STANCE);
+    #endif
 }
 
 Cartwheel::~Cartwheel()
@@ -273,6 +286,59 @@ Eigen::Vector3d invTransformTorque(const dReal* R, double t0, double t1, double 
     return v;
 }
 
+void Cartwheel::LockStanceFoot(int stance)
+{
+    if(fLFootStickyJ != 0) {
+        dJointDestroy(fLFootStickyJ);
+        fLFootStickyJ = 0;
+    }
+    if(fRFootStickyJ != 0) {
+        dJointDestroy(fRFootStickyJ);
+        fRFootStickyJ = 0;
+    }
+    
+    if(stance == LEFT_STANCE) {
+        fLFootStickyJ = dJointCreateFixed(fWorld, 0);
+        dJointAttach(fLFootStickyJ, 0, fRobot->fLFootB);
+        dJointSetFixed(fLFootStickyJ);
+    } else {
+        fRFootStickyJ = dJointCreateFixed(fWorld, 0);
+        dJointAttach(fRFootStickyJ, 0, fRobot->fRFootB);
+        dJointSetFixed(fRFootStickyJ);
+    }
+}
+
+void Cartwheel::SetFakeContactDataForFoot(std::vector<ContactPoint>& cpts, const Vector3d& pos)
+{
+    cpts.push_back(ContactPoint());
+    cpts.at(0).f = Vector3d(0., 100., 0.);
+    cpts.at(0).cp = pos + Vector3d(1., 0., 1.);
+    
+    cpts.push_back(ContactPoint());
+    cpts.at(1).f = Vector3d(0., 100., 0.);
+    cpts.at(1).cp = pos + Vector3d(1., 0., -1.);
+    
+    cpts.push_back(ContactPoint());
+    cpts.at(2).f = Vector3d(0., 100., 0.);
+    cpts.at(2).cp = pos + Vector3d(-1., 0., 1.);
+    
+    cpts.push_back(ContactPoint());
+    cpts.at(3).f = Vector3d(0., 100., 0.);
+    cpts.at(3).cp = Vector3d(-1., 0., -1.);
+}
+
+void Cartwheel::SetFakeContactData(int stance)
+{
+    fCData.pLeft.clear();
+    fCData.pRight.clear();
+    
+    if(stance == LEFT_STANCE) {
+        SetFakeContactDataForFoot(fCData.pLeft, ODE::BodyGetPosition(fRobot->fLFootB));
+    } else {
+        SetFakeContactDataForFoot(fCData.pRight, ODE::BodyGetPosition(fRobot->fRFootB));
+    }
+}
+
 void Cartwheel::ApplyTorques(const JointSpTorques& jt)
 {
     Eigen::Vector3d lHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fPelvisB),
@@ -294,13 +360,24 @@ void Cartwheel::ApplyTorques(const JointSpTorques& jt)
 
 void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
 {
+    #ifdef USE_STANCE_FOOT_LOCKING
+    if((fT - fLastStanceSwitchTime) > 0.5) {
+        dBodyID swingFootB = (fStance == LEFT_STANCE ? fRobot->fRFootB : fRobot->fLFootB);
+        if(ODE::BodyGetPosition(swingFootB).y() < CharacterConst::footPosY) {
+            fStance = (fStance == LEFT_STANCE ? RIGHT_STANCE : LEFT_STANCE);
+            fLastStanceSwitchTime = fT;
+            LockStanceFoot(fStance);
+        }
+    }
+    #endif
+    
     //go through all the joints in the world, and apply their torques to the parent and child rb's
     ApplyTorques(torques);
     
     //we need to determine the contact points first - delete the previous contacts
     dJointGroupEmpty(fContactGroup);
     //initiate the collision detection
-    #ifndef DEBUG_FIXED_TORSO
+    #ifdef USE_FOOT_COLLISION
     Collide(fRobot->fLFootG, fFloorG, fCData.pLeft, fLeftFeedback);
     Collide(fRobot->fRFootG, fFloorG, fCData.pRight, fRightFeedback);
     #endif
@@ -315,6 +392,7 @@ void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
         setRBStateFromODE(rb);
     }
     
+    #ifdef USE_FOOT_COLLISION
     //copy over the force information for the contact forces
     assert(fCData.pLeft.size() < MAX_CONTACTS);
     assert(fCData.pRight.size() < MAX_CONTACTS);
@@ -325,6 +403,11 @@ void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
     for (unsigned int i=0; i<fCData.pRight.size(); i++) {
         fCData.pRight[i].f = Vector3d(fRightFeedback[i].f1[0], fRightFeedback[i].f1[1], fRightFeedback[i].f1[2]);
     }
+    #endif
+    
+    #ifdef USE_STANCE_FOOT_LOCKING
+    SetFakeContactData(fStance);
+    #endif
 }
 
 void Cartwheel::setRBStateFromODE(RigidBody* rb)
