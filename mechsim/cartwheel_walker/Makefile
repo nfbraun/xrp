@@ -1,5 +1,5 @@
 SOURCES = Cartwheel.cxx CWRobot.cxx
-HEADERS = Cartwheel.h CWRobot.h
+HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h
 
 CW_SOURCES = \
 cartwheel/MathLib/Quaternion.cxx \

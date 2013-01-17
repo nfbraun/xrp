@@ -4,15 +4,17 @@
 #include <Physics/Joint.h>
 #include <ode/ode.h>
 
-dBodyID CWRobot::makeODEARB(dWorldID world, ArticulatedRigidBody* arb)
+dBodyID CWRobot::makeODEARB(dWorldID world, ArbID id, ArticulatedRigidBody* arb)
 {
-    dBodyID id = dBodyCreate(world);
+    dBodyID body = dBodyCreate(world);
     dMass ODEmass;
-    ODEmass.setParameters(arb->getMass(), 0, 0, 0, 
-            arb->moi.x(), arb->moi.y(), arb->moi.z(),
+    ODEmass.setParameters(rbMass(id), 0, 0, 0, 
+            rbMOI(id).x(), rbMOI(id).y(), rbMOI(id).z(),
             0, 0, 0);
-
-    dBodySetMass(id, &ODEmass);
+    
+    assert(rbMass(id) == arb->getMass());
+    
+    dBodySetMass(body, &ODEmass);
     
     dQuaternion tempQ;
     tempQ[0] = arb->getState().orientation.s;
@@ -20,12 +22,12 @@ dBodyID CWRobot::makeODEARB(dWorldID world, ArticulatedRigidBody* arb)
     tempQ[2] = arb->getState().orientation.v.y();
     tempQ[3] = arb->getState().orientation.v.z();
     
-    dBodySetPosition(id, arb->getState().position.x(), arb->getState().position.y(), arb->getState().position.z());
-    dBodySetQuaternion(id, tempQ);
+    dBodySetPosition(body, arb->getState().position.x(), arb->getState().position.y(), arb->getState().position.z());
+    dBodySetQuaternion(body, tempQ);
 
-    fODEMap[arb] = id;
+    fODEMap[arb] = body;
     
-    return id;
+    return body;
 }
 
 dGeomID makeODEBoxGeom(double sx, double sy, double sz)
@@ -34,47 +36,13 @@ dGeomID makeODEBoxGeom(double sx, double sy, double sz)
     return g;
 }
 
-ArticulatedRigidBody* createBox(const char* name,
-                                const Point3d& pos,
-                                const Vector3d& size,
-                                double moiScale = 1,
-                                double density=1, bool havecdp=false)
+ArticulatedRigidBody* createARB(unsigned int id, const Vector3d& pos)
 {
-    const double mass = density * size.x()*size.y()*size.z();
+    ArticulatedRigidBody* arb = new ArticulatedRigidBody();
+    arb->setMass(rbMass(id));
+    arb->state.position = pos;
     
-    //std::cout << "Mass: " << mass << "kg" << std::endl;
-
-    ArticulatedRigidBody* box = new ArticulatedRigidBody();
-    box->state.position = pos;
-    box->setMass(mass);
-    
-    box->moi = Vector3d( size.y()*size.y() + size.z()*size.z(),
-                  size.x()*size.x() + size.z()*size.z(),
-                  size.x()*size.x() + size.y()*size.y() ) * 1.0/12.0 * mass * moiScale;
-    
-    return box;
-}
-
-ArticulatedRigidBody* createCylinder(const char* name,
-                                     const Point3d& pos,
-                                     double basePos, double tipPos,
-                                     double radius=1,
-                                     double moiScale = 1,
-                                     double density = 1)
-{
-    const double mass = density * M_PI *radius*radius* fabs(tipPos-basePos);
-    
-    ArticulatedRigidBody* cylinder = new ArticulatedRigidBody();
-    cylinder->state.position = pos;
-    cylinder->setMass(mass);
-
-    const double height = fabs(tipPos-basePos);
-    
-    cylinder->moi = Vector3d(mass*(3*radius*radius + height*height) / 12.0 * moiScale,
-                 mass*radius*radius / 2.0 * moiScale,
-                 mass*(3*radius*radius + height*height) / 12.0 * moiScale);
-    
-    return cylinder;
+    return arb;
 }
 
 void CWRobot::create(dWorldID world)
@@ -84,16 +52,11 @@ void CWRobot::create(dWorldID world)
     
     fCharacter = new Character();
     
-    ArticulatedRigidBody* pelvis = createBox("pelvis", Point3d(0, pelvisPosY, 0),
-        Vector3d(pelvisSizeX, pelvisSizeY, pelvisSizeZ),
-        3., density);
+    ArticulatedRigidBody* pelvis = createARB(R_ROOT, Point3d(0, pelvisPosY, 0));
     fCharacter->setRoot( pelvis );
     
-    ArticulatedRigidBody* lUpperLeg = createCylinder("lUpperLeg",
-        Point3d(legPosX_L, upperLegPosY, 0.),
-        -upperLegSizeY/2.0, upperLegSizeY/2.0,
-        legDiameter/2.0,
-        1, density);
+    ArticulatedRigidBody* lUpperLeg = createARB(R_L_UPPER_LEG,
+        Point3d(legPosX_L, upperLegPosY, 0.));
     fCharacter->addArticulatedRigidBody( lUpperLeg, R_L_UPPER_LEG );
     
     Joint* joint2 = new Joint();
@@ -103,11 +66,8 @@ void CWRobot::create(dWorldID world)
     joint2->setChild(lUpperLeg);
     fCharacter->addJoint(joint2, J_L_HIP);
     
-    ArticulatedRigidBody* rUpperLeg = createCylinder("rUpperLeg",
-        Point3d(legPosX_R, upperLegPosY, 0.),
-        -upperLegSizeY/2.0, upperLegSizeY/2.0,
-        legDiameter/2.0,
-        1., density);
+    ArticulatedRigidBody* rUpperLeg = createARB(R_R_UPPER_LEG,
+        Point3d(legPosX_R, upperLegPosY, 0.));
     fCharacter->addArticulatedRigidBody( rUpperLeg, R_R_UPPER_LEG );
     
     Joint* joint3 = new Joint();
@@ -117,11 +77,8 @@ void CWRobot::create(dWorldID world)
     joint3->setChild(rUpperLeg);
     fCharacter->addJoint(joint3, J_R_HIP);
     
-    ArticulatedRigidBody* lLowerLeg = createCylinder("lLowerLeg",
-        Point3d(legPosX_L, lowerLegPosY, 0.),
-        -lowerLegSizeY/2.0, lowerLegSizeY/2.0, 
-        legDiameter/2.0,
-        1, density);
+    ArticulatedRigidBody* lLowerLeg = createARB(R_L_LOWER_LEG,
+        Point3d(legPosX_L, lowerLegPosY, 0.));
     fCharacter->addArticulatedRigidBody( lLowerLeg, R_L_LOWER_LEG);
     
     Joint* joint4 = new Joint();
@@ -131,11 +88,8 @@ void CWRobot::create(dWorldID world)
     joint4->setChild(lLowerLeg);
     fCharacter->addJoint(joint4, J_L_KNEE);
     
-    ArticulatedRigidBody* rLowerLeg = createCylinder("rLowerLeg",
-        Point3d(legPosX_R, lowerLegPosY, 0.),
-        -lowerLegSizeY/2.0, lowerLegSizeY/2.0, 
-        legDiameter/2.0,
-        1, density);
+    ArticulatedRigidBody* rLowerLeg = createARB(R_R_LOWER_LEG,
+        Point3d(legPosX_R, lowerLegPosY, 0.));
     fCharacter->addArticulatedRigidBody( rLowerLeg, R_R_LOWER_LEG );
     
     Joint* joint5 = new Joint();
@@ -145,10 +99,8 @@ void CWRobot::create(dWorldID world)
     joint5->setChild(rLowerLeg);
     fCharacter->addJoint(joint5, J_R_KNEE);
     
-    ArticulatedRigidBody* lFoot = createBox("lFoot",
-        Point3d(legPosX_L, footPosY, 0.016),
-        Vector3d(footSizeX,footSizeY,footSizeZ),
-        3., density, true);
+    ArticulatedRigidBody* lFoot = createARB(R_L_FOOT,
+        Point3d(legPosX_L, footPosY, 0.016));
     fCharacter->addArticulatedRigidBody( lFoot, R_L_FOOT );
     
     Joint* joint6 = new Joint();
@@ -158,10 +110,8 @@ void CWRobot::create(dWorldID world)
     joint6->setChild(lFoot);
     fCharacter->addJoint(joint6, J_L_ANKLE);
     
-    ArticulatedRigidBody* rFoot = createBox("rFoot",
-        Point3d(legPosX_R, footPosY, 0.016), 
-        Vector3d(footSizeX,footSizeY,footSizeZ),
-        3., density, true);
+    ArticulatedRigidBody* rFoot = createARB(R_R_FOOT,
+        Point3d(legPosX_R, footPosY, 0.016));
     fCharacter->addArticulatedRigidBody( rFoot, R_R_FOOT );
     
     Joint* joint7 = new Joint();
@@ -171,15 +121,15 @@ void CWRobot::create(dWorldID world)
     joint7->setChild(rFoot);
     fCharacter->addJoint(joint7, J_R_ANKLE);
     
-    fPelvisB = makeODEARB(world, pelvis);
+    fPelvisB = makeODEARB(world, R_ROOT, pelvis);
     
-    fLUpperLegB = makeODEARB(world, lUpperLeg);
-    fLLowerLegB = makeODEARB(world, lLowerLeg);
-    fRUpperLegB = makeODEARB(world, rUpperLeg);
-    fRLowerLegB = makeODEARB(world, rLowerLeg);
+    fLUpperLegB = makeODEARB(world, R_L_UPPER_LEG, lUpperLeg);
+    fLLowerLegB = makeODEARB(world, R_L_LOWER_LEG, lLowerLeg);
+    fRUpperLegB = makeODEARB(world, R_R_UPPER_LEG, rUpperLeg);
+    fRLowerLegB = makeODEARB(world, R_R_LOWER_LEG, rLowerLeg);
     
-    fLFootB = makeODEARB(world, lFoot);
-    fRFootB = makeODEARB(world, rFoot);
+    fLFootB = makeODEARB(world, R_L_FOOT, lFoot);
+    fRFootB = makeODEARB(world, R_R_FOOT, rFoot);
     
     fLFootG = makeODEBoxGeom(footSizeX, footSizeY, footSizeZ);
     fRFootG = makeODEBoxGeom(footSizeX, footSizeY, footSizeZ);

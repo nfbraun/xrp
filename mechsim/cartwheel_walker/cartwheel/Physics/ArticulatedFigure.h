@@ -6,11 +6,7 @@
 #include <iostream>
 #include <stdexcept>
 
-enum JointID { J_L_HIP, J_R_HIP, J_L_KNEE, J_R_KNEE,
-    J_L_ANKLE, J_R_ANKLE, J_MAX };
-
-enum ArbID { R_ROOT, R_L_UPPER_LEG, R_L_LOWER_LEG, R_R_UPPER_LEG,
-    R_R_LOWER_LEG, R_L_FOOT, R_R_FOOT, R_MAX };
+#include "../../StaticRobotInfo.h"
 
 /*======================================================================================================================================================================*
  * An articulated figure is composed of many articulated rigid bodies that are interconnected by joints. Characters, cars, ropes, etc, can all be viewed as articulated *

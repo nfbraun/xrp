@@ -1,5 +1,6 @@
 #ifndef CW_CHARACTER_H
 #define CW_CHARACTER_H
+#include "StaticRobotInfo.h"
 #include <Core/Character.h>
 #include <ode/ode.h>
 #include <map>
@@ -23,42 +24,7 @@ public:
     CWRobot() {}
     void create(dWorldID world);
     
-    dBodyID makeODEARB(dWorldID world, ArticulatedRigidBody* arb);
+    dBodyID makeODEARB(dWorldID world, ArbID id, ArticulatedRigidBody* arb);
 };
-
-namespace CharacterConst {
-    const double density = 900;
-    
-    const double footSizeX = 0.12;
-    const double footSizeY = 0.05;
-    const double footSizeZ = 0.2;
-    const double legDiameter = 0.1;
-    const double lowerLegDiameter = 0.1;
-    const double upperLegDiameter = 0.1;
-    const double legSizeY = 1.0;
-    const double kneeRelativePosY = 0.5;
-    const double legRelativeAnchorX = 0.6;
-    
-    const double pelvisSizeX = 0.45;
-    const double pelvisSizeY = 0.3;
-    const double pelvisSizeZ = 0.25;
-    
-    const double pelvisDiameter = 0.45;
-    const double pelvisRadius = pelvisDiameter/2.0;
-    
-    const double lowerLegSizeY = legSizeY * kneeRelativePosY;
-    const double upperLegSizeY = legSizeY - lowerLegSizeY;
-    
-    const double footPosY = footSizeY/2.;
-    const double anklePosY = footSizeY;
-    const double lowerLegPosY = anklePosY + lowerLegSizeY/2.;
-    const double kneePosY = anklePosY + legSizeY * kneeRelativePosY;
-    const double upperLegPosY = kneePosY + upperLegSizeY/2.;
-    const double hipPosY = anklePosY + legSizeY;
-    const double pelvisPosY = hipPosY + pelvisSizeY/2.;
-    
-    const double legPosX_L = pelvisSizeX/2.0*legRelativeAnchorX;
-    const double legPosX_R = -pelvisSizeX/2.0*legRelativeAnchorX;
-} // end namespace CharacterConst
 
 #endif

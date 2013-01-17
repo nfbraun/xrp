@@ -47,8 +47,6 @@ public:
 	//--> the state of the rigid body: made up of the object's position in the world, its orientation and linear/angular velocities (stored in world coordinates)
 	RBState state;
 
-	Vector3d moi;
-
 	/**
 		This method returns the coordinates of the point that is passed in as a parameter(expressed in local coordinates), in world coordinates.
 	*/
