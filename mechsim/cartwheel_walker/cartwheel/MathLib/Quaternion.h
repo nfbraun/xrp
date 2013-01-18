@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vector3d.h"
-
+#include <Eigen/Dense>
 
 /*================================================================================================================================================================*
  *	This class provides an implementation for quaternions. Internally, each quaternion it will be stored in the form: q = s + v, where s is a scalar and v is a   |
@@ -30,6 +30,11 @@ public:
 	Quaternion(const Quaternion& other){
 		this->s = other.s;
 		this->v = other.v;
+	}
+	
+	Quaternion(const Eigen::Quaterniond& other){
+		this->s = other.w();
+		this->v = other.vec();
 	}
 
 	/**
@@ -60,6 +65,12 @@ public:
 	Quaternion& operator = (const Quaternion &rhs){
 		this->s = rhs.s;
 		this->v = rhs.v;
+		return *this;
+	}
+	
+	Quaternion& operator = (const Eigen::Quaterniond &rhs){
+		this->s = rhs.w();
+		this->v = rhs.vec();
 		return *this;
 	}
 

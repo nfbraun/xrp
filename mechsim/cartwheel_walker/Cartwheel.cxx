@@ -496,8 +496,6 @@ CartState Cartwheel::GetCurrentState()
     CartState state;
     
     state.fParent = this;
-    //state.fTorsoQ = BodyQ::FromODE(fRobot->fTorsoB);
-    //state.fLowerBackQ = BodyQ::FromODE(fRobot->fLowerBackB);
     state.fPelvisQ = BodyQ::FromODE(fRobot->fPelvisB);
     
     state.fLUpperLegQ = BodyQ::FromODE(fRobot->fLUpperLegB);

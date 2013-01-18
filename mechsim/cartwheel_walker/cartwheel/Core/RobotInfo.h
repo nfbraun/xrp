@@ -41,7 +41,16 @@ class RobotInfo {
     
     // Return joint position in global coordinates
     Vector3d jPos(unsigned int index) const
-        { assert(index < J_MAX); return fCharacter->getJoints()[index]->child->getWorldCoordinatesForPoint(fCharacter->getJoints()[index]->getChildJointPosition()); }
+    {
+        assert(index < J_MAX);
+        
+        Vector3d pc = fCharacter->getJoints()[index]->child->getWorldCoordinatesForPoint(fCharacter->getJoints()[index]->getChildJointPosition());
+        Vector3d pp = fCharacter->getJoints()[index]->parent->getWorldCoordinatesForPoint(fCharacter->getJoints()[index]->getParentJointPosition());
+        
+        assert((pp - pc).norm() < 1e-3);
+        
+        return pc;
+    }
     
     unsigned int rootIndex() const { return R_ROOT; }
     

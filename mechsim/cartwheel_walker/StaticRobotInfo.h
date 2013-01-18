@@ -9,6 +9,8 @@ enum JointID { J_L_HIP, J_R_HIP, J_L_KNEE, J_R_KNEE,
 enum ArbID { R_ROOT, R_L_UPPER_LEG, R_L_LOWER_LEG, R_R_UPPER_LEG,
     R_R_LOWER_LEG, R_L_FOOT, R_R_FOOT, R_MAX };
 
+enum PhiID { LH0, LH1, LH2, LK, LA0, LA1, RH0, RH1, RH2, RK, RA0, RA1 };
+
 namespace CharacterConst {
     const double density = 900;
     

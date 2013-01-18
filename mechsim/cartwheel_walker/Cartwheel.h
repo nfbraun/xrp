@@ -32,7 +32,6 @@ class BodyQ {
     Eigen::Vector3d fAVel;
 };
 
-enum PhiID { LH0, LH1, LH2, LK, LA0, LA1, RH0, RH1, RH2, RK, RA0, RA1 };
 extern const char* PhiNames[];
 
 class RobotState {
@@ -48,7 +47,7 @@ class CartState: public SimulationState {
     Cartwheel* fParent;
     double fT;
     
-    BodyQ fTorsoQ, fLowerBackQ, fPelvisQ;
+    BodyQ fPelvisQ;
     BodyQ fLUpperLegQ, fLLowerLegQ, fRUpperLegQ, fRLowerLegQ;
     BodyQ fLFootQ, fRFootQ;
     

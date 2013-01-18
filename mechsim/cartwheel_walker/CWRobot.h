@@ -8,7 +8,7 @@
 class CWRobot
 {
 public:
-    dBodyID fTorsoB, fLowerBackB, fPelvisB;
+    dBodyID fPelvisB;
     dBodyID fLUpperLegB, fLLowerLegB, fRUpperLegB, fRLowerLegB;
     dBodyID fLFootB, fRFootB;
     dGeomID fLFootG, fRFootG;
