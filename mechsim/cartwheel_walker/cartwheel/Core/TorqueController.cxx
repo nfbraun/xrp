@@ -12,8 +12,8 @@ TorqueController::TorqueController()
     addControlParams(J_R_HIP, 300.0, 35.0, 100.0, Vector3d( 1.0, 1.0, 1.0 ) );
     addControlParams(J_L_KNEE, 300.0, 35.0, 200.0, Vector3d( 1.0, 1.0, 1.0 ) );
     addControlParams(J_R_KNEE, 300.0, 35.0, 200.0, Vector3d( 1.0, 1.0, 1.0 ) );
-    addControlParams(J_L_ANKLE, 50.0, 15.0, 50.0, Vector3d( 1.0, 0.2, 0.2 ) );
-    addControlParams(J_R_ANKLE, 50.0, 15.0, 50.0, Vector3d( 1.0, 0.2, 0.2 ) );
+    addControlParams(J_L_ANKLE, 50.0, 15.0, 50.0, Vector3d( 0.2, 1.0, 0.2 ) );
+    addControlParams(J_R_ANKLE, 50.0, 15.0, 50.0, Vector3d( 0.2, 1.0, 0.2 ) );
 }
 
 void TorqueController::addControlParams(JointID jid, double kp, double kd, double tauMax, const Vector3d& scale)
@@ -32,9 +32,9 @@ RawTorques TorqueController::computeGravityCompensationTorques(const RobotInfo& 
 {
     RawTorques torques;
     
-    VirtualModelController::addJointTorquesEquivalentToForce(rinfo.character()->getJoints()[rinfo.swingHipIndex()], Point3d(), Vector3d(0, rinfo.character()->getJoints()[rinfo.swingHipIndex()]->child->getMass()*9.8, 0), NULL, torques);
-    VirtualModelController::addJointTorquesEquivalentToForce(rinfo.character()->getJoints()[rinfo.swingKneeIndex()], Point3d(), Vector3d(0, rinfo.character()->getJoints()[rinfo.swingKneeIndex()]->child->getMass()*9.8, 0), NULL, torques);
-    VirtualModelController::addJointTorquesEquivalentToForce(rinfo.character()->getJoints()[rinfo.swingAnkleIndex()], Point3d(), Vector3d(0, rinfo.character()->getJoints()[rinfo.swingAnkleIndex()]->child->getMass()*9.8, 0), NULL, torques);
+    VirtualModelController::addJointTorquesEquivalentToForce(rinfo.character()->getJoints()[rinfo.swingHipIndex()], Point3d(), Vector3d(0, 0, rinfo.character()->getJoints()[rinfo.swingHipIndex()]->child->getMass()*9.8), NULL, torques);
+    VirtualModelController::addJointTorquesEquivalentToForce(rinfo.character()->getJoints()[rinfo.swingKneeIndex()], Point3d(), Vector3d(0, 0, rinfo.character()->getJoints()[rinfo.swingKneeIndex()]->child->getMass()*9.8), NULL, torques);
+    VirtualModelController::addJointTorquesEquivalentToForce(rinfo.character()->getJoints()[rinfo.swingAnkleIndex()], Point3d(), Vector3d(0, 0, rinfo.character()->getJoints()[rinfo.swingAnkleIndex()]->child->getMass()*9.8), NULL, torques);
     
     return torques;
 }
@@ -92,12 +92,12 @@ double TorqueController::getStanceFootWeightRatio(const RobotInfo& rinfo, const 
 {
 	Vector3d stanceFootForce = cfs.getForceOnFoot(rinfo.stanceFootIndex());
 	Vector3d swingFootForce = cfs.getForceOnFoot(rinfo.swingFootIndex());
-	double totalYForce = (stanceFootForce + swingFootForce).dot(PhysicsGlobals::up);
+	double totalZForce = (stanceFootForce + swingFootForce).dot(PhysicsGlobals::up);
 
-	if (IS_ZERO(totalYForce))
+	if (IS_ZERO(totalZForce))
 		return -1;
 	else
-		return stanceFootForce.dot(PhysicsGlobals::up) / totalYForce;
+		return stanceFootForce.dot(PhysicsGlobals::up) / totalZForce;
 }
 
 /**
@@ -109,16 +109,16 @@ Vector3d TorqueController::preprocessAnkleVTorque(const RobotInfo& rinfo, const 
 	ArticulatedRigidBody* foot = rinfo.character()->getARBs()[rinfo.stanceFootIndex()];
 	ankleVTorque = foot->getLocalCoordinatesForVector(ankleVTorque);
 	
-	if (cfs.toeInContact(rinfo.stanceFootIndex(), foot) == false || phi < 0.2 || phi > 0.8) ankleVTorque.x() = 0;
+	if (cfs.toeInContact(rinfo.stanceFootIndex(), foot) == false || phi < 0.2 || phi > 0.8) ankleVTorque.y() = 0;
 
 	Vector3d footRelativeAngularVel = foot->getLocalCoordinatesForVector(foot->getAngularVelocity());
-	if ((footRelativeAngularVel.z() < -0.2 && ankleVTorque.z() > 0) || (footRelativeAngularVel.z() > 0.2 && ankleVTorque.z() < 0))
-		ankleVTorque.z() = 0;
+	if ((footRelativeAngularVel.x() < -0.2 && ankleVTorque.x() > 0) || (footRelativeAngularVel.x() > 0.2 && ankleVTorque.x() < 0))
+		ankleVTorque.x() = 0;
 
-	if (fabs(footRelativeAngularVel.z()) > 1.0) ankleVTorque.z() = 0;
 	if (fabs(footRelativeAngularVel.x()) > 1.0) ankleVTorque.x() = 0;
+	if (fabs(footRelativeAngularVel.y()) > 1.0) ankleVTorque.y() = 0;
 	
-	boundToRange(&ankleVTorque.z(), -20, 20);
+	boundToRange(&ankleVTorque.x(), -20, 20);
 
 	ankleVTorque = foot->getWorldCoordinatesForVector(ankleVTorque);
 	
@@ -132,9 +132,9 @@ Vector3d TorqueController::computeVirtualForce(const RobotInfo& rinfo, double de
 {
 	//this is the desired acceleration of the center of mass
 	Vector3d desA;
-	desA.z() = (desVSagittal - rinfo.getV().z()) * 30;
-	desA.y() = 0.;
-	desA.x() = (desOffCoronal - rinfo.getD().x()) * 20 + (desVCoronal - rinfo.getV().x()) * 9;
+	desA.x() = (desVSagittal - rinfo.getV().x()) * 30;
+	desA.y() = (desOffCoronal - rinfo.getD().y()) * 20 + (desVCoronal - rinfo.getV().y()) * 9;
+	desA.z() = 0.;
 	
 	/* if (doubleStanceMode == true){
 	    assert(false);
@@ -145,8 +145,8 @@ Vector3d TorqueController::computeVirtualForce(const RobotInfo& rinfo, double de
 
 	//and this is the force that would achieve that - make sure it's not too large...
 	Vector3d fA = (desA) * rinfo.totalMass();
-	boundToRange(&fA.x(), -100, 100);
-	boundToRange(&fA.z(), -60, 60);
+	boundToRange(&fA.x(), -60, 60);
+	boundToRange(&fA.y(), -100, 100);
 
 	//now change this quantity to world coordinates...
 	fA = rinfo.characterFrame().rotate(fA);
@@ -188,11 +188,11 @@ JointSpTorques TorqueController::transformTorques(const RobotInfo& rinfo, const 
     const Character* character = rinfo.character();
     
     /*** Left leg ***/
-    Vector3d cf_lKneeAxis(1., 0., 0.);
+    Vector3d cf_lKneeAxis(0., 1., 0.);
     Eigen::Vector3d lKneeAxis = character->getARBs()[R_L_UPPER_LEG]->getOrientation().rotate(cf_lKneeAxis).toEigen();
     
-    Vector3d cf_lAnkleAxis1(0., 0., 1.);
-    Vector3d cf_lAnkleAxis2(1., 0., 0.);
+    Vector3d cf_lAnkleAxis1(1., 0., 0.);
+    Vector3d cf_lAnkleAxis2(0., 1., 0.);
     Eigen::Vector3d lAnkleAxis1 = character->getARBs()[R_L_FOOT]->getOrientation().rotate(cf_lAnkleAxis1).toEigen();
     Eigen::Vector3d lAnkleAxis2 = character->getARBs()[R_L_LOWER_LEG]->getOrientation().rotate(cf_lAnkleAxis2).toEigen();
     
@@ -206,11 +206,11 @@ JointSpTorques TorqueController::transformTorques(const RobotInfo& rinfo, const 
     jt.fLeftLeg[5] = lAnkleAxis2.dot(torques.get(J_L_ANKLE).toEigen());
     
     /*** Right leg ***/
-    Vector3d cf_rKneeAxis(1., 0., 0.);
+    Vector3d cf_rKneeAxis(0., 1., 0.);
     Eigen::Vector3d rKneeAxis = character->getARBs()[R_R_UPPER_LEG]->getOrientation().rotate(cf_rKneeAxis).toEigen();
     
-    Vector3d cf_rAnkleAxis1(0., 0., -1.);
-    Vector3d cf_rAnkleAxis2(1., 0., 0.);
+    Vector3d cf_rAnkleAxis1(-1., 0., 0.);
+    Vector3d cf_rAnkleAxis2(0., 1., 0.);
     Eigen::Vector3d rAnkleAxis1 = character->getARBs()[R_R_FOOT]->getOrientation().rotate(cf_rAnkleAxis1).toEigen();
     Eigen::Vector3d rAnkleAxis2 = character->getARBs()[R_R_LOWER_LEG]->getOrientation().rotate(cf_rAnkleAxis2).toEigen();
     

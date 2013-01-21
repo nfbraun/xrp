@@ -152,7 +152,7 @@ void TurnController::calcStepPlan(const RobotInfo& rinfo, double dt)
 		boundToRange(&t, 0, 1);
 		Vector3d vD = initialVelocity*t + desiredVelocity*(1-t);
 		vD = rinfo.characterFrame().inverseRotate(vD);
-		setVelocities(vD.z(), vD.x());
+		setVelocities(vD.x(), vD.y());
 	}
 
 	setDesiredHeading(turningDesiredHeading);
@@ -225,7 +225,7 @@ void TurnController::initiateTurn(const RobotInfo& rinfo, double finalDHeading)
 	boundToRange(&finalVDSagittal, -0.5, 0.6);
 	if (fabs(turnAngle) > 2.5)
 		boundToRange(&finalVDSagittal, -0.2, 0.3);
-	desiredVelocity = Vector3d(0,0,finalVDSagittal).rotate(finalHeading, Vector3d(0,1,0));
+	desiredVelocity = Vector3d(finalVDSagittal, 0., 0.).rotate(finalHeading, Vector3d(0,0,1));
 
 	if (((rinfo.stance() == LEFT_STANCE && turnAngle < -1.5) || (rinfo.stance() == RIGHT_STANCE && turnAngle > 1.5)) && finalVDSagittal >=0){
 		std::cout << "this is the bad side... try a smaller heading first..." << std::endl;

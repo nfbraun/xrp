@@ -65,7 +65,7 @@ class CartState: public SimulationState {
     void DrawRobot(bool shadowmode) const;
     
     Eigen::Vector3d GetCenter() const
-        { return Eigen::AngleAxis<double>(M_PI/2., Eigen::Vector3d::UnitX()) * fPelvisQ.pos(); }
+        { return fPelvisQ.pos(); }
     
     virtual double GetData(int ch) const {
         switch(ch) {

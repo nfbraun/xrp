@@ -65,18 +65,12 @@ void CartState::Draw(int mode) const
         DrawRobotOutline();
     }
     
-    glPushMatrix();
-    GL::Rotate(Eigen::AngleAxis<double>(M_PI/2., Eigen::Vector3d::UnitX()));
     glColor3f(1., 1., 0.);
     GL::drawSphere(0.1, fDbg.desSwingPos.toEigen());
-    glPopMatrix();
 }
 
 void CartState::DrawRobot(bool shadowmode) const
 {
-    glPushMatrix();
-    GL::Rotate(Eigen::AngleAxis<double>(M_PI/2., Eigen::Vector3d::UnitX()));
-    
     if(!shadowmode) glColor3f(.5, .5, 0.);
     
     /* fTorsoQ.TransformGL();
@@ -100,26 +94,26 @@ void CartState::DrawRobot(bool shadowmode) const
     
     fLUpperLegQ.TransformGL();
     GL::drawTube(CharacterConst::legDiameter/2.,
-                 CharacterConst::upperLegSizeY / 2. * Eigen::Vector3d::UnitY(),
-                 -CharacterConst::upperLegSizeY / 2. * Eigen::Vector3d::UnitY());
+                 -CharacterConst::upperLegSizeZ / 2. * Eigen::Vector3d::UnitZ(),
+                 CharacterConst::upperLegSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
     fLLowerLegQ.TransformGL();
     GL::drawTube(CharacterConst::legDiameter/2.,
-                 CharacterConst::lowerLegSizeY / 2. * Eigen::Vector3d::UnitY(),
-                 -CharacterConst::lowerLegSizeY / 2. * Eigen::Vector3d::UnitY());
+                 -CharacterConst::lowerLegSizeZ / 2. * Eigen::Vector3d::UnitZ(),
+                 CharacterConst::lowerLegSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
     fRUpperLegQ.TransformGL();
     GL::drawTube(CharacterConst::legDiameter/2.,
-                 CharacterConst::upperLegSizeY / 2. * Eigen::Vector3d::UnitY(),
-                 -CharacterConst::upperLegSizeY / 2. * Eigen::Vector3d::UnitY());
+                 -CharacterConst::upperLegSizeZ / 2. * Eigen::Vector3d::UnitZ(),
+                 CharacterConst::upperLegSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
     fRLowerLegQ.TransformGL();
     GL::drawTube(CharacterConst::legDiameter/2.,
-                 CharacterConst::lowerLegSizeY / 2. * Eigen::Vector3d::UnitY(),
-                 -CharacterConst::lowerLegSizeY / 2. * Eigen::Vector3d::UnitY());
+                 -CharacterConst::lowerLegSizeZ / 2. * Eigen::Vector3d::UnitZ(),
+                 CharacterConst::lowerLegSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
     if(!shadowmode) glColor3f(.5, .5, .5);
@@ -140,8 +134,6 @@ void CartState::DrawRobot(bool shadowmode) const
     glScalef(CharacterConst::footSizeX, CharacterConst::footSizeY,
         CharacterConst::footSizeZ);
     GL::drawUnitCube();
-    glPopMatrix();
-    
     glPopMatrix();
 }
 
@@ -212,11 +204,11 @@ Cartwheel::Cartwheel(unsigned int stepPerSec, unsigned int intPerStep)
     dInitODE();
     
     fWorld = dWorldCreate();
-    dWorldSetGravity(fWorld, 0., -9.81, 0.);
+    dWorldSetGravity(fWorld, 0., 0., -9.81);
     
     //fFloorG = dCreatePlane(0, FloorNormal.x(), FloorNormal.y(), FloorNormal.z(),
     //                       -FLOOR_DIST);
-    fFloorG = dCreatePlane(0, 0., 1., 0., 0.);
+    fFloorG = dCreatePlane(0, 0., 0., 1., 0.);
     
     fRobot = new CWRobot();
     fRobot->create(fWorld);
@@ -311,20 +303,20 @@ void Cartwheel::LockStanceFoot(int stance)
 void Cartwheel::SetFakeContactDataForFoot(std::vector<ContactPoint>& cpts, const Vector3d& pos)
 {
     cpts.push_back(ContactPoint());
-    cpts.at(0).f = Vector3d(0., 100., 0.);
-    cpts.at(0).cp = pos + Vector3d(1., 0., 1.);
+    cpts.at(0).f = Vector3d(0., 0., 100.);
+    cpts.at(0).cp = pos + Vector3d(1., 1., 0.);
     
     cpts.push_back(ContactPoint());
-    cpts.at(1).f = Vector3d(0., 100., 0.);
-    cpts.at(1).cp = pos + Vector3d(1., 0., -1.);
+    cpts.at(1).f = Vector3d(0., 0., 100.);
+    cpts.at(1).cp = pos + Vector3d(1., -1., 0.);
     
     cpts.push_back(ContactPoint());
-    cpts.at(2).f = Vector3d(0., 100., 0.);
-    cpts.at(2).cp = pos + Vector3d(-1., 0., 1.);
+    cpts.at(2).f = Vector3d(0., 0., 100.);
+    cpts.at(2).cp = pos + Vector3d(-1., 1., 0.);
     
     cpts.push_back(ContactPoint());
-    cpts.at(3).f = Vector3d(0., 100., 0.);
-    cpts.at(3).cp = Vector3d(-1., 0., -1.);
+    cpts.at(3).f = Vector3d(0., 0., 100.);
+    cpts.at(3).cp = Vector3d(-1., -1., 0.);
 }
 
 void Cartwheel::SetFakeContactData(int stance)
@@ -363,7 +355,7 @@ void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
     #ifdef USE_STANCE_FOOT_LOCKING
     if((fT - fLastStanceSwitchTime) > 0.5) {
         dBodyID swingFootB = (fStance == LEFT_STANCE ? fRobot->fRFootB : fRobot->fLFootB);
-        if(ODE::BodyGetPosition(swingFootB).y() < CharacterConst::footPosY) {
+        if(ODE::BodyGetPosition(swingFootB).z() < CharacterConst::footPosZ) {
             fStance = (fStance == LEFT_STANCE ? RIGHT_STANCE : LEFT_STANCE);
             fLastStanceSwitchTime = fT;
             LockStanceFoot(fStance);

@@ -91,7 +91,7 @@ IKSwingLegTarget IKVMCController::computeIKQandW(const RobotInfo& rinfo, const V
 IKSwingLegTarget IKVMCController::computeIKSwingLegTargets(const RobotInfo& rinfo, const Vector3d& swingFootPos, const Vector3d& swingFootVel, double swingFootHeight, double swingFootHeightVel)
 {
     //this is the vector that specifies the plane of rotation for the swing leg, relative to the root...
-	Vector3d swingLegPlaneOfRotation = Vector3d(-1,0,0);;
+	Vector3d swingLegPlaneOfRotation = Vector3d(0,-1,0);
     
     const double dt = 0.001;
     
@@ -102,13 +102,13 @@ IKSwingLegTarget IKVMCController::computeIKSwingLegTargets(const RobotInfo& rinf
     pNow = transformSwingFootTarget(swingFootPos, rinfo.comPos(), rinfo.characterFrame(), hNow);
     pFuture = transformSwingFootTarget(swingFootPos + swingFootVel*dt,
         rinfo.comPos() + rinfo.comVel()*dt, rinfo.characterFrame(), hFuture);
-        
+    
     dbg->desSwingPos = pNow;
     
     Vector3d parentAxis = rinfo.character()->getJoints()[rinfo.swingKneeIndex()]->getParentJointPosition() - rinfo.character()->getJoints()[rinfo.swingHipIndex()]->getChildJointPosition();
     Vector3d childAxis = rinfo.character()->getJoints()[rinfo.swingAnkleIndex()]->getParentJointPosition() - rinfo.character()->getJoints()[rinfo.swingKneeIndex()]->getChildJointPosition();
 
-    return computeIKQandW(rinfo, parentAxis, swingLegPlaneOfRotation, Vector3d(-1,0,0), childAxis, pNow, true, pFuture, dt);
+    return computeIKQandW(rinfo, parentAxis, swingLegPlaneOfRotation, Vector3d(0,-1,0), childAxis, pNow, true, pFuture, dt);
     // computeIKQandW(swingHipIndex, swingKneeIndex, Vector3d(0, -0.355, 0), Vector3d(1,0,0), Vector3d(1,0,0), Vector3d(0, -0.36, 0), pNow, true, pFuture, dt);
 }
 
@@ -124,7 +124,7 @@ Vector3d IKVMCController::transformSwingFootTarget(Vector3d step, const Point3d&
 	//add it to the com location
 	step = com + step;
 	//finally, set the desired height of the foot
-	step.y() = height;
+	step.z() = height;
 
 	// step += computeSwingFootDelta(t);
 	

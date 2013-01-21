@@ -14,36 +14,36 @@ enum PhiID { LH0, LH1, LH2, LK, LA0, LA1, RH0, RH1, RH2, RK, RA0, RA1 };
 namespace CharacterConst {
     const double density = 900;
     
-    const double footSizeX = 0.12;
-    const double footSizeY = 0.05;
-    const double footSizeZ = 0.2;
+    const double footSizeX = 0.2;
+    const double footSizeY = 0.12;
+    const double footSizeZ = 0.05;
     const double legDiameter = 0.1;
     const double lowerLegDiameter = 0.1;
     const double upperLegDiameter = 0.1;
-    const double legSizeY = 1.0;
-    const double kneeRelativePosY = 0.5;
-    const double legRelativeAnchorX = 0.6;
+    const double legSizeZ = 1.0;
+    const double kneeRelativePosZ = 0.5;
+    const double legRelativeAnchorY = 0.6;
     
-    const double pelvisSizeX = 0.45;
-    const double pelvisSizeY = 0.3;
-    const double pelvisSizeZ = 0.25;
+    const double pelvisSizeX = 0.25;
+    const double pelvisSizeY = 0.45;
+    const double pelvisSizeZ = 0.3;
     
     const double pelvisDiameter = 0.45;
     const double pelvisRadius = pelvisDiameter/2.0;
     
-    const double lowerLegSizeY = legSizeY * kneeRelativePosY;
-    const double upperLegSizeY = legSizeY - lowerLegSizeY;
+    const double lowerLegSizeZ = legSizeZ * kneeRelativePosZ;
+    const double upperLegSizeZ = legSizeZ - lowerLegSizeZ;
     
-    const double footPosY = footSizeY/2.;
-    const double anklePosY = footSizeY;
-    const double lowerLegPosY = anklePosY + lowerLegSizeY/2.;
-    const double kneePosY = anklePosY + legSizeY * kneeRelativePosY;
-    const double upperLegPosY = kneePosY + upperLegSizeY/2.;
-    const double hipPosY = anklePosY + legSizeY;
-    const double pelvisPosY = hipPosY + pelvisSizeY/2.;
+    const double footPosZ = footSizeZ/2.;
+    const double anklePosZ = footSizeZ;
+    const double lowerLegPosZ = anklePosZ + lowerLegSizeZ/2.;
+    const double kneePosZ = anklePosZ + legSizeZ * kneeRelativePosZ;
+    const double upperLegPosZ = kneePosZ + upperLegSizeZ/2.;
+    const double hipPosZ = anklePosZ + legSizeZ;
+    const double pelvisPosZ = hipPosZ + pelvisSizeZ/2.;
     
-    const double legPosX_L = pelvisSizeX/2.0*legRelativeAnchorX;
-    const double legPosX_R = -pelvisSizeX/2.0*legRelativeAnchorX;
+    const double legPosY_L = pelvisSizeY/2.0*legRelativeAnchorY;
+    const double legPosY_R = -pelvisSizeY/2.0*legRelativeAnchorY;
 } // end namespace CharacterConst
 
 inline double boxMass(double sx, double sy, double sz)
@@ -78,10 +78,10 @@ inline double rbMass(unsigned int id)
     
     const double masses[R_MAX] =
     { boxMass(pelvisSizeX, pelvisSizeY, pelvisSizeZ),   // R_ROOT
-      cylinderMass(upperLegSizeY, upperLegDiameter/2.), // R_L_UPPER_LEG
-      cylinderMass(lowerLegSizeY, lowerLegDiameter/2.), // R_L_LOWER_LEG
-      cylinderMass(upperLegSizeY, upperLegDiameter/2.), // R_R_UPPER_LEG
-      cylinderMass(lowerLegSizeY, lowerLegDiameter/2.), // R_R_LOWER_LEG
+      cylinderMass(upperLegSizeZ, upperLegDiameter/2.), // R_L_UPPER_LEG
+      cylinderMass(lowerLegSizeZ, lowerLegDiameter/2.), // R_L_LOWER_LEG
+      cylinderMass(upperLegSizeZ, upperLegDiameter/2.), // R_R_UPPER_LEG
+      cylinderMass(lowerLegSizeZ, lowerLegDiameter/2.), // R_R_LOWER_LEG
       boxMass(footSizeX, footSizeY, footSizeZ),         // R_L_FOOT
       boxMass(footSizeX, footSizeY, footSizeZ)          // R_R_FOOT
     };
@@ -96,10 +96,10 @@ inline Eigen::Vector3d rbMOI(unsigned int id)
     
     const Eigen::Vector3d mois[R_MAX] =
     { 3.*boxMOI(pelvisSizeX, pelvisSizeY, pelvisSizeZ),   // R_ROOT
-         cylinderMOI(upperLegSizeY, upperLegDiameter/2.), // R_L_UPPER_LEG
-         cylinderMOI(lowerLegSizeY, lowerLegDiameter/2.), // R_L_LOWER_LEG
-         cylinderMOI(upperLegSizeY, upperLegDiameter/2.), // R_R_UPPER_LEG
-         cylinderMOI(lowerLegSizeY, lowerLegDiameter/2.), // R_R_LOWER_LEG
+         cylinderMOI(upperLegSizeZ, upperLegDiameter/2.), // R_L_UPPER_LEG
+         cylinderMOI(lowerLegSizeZ, lowerLegDiameter/2.), // R_L_LOWER_LEG
+         cylinderMOI(upperLegSizeZ, upperLegDiameter/2.), // R_R_UPPER_LEG
+         cylinderMOI(lowerLegSizeZ, lowerLegDiameter/2.), // R_R_LOWER_LEG
       3.*boxMOI(footSizeX, footSizeY, footSizeZ),         // R_L_FOOT
       3.*boxMOI(footSizeX, footSizeY, footSizeZ)          // R_R_FOOT
     };
