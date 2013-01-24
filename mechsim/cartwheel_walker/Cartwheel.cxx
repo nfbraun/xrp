@@ -85,35 +85,35 @@ void CartState::DrawRobot(bool shadowmode) const
     GL::drawUnitCube();
     glPopMatrix(); */
     
-    fPelvisQ.TransformGL();
-    glScalef(CharacterConst::pelvisSizeX, CharacterConst::pelvisSizeY, CharacterConst::pelvisSizeZ);
+    fTorsoQ.TransformGL();
+    glScalef(CharacterConst::torsoSizeX, CharacterConst::torsoSizeY, CharacterConst::torsoSizeZ);
     GL::drawUnitCube();
     glPopMatrix();
     
     if(!shadowmode) glColor3f(.5, 0., .5);
     
-    fLUpperLegQ.TransformGL();
+    fLThighQ.TransformGL();
     GL::drawTube(CharacterConst::legDiameter/2.,
-                 -CharacterConst::upperLegSizeZ / 2. * Eigen::Vector3d::UnitZ(),
-                 CharacterConst::upperLegSizeZ / 2. * Eigen::Vector3d::UnitZ());
+                 -CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ(),
+                 CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
-    fLLowerLegQ.TransformGL();
+    fLShankQ.TransformGL();
     GL::drawTube(CharacterConst::legDiameter/2.,
-                 -CharacterConst::lowerLegSizeZ / 2. * Eigen::Vector3d::UnitZ(),
-                 CharacterConst::lowerLegSizeZ / 2. * Eigen::Vector3d::UnitZ());
+                 -CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ(),
+                 CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
-    fRUpperLegQ.TransformGL();
+    fRThighQ.TransformGL();
     GL::drawTube(CharacterConst::legDiameter/2.,
-                 -CharacterConst::upperLegSizeZ / 2. * Eigen::Vector3d::UnitZ(),
-                 CharacterConst::upperLegSizeZ / 2. * Eigen::Vector3d::UnitZ());
+                 -CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ(),
+                 CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
-    fRLowerLegQ.TransformGL();
+    fRShankQ.TransformGL();
     GL::drawTube(CharacterConst::legDiameter/2.,
-                 -CharacterConst::lowerLegSizeZ / 2. * Eigen::Vector3d::UnitZ(),
-                 CharacterConst::lowerLegSizeZ / 2. * Eigen::Vector3d::UnitZ());
+                 -CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ(),
+                 CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
     if(!shadowmode) glColor3f(.5, .5, .5);
@@ -333,18 +333,18 @@ void Cartwheel::SetFakeContactData(int stance)
 
 void Cartwheel::ApplyTorques(const JointSpTorques& jt)
 {
-    Eigen::Vector3d lHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fPelvisB),
+    Eigen::Vector3d lHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fTorsoB),
         jt.fLeftLeg[0], jt.fLeftLeg[1], jt.fLeftLeg[2]);
-    ODE::BodyAddTorque(fRobot->fPelvisB, lHipTorque);
-    ODE::BodyAddTorque(fRobot->fLUpperLegB, -lHipTorque);
+    ODE::BodyAddTorque(fRobot->fTorsoB, lHipTorque);
+    ODE::BodyAddTorque(fRobot->fLThighB, -lHipTorque);
     
     dJointAddHingeTorque(fRobot->fLKneeJ, -jt.fLeftLeg[3]);
     dJointAddUniversalTorques(fRobot->fLAnkleJ, -jt.fLeftLeg[4], -jt.fLeftLeg[5]);
     
-    Eigen::Vector3d rHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fPelvisB),
+    Eigen::Vector3d rHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fTorsoB),
         jt.fRightLeg[0], jt.fRightLeg[1], jt.fRightLeg[2]);
-    ODE::BodyAddTorque(fRobot->fPelvisB, rHipTorque);
-    ODE::BodyAddTorque(fRobot->fRUpperLegB, -rHipTorque);
+    ODE::BodyAddTorque(fRobot->fTorsoB, rHipTorque);
+    ODE::BodyAddTorque(fRobot->fRThighB, -rHipTorque);
     
     dJointAddHingeTorque(fRobot->fRKneeJ, -jt.fRightLeg[3]);
     dJointAddUniversalTorques(fRobot->fRAnkleJ, -jt.fRightLeg[4], -jt.fRightLeg[5]);
@@ -488,12 +488,12 @@ CartState Cartwheel::GetCurrentState()
     CartState state;
     
     state.fParent = this;
-    state.fPelvisQ = BodyQ::FromODE(fRobot->fPelvisB);
+    state.fTorsoQ = BodyQ::FromODE(fRobot->fTorsoB);
     
-    state.fLUpperLegQ = BodyQ::FromODE(fRobot->fLUpperLegB);
-    state.fLLowerLegQ = BodyQ::FromODE(fRobot->fLLowerLegB);
-    state.fRUpperLegQ = BodyQ::FromODE(fRobot->fRUpperLegB);
-    state.fRLowerLegQ = BodyQ::FromODE(fRobot->fRLowerLegB);
+    state.fLThighQ = BodyQ::FromODE(fRobot->fLThighB);
+    state.fLShankQ = BodyQ::FromODE(fRobot->fLShankB);
+    state.fRThighQ = BodyQ::FromODE(fRobot->fRThighB);
+    state.fRShankQ = BodyQ::FromODE(fRobot->fRShankB);
     
     state.fLFootQ = BodyQ::FromODE(fRobot->fLFootB);
     state.fRFootQ = BodyQ::FromODE(fRobot->fRFootB);
@@ -518,14 +518,14 @@ CartState Cartwheel::GetCurrentState()
     Eigen::Vector3d lKneeAxis = ODE::JointGetHingeAxis(fRobot->fLKneeJ);
     
     // FIXME: figure out the signs
-    decompRot3(dBodyGetRotation(fRobot->fPelvisB), dBodyGetRotation(fRobot->fLUpperLegB),
+    decompRot3(dBodyGetRotation(fRobot->fTorsoB), dBodyGetRotation(fRobot->fLThighB),
         state.fRobot.phi[LH0], state.fRobot.phi[LH1], state.fRobot.phi[LH2]);
     state.fRobot.phi[LK] = -dJointGetHingeAngle(fRobot->fLKneeJ);
     state.fRobot.phi[LA0] = -dJointGetUniversalAngle1(fRobot->fLAnkleJ);
     state.fRobot.phi[LA1] = -dJointGetUniversalAngle2(fRobot->fLAnkleJ);
     
     transformOmega(dBodyGetRotation(fRobot->fLFootB),
-                   dBodyGetAngularVel(fRobot->fLLowerLegB),
+                   dBodyGetAngularVel(fRobot->fLShankB),
                    dBodyGetAngularVel(fRobot->fLFootB),
                    state.fRobot.omega[LH0], state.fRobot.omega[LH1], state.fRobot.omega[LH2]);
     
@@ -544,14 +544,14 @@ CartState Cartwheel::GetCurrentState()
     Eigen::Vector3d rKneeAxis = ODE::JointGetHingeAxis(fRobot->fRKneeJ);
     
     // FIXME: figure out the signs
-    decompRot3(dBodyGetRotation(fRobot->fPelvisB), dBodyGetRotation(fRobot->fRUpperLegB),
+    decompRot3(dBodyGetRotation(fRobot->fTorsoB), dBodyGetRotation(fRobot->fRThighB),
         state.fRobot.phi[RH0], state.fRobot.phi[RH1], state.fRobot.phi[RH2]);
     state.fRobot.phi[RK] = -dJointGetHingeAngle(fRobot->fRKneeJ);
     state.fRobot.phi[RA0] = -dJointGetUniversalAngle1(fRobot->fRAnkleJ);
     state.fRobot.phi[RA1] = -dJointGetUniversalAngle2(fRobot->fRAnkleJ);
     
     transformOmega(dBodyGetRotation(fRobot->fRFootB),
-                   dBodyGetAngularVel(fRobot->fRLowerLegB),
+                   dBodyGetAngularVel(fRobot->fRShankB),
                    dBodyGetAngularVel(fRobot->fRFootB),
                    state.fRobot.omega[RH0], state.fRobot.omega[RH1], state.fRobot.omega[RH2]);
     

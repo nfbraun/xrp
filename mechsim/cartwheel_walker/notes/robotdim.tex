@@ -7,39 +7,39 @@
 \pgfmathsetmacro{\footSizeY}{0.12}
 \pgfmathsetmacro{\footSizeZ}{0.05}
 \pgfmathsetmacro{\legDiameter}{0.1}
-\pgfmathsetmacro{\lowerLegDiameter}{0.1}
-\pgfmathsetmacro{\upperLegDiameter}{0.1}
+\pgfmathsetmacro{\shankDiameter}{0.1}
+\pgfmathsetmacro{\thighDiameter}{0.1}
 \pgfmathsetmacro{\legSizeZ}{1.0}
 \pgfmathsetmacro{\kneeRelativePosZ}{0.5}
 \pgfmathsetmacro{\legRelativeAnchorY}{0.6}
 
-\pgfmathsetmacro{\pelvisSizeX}{0.25}
-\pgfmathsetmacro{\pelvisSizeY}{0.45}
-\pgfmathsetmacro{\pelvisSizeZ}{0.3}
+\pgfmathsetmacro{\torsoSizeX}{0.25}
+\pgfmathsetmacro{\torsoSizeY}{0.45}
+\pgfmathsetmacro{\torsoSizeZ}{0.3}
 
-\pgfmathsetmacro{\pelvisDiameter}{0.45}
-\pgfmathsetmacro{\pelvisRadius}{\pelvisDiameter/2.}
+\pgfmathsetmacro{\torsoDiameter}{0.45}
+\pgfmathsetmacro{\torsoRadius}{\torsoDiameter/2.}
 
-\pgfmathsetmacro{\lowerLegSizeZ}{\legSizeZ * \kneeRelativePosZ}
-\pgfmathsetmacro{\upperLegSizeZ}{\legSizeZ - \lowerLegSizeZ}
+\pgfmathsetmacro{\shankSizeZ}{\legSizeZ * \kneeRelativePosZ}
+\pgfmathsetmacro{\thighSizeZ}{\legSizeZ - \shankSizeZ}
 
 \pgfmathsetmacro{\footPosZ}{\footSizeZ/2.}
 \pgfmathsetmacro{\anklePosZ}{\footSizeZ}
-\pgfmathsetmacro{\lowerLegPosZ}{\anklePosZ + \lowerLegSizeZ/2.}
+\pgfmathsetmacro{\shankPosZ}{\anklePosZ + \shankSizeZ/2.}
 \pgfmathsetmacro{\kneePosZ}{\anklePosZ + \legSizeZ * \kneeRelativePosZ}
-\pgfmathsetmacro{\upperLegPosZ}{\kneePosZ + \upperLegSizeZ/2.}
+\pgfmathsetmacro{\thighPosZ}{\kneePosZ + \thighSizeZ/2.}
 \pgfmathsetmacro{\hipPosZ}{\anklePosZ + \legSizeZ}
-\pgfmathsetmacro{\pelvisPosZ}{\hipPosZ + \pelvisSizeZ/2.}
+\pgfmathsetmacro{\torsoPosZ}{\hipPosZ + \torsoSizeZ/2.}
 
-\pgfmathsetmacro{\legPosYL}{\pelvisSizeY/2.*\legRelativeAnchorY}
-\pgfmathsetmacro{\legPosYR}{-\pelvisSizeY/2.*\legRelativeAnchorY}
+\pgfmathsetmacro{\legPosYL}{\torsoSizeY/2.*\legRelativeAnchorY}
+\pgfmathsetmacro{\legPosYR}{-\torsoSizeY/2.*\legRelativeAnchorY}
 
 \maketitle
 \textbf{Notes:}
 \begin{itemize}
 \item The coordinate system described here differs from that in the original Cartwheel paper.
 \item \textit{Character frame:} $z$ axis is up, $x$ axis is character facing direction.
-\item In practice, the character frame is computed from the orientation of the pelvis (also called the \textit{root}).
+\item In practice, the character frame is computed from the orientation of the torso (also called the \textit{root}).
 \item For vectors in the character frame (like the center of mass velocity), the $x$ component is called the \textit{sagittal} component and the $y$ component is called the \textit{coronal} component.
 \end{itemize}
 
@@ -84,19 +84,19 @@
 \draw (-0.1,0) -- (-0.12,0) node[anchor=east]{0};
 \draw (0,-0.05) -- (0,-0.07) node[anchor=north]{0};
 
-\draw(0, \pelvisPosZ+\pelvisSizeZ/2+0.05) node[anchor=south] {\textbf{Side view}};
+\draw(0, \torsoPosZ+\torsoSizeZ/2+0.05) node[anchor=south] {\textbf{Side view}};
 
-% Pelvis (torso, really)
-\rect{0}{\pelvisPosZ}{\pelvisSizeX}{\pelvisSizeZ}
-\cmpos{0}{\pelvisPosZ}
+% Torso
+\rect{0}{\torsoPosZ}{\torsoSizeX}{\torsoSizeZ}
+\cmpos{0}{\torsoPosZ}
 
-% Upper leg (thigh)
-\arect{0}{\upperLegPosZ}{\upperLegDiameter}{\upperLegSizeZ}
-\cmpos{0}{\upperLegPosZ}
+% Thigh (upper leg)
+\arect{0}{\thighPosZ}{\thighDiameter}{\thighSizeZ}
+\cmpos{0}{\thighPosZ}
 
-% Lower leg (shank)
-\arect{0}{\lowerLegPosZ}{\lowerLegDiameter}{\lowerLegSizeZ}
-\cmpos{0}{\lowerLegPosZ}
+% Shank (lower leg)
+\arect{0}{\shankPosZ}{\shankDiameter}{\shankSizeZ}
+\cmpos{0}{\shankPosZ}
 
 % Foot
 \rect{0.016}{\footPosZ}{\footSizeX}{\footSizeZ}
@@ -114,23 +114,23 @@
 \draw (0.2,0) -- (0.22,0) node[anchor=west]{0};
 \draw (0,-0.05) -- (0,-0.07) node[anchor=north]{0};
 
-\draw(0, \pelvisPosZ+\pelvisSizeZ/2+0.05) node[anchor=south] {\textbf{Front view}};
+\draw(0, \torsoPosZ+\torsoSizeZ/2+0.05) node[anchor=south] {\textbf{Front view}};
 
-% Pelvis
-\rect{0}{\pelvisPosZ}{\pelvisSizeY}{\pelvisSizeZ}
-\cmpos{0}{\pelvisPosZ}
+% Torso
+\rect{0}{\torsoPosZ}{\torsoSizeY}{\torsoSizeZ}
+\cmpos{0}{\torsoPosZ}
 
-% Upper leg (thigh)
-\arect{\legPosYL}{\upperLegPosZ}{\upperLegDiameter}{\upperLegSizeZ}
-\cmpos{\legPosYL}{\upperLegPosZ}
-\arect{\legPosYR}{\upperLegPosZ}{\upperLegDiameter}{\upperLegSizeZ}
-\cmpos{\legPosYR}{\upperLegPosZ}
+% Thigh (upper leg)
+\arect{\legPosYL}{\thighPosZ}{\thighDiameter}{\thighSizeZ}
+\cmpos{\legPosYL}{\thighPosZ}
+\arect{\legPosYR}{\thighPosZ}{\thighDiameter}{\thighSizeZ}
+\cmpos{\legPosYR}{\thighPosZ}
 
-% Lower leg (shank)
-\arect{\legPosYL}{\lowerLegPosZ}{\lowerLegDiameter}{\lowerLegSizeZ}
-\cmpos{\legPosYL}{\lowerLegPosZ}
-\arect{\legPosYR}{\lowerLegPosZ}{\lowerLegDiameter}{\lowerLegSizeZ}
-\cmpos{\legPosYR}{\lowerLegPosZ}
+% Shank (lower leg)
+\arect{\legPosYL}{\shankPosZ}{\shankDiameter}{\shankSizeZ}
+\cmpos{\legPosYL}{\shankPosZ}
+\arect{\legPosYR}{\shankPosZ}{\shankDiameter}{\shankSizeZ}
+\cmpos{\legPosYR}{\shankPosZ}
 
 % Foot
 \rect{\legPosYL}{\footPosZ}{\footSizeY}{\footSizeZ}
@@ -144,11 +144,11 @@
 \end{scope}
 
 \begin{scope}[xshift=0]
-\draw (0,\pelvisPosZ) node[anchor=center]{Pelvis};
+\draw (0,\torsoPosZ) node[anchor=center]{Torso};
 \draw (0,\hipPosZ) node[anchor=center]{Hip};
-\draw (0,\upperLegPosZ) node[anchor=center]{Upper leg};
+\draw (0,\thighPosZ) node[anchor=center]{Thigh};
 \draw (0,\kneePosZ) node[anchor=center]{Knee};
-\draw (0,\lowerLegPosZ) node[anchor=center]{Lower leg};
+\draw (0,\shankPosZ) node[anchor=center]{Shank};
 \draw (0,\anklePosZ) node[anchor=center]{Ankle};
 \draw (0,\footPosZ) node[anchor=north]{Foot};
 \end{scope}
@@ -163,29 +163,29 @@ footSizeX & \footSizeX \\
 footSizeY & \footSizeY \\
 footSizeZ & \footSizeZ \\
 legDiameter & \legDiameter \\
-lowerLegDiameter & \lowerLegDiameter \\
-upperLegDiameter & \upperLegDiameter \\
+shankDiameter & \shankDiameter \\
+thighDiameter & \thighDiameter \\
 legSizeZ & \legSizeZ \\
 kneeRelativePosZ & \kneeRelativePosZ \\
 legRelativeAnchorY & \legRelativeAnchorY \\
 \hline
-pelvisSizeX & \pelvisSizeX \\
-pelvisSizeY & \pelvisSizeY \\
-pelvisSizeZ & \pelvisSizeZ \\
+torsoSizeX & \torsoSizeX \\
+torsoSizeY & \torsoSizeY \\
+torsoSizeZ & \torsoSizeZ \\
 \hline
-pelvisDiameter & \pelvisDiameter \\
-pelvisRadius$^*$ & \pelvisRadius \\
+torsoDiameter & \torsoDiameter \\
+torsoRadius$^*$ & \torsoRadius \\
 \hline
-lowerLegSizeZ$^*$ & \lowerLegSizeZ \\
-upperLegSizeZ$^*$ & \upperLegSizeZ \\
+shankSizeZ$^*$ & \shankSizeZ \\
+thighSizeZ$^*$ & \thighSizeZ \\
 \hline
 footPosZ$^*$ & \footPosZ \\
 anklePosZ$*$ & \anklePosZ \\
-lowerLegPosZ$^*$ & \lowerLegPosZ \\
+shankPosZ$^*$ & \shankPosZ \\
 kneePosZ$^*$ & \kneePosZ \\
-upperLegPosZ$^*$ & \upperLegPosZ \\
+thighPosZ$^*$ & \thighPosZ \\
 hipPosZ$^*$ & \hipPosZ \\
-pelvisPosZ$^*$ & \pelvisPosZ \\
+torsoPosZ$^*$ & \torsoPosZ \\
 \hline
 legPosY\_L$^*$ & \legPosYL \\
 legPosY\_R$^*$ & \legPosYR \\

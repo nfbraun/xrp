@@ -55,13 +55,13 @@ class RobotInfo {
     unsigned int rootIndex() const { return R_ROOT; }
     
     unsigned int stanceThighIndex() const
-        { return (fStance == LEFT_STANCE) ? (R_L_UPPER_LEG) : (R_R_UPPER_LEG); }
+        { return (fStance == LEFT_STANCE) ? (R_L_THIGH) : (R_R_THIGH); }
     unsigned int swingThighIndex() const
-        { return (fStance == LEFT_STANCE) ? (R_R_UPPER_LEG) : (R_L_UPPER_LEG); }
+        { return (fStance == LEFT_STANCE) ? (R_R_THIGH) : (R_L_THIGH); }
     unsigned int stanceShankIndex() const
-        { return (fStance == LEFT_STANCE) ? (R_L_LOWER_LEG) : (R_R_LOWER_LEG); }
+        { return (fStance == LEFT_STANCE) ? (R_L_SHANK) : (R_R_SHANK); }
     unsigned int swingShankIndex() const
-        { return (fStance == LEFT_STANCE) ? (R_R_LOWER_LEG) : (R_L_LOWER_LEG); }
+        { return (fStance == LEFT_STANCE) ? (R_R_SHANK) : (R_L_SHANK); }
     unsigned int stanceFootIndex() const
         { return (fStance == LEFT_STANCE) ? (R_L_FOOT) : (R_R_FOOT); }
     unsigned int swingFootIndex() const
