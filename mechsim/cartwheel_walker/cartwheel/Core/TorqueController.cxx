@@ -50,21 +50,21 @@ void TorqueController::COMJT(const RobotInfo& rinfo, const Vector3d& fA, Vector3
 
 	//total mass...
 	// double m = lowerLeg->getMass() + upperLeg->getMass() + pelvis->getMass();
-	const double torsoMass = rinfo.rbMass(rinfo.rootIndex());
+	const double pelvisMass = rinfo.rbMass(rinfo.rootIndex());
 	const double thighMass = rinfo.rbMass(rinfo.stanceThighIndex());
 	const double shankMass = rinfo.rbMass(rinfo.stanceShankIndex());
-	const double m = torsoMass + thighMass + shankMass;
+	const double m = pelvisMass + thighMass + shankMass;
 
 	Vector3d f1 =	(rinfo.rbPos(rinfo.stanceShankIndex()) - anklePos) * shankMass +
 					(rinfo.rbPos(rinfo.stanceThighIndex()) - anklePos) * thighMass + 
-					(rinfo.rbPos(rinfo.rootIndex()) - anklePos) * torsoMass; 
+					(rinfo.rbPos(rinfo.rootIndex()) - anklePos) * pelvisMass; 
 	f1 /= m;
 	
 	Vector3d f2 =	(rinfo.rbPos(rinfo.stanceThighIndex()) - kneePos) * thighMass + 
-					(rinfo.rbPos(rinfo.rootIndex()) - kneePos) * torsoMass;
+					(rinfo.rbPos(rinfo.rootIndex()) - kneePos) * pelvisMass;
 	f2 /= m;
 
-	Vector3d f3 =	(rinfo.rbPos(rinfo.rootIndex()) - hipPos) * torsoMass;
+	Vector3d f3 =	(rinfo.rbPos(rinfo.rootIndex()) - hipPos) * pelvisMass;
 	f3 /= m;
 
 	stanceAnkleTorque = f1.cross(fA);

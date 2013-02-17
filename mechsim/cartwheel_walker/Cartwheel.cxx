@@ -85,8 +85,8 @@ void CartState::DrawRobot(bool shadowmode) const
     GL::drawUnitCube();
     glPopMatrix(); */
     
-    fTorsoQ.TransformGL();
-    glScalef(CharacterConst::torsoSizeX, CharacterConst::torsoSizeY, CharacterConst::torsoSizeZ);
+    fPelvisQ.TransformGL();
+    glScalef(CharacterConst::pelvisSizeX, CharacterConst::pelvisSizeY, CharacterConst::pelvisSizeZ);
     GL::drawUnitCube();
     glPopMatrix();
     
@@ -333,17 +333,17 @@ void Cartwheel::SetFakeContactData(int stance)
 
 void Cartwheel::ApplyTorques(const JointSpTorques& jt)
 {
-    Eigen::Vector3d lHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fTorsoB),
+    Eigen::Vector3d lHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fPelvisB),
         jt.fLeftLeg[0], jt.fLeftLeg[1], jt.fLeftLeg[2]);
-    ODE::BodyAddTorque(fRobot->fTorsoB, lHipTorque);
+    ODE::BodyAddTorque(fRobot->fPelvisB, lHipTorque);
     ODE::BodyAddTorque(fRobot->fLThighB, -lHipTorque);
     
     dJointAddHingeTorque(fRobot->fLKneeJ, -jt.fLeftLeg[3]);
     dJointAddUniversalTorques(fRobot->fLAnkleJ, -jt.fLeftLeg[4], -jt.fLeftLeg[5]);
     
-    Eigen::Vector3d rHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fTorsoB),
+    Eigen::Vector3d rHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fPelvisB),
         jt.fRightLeg[0], jt.fRightLeg[1], jt.fRightLeg[2]);
-    ODE::BodyAddTorque(fRobot->fTorsoB, rHipTorque);
+    ODE::BodyAddTorque(fRobot->fPelvisB, rHipTorque);
     ODE::BodyAddTorque(fRobot->fRThighB, -rHipTorque);
     
     dJointAddHingeTorque(fRobot->fRKneeJ, -jt.fRightLeg[3]);
@@ -488,7 +488,7 @@ CartState Cartwheel::GetCurrentState()
     CartState state;
     
     state.fParent = this;
-    state.fTorsoQ = BodyQ::FromODE(fRobot->fTorsoB);
+    state.fPelvisQ = BodyQ::FromODE(fRobot->fPelvisB);
     
     state.fLThighQ = BodyQ::FromODE(fRobot->fLThighB);
     state.fLShankQ = BodyQ::FromODE(fRobot->fLShankB);
@@ -518,7 +518,7 @@ CartState Cartwheel::GetCurrentState()
     Eigen::Vector3d lKneeAxis = ODE::JointGetHingeAxis(fRobot->fLKneeJ);
     
     // FIXME: figure out the signs
-    decompRot3(dBodyGetRotation(fRobot->fTorsoB), dBodyGetRotation(fRobot->fLThighB),
+    decompRot3(dBodyGetRotation(fRobot->fPelvisB), dBodyGetRotation(fRobot->fLThighB),
         state.fRobot.phi[LH0], state.fRobot.phi[LH1], state.fRobot.phi[LH2]);
     state.fRobot.phi[LK] = -dJointGetHingeAngle(fRobot->fLKneeJ);
     state.fRobot.phi[LA0] = -dJointGetUniversalAngle1(fRobot->fLAnkleJ);
@@ -544,7 +544,7 @@ CartState Cartwheel::GetCurrentState()
     Eigen::Vector3d rKneeAxis = ODE::JointGetHingeAxis(fRobot->fRKneeJ);
     
     // FIXME: figure out the signs
-    decompRot3(dBodyGetRotation(fRobot->fTorsoB), dBodyGetRotation(fRobot->fRThighB),
+    decompRot3(dBodyGetRotation(fRobot->fPelvisB), dBodyGetRotation(fRobot->fRThighB),
         state.fRobot.phi[RH0], state.fRobot.phi[RH1], state.fRobot.phi[RH2]);
     state.fRobot.phi[RK] = -dJointGetHingeAngle(fRobot->fRKneeJ);
     state.fRobot.phi[RA0] = -dJointGetUniversalAngle1(fRobot->fRAnkleJ);

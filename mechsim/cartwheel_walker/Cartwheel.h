@@ -47,7 +47,7 @@ class CartState: public SimulationState {
     Cartwheel* fParent;
     double fT;
     
-    BodyQ fTorsoQ;
+    BodyQ fPelvisQ;
     BodyQ fLThighQ, fLShankQ, fRThighQ, fRShankQ;
     BodyQ fLFootQ, fRFootQ;
     
@@ -65,7 +65,7 @@ class CartState: public SimulationState {
     void DrawRobot(bool shadowmode) const;
     
     Eigen::Vector3d GetCenter() const
-        { return fTorsoQ.pos(); }
+        { return fPelvisQ.pos(); }
     
     virtual double GetData(int ch) const {
         switch(ch) {

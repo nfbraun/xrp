@@ -24,12 +24,12 @@ namespace CharacterConst {
     const double kneeRelativePosZ = 0.5;
     const double legRelativeAnchorY = 0.6;
     
-    const double torsoSizeX = 0.25;
-    const double torsoSizeY = 0.45;
-    const double torsoSizeZ = 0.3;
+    const double pelvisSizeX = 0.25;
+    const double pelvisSizeY = 0.45;
+    const double pelvisSizeZ = 0.3;
     
-    const double torsoDiameter = 0.45;
-    const double torsoRadius = torsoDiameter/2.0;
+    const double pelvisDiameter = 0.45;
+    const double pelvisRadius = pelvisDiameter/2.0;
     
     const double shankSizeZ = legSizeZ * kneeRelativePosZ;
     const double thighSizeZ = legSizeZ - shankSizeZ;
@@ -40,10 +40,10 @@ namespace CharacterConst {
     const double kneePosZ = anklePosZ + legSizeZ * kneeRelativePosZ;
     const double thighPosZ = kneePosZ + thighSizeZ/2.;
     const double hipPosZ = anklePosZ + legSizeZ;
-    const double torsoPosZ = hipPosZ + torsoSizeZ/2.;
+    const double pelvisPosZ = hipPosZ + pelvisSizeZ/2.;
     
-    const double legPosY_L = torsoSizeY/2.0*legRelativeAnchorY;
-    const double legPosY_R = -torsoSizeY/2.0*legRelativeAnchorY;
+    const double legPosY_L = pelvisSizeY/2.0*legRelativeAnchorY;
+    const double legPosY_R = -pelvisSizeY/2.0*legRelativeAnchorY;
 } // end namespace CharacterConst
 
 inline double boxMass(double sx, double sy, double sz)
@@ -77,13 +77,13 @@ inline double rbMass(unsigned int id)
     using namespace CharacterConst;
     
     const double masses[R_MAX] =
-    { boxMass(torsoSizeX, torsoSizeY, torsoSizeZ), // R_ROOT
-      cylinderMass(thighSizeZ, thighDiameter/2.),  // R_L_THIGH
-      cylinderMass(shankSizeZ, shankDiameter/2.),  // R_L_SHANK
-      cylinderMass(thighSizeZ, thighDiameter/2.),  // R_R_THIGH
-      cylinderMass(shankSizeZ, shankDiameter/2.),  // R_R_SHANK
-      boxMass(footSizeX, footSizeY, footSizeZ),    // R_L_FOOT
-      boxMass(footSizeX, footSizeY, footSizeZ)     // R_R_FOOT
+    { boxMass(pelvisSizeX, pelvisSizeY, pelvisSizeZ), // R_ROOT
+      cylinderMass(thighSizeZ, thighDiameter/2.),     // R_L_THIGH
+      cylinderMass(shankSizeZ, shankDiameter/2.),     // R_L_SHANK
+      cylinderMass(thighSizeZ, thighDiameter/2.),     // R_R_THIGH
+      cylinderMass(shankSizeZ, shankDiameter/2.),     // R_R_SHANK
+      boxMass(footSizeX, footSizeY, footSizeZ),       // R_L_FOOT
+      boxMass(footSizeX, footSizeY, footSizeZ)        // R_R_FOOT
     };
     
     assert(id < R_MAX);
@@ -95,13 +95,13 @@ inline Eigen::Vector3d rbMOI(unsigned int id)
     using namespace CharacterConst;
     
     const Eigen::Vector3d mois[R_MAX] =
-    { 3.*boxMOI(torsoSizeX, torsoSizeY, torsoSizeZ), // R_ROOT
-         cylinderMOI(thighSizeZ, thighDiameter/2.),  // R_L_THIGH
-         cylinderMOI(shankSizeZ, shankDiameter/2.),  // R_L_SHANK
-         cylinderMOI(thighSizeZ, thighDiameter/2.),  // R_R_THIGH
-         cylinderMOI(shankSizeZ, shankDiameter/2.),  // R_R_SHANK
-      3.*boxMOI(footSizeX, footSizeY, footSizeZ),    // R_L_FOOT
-      3.*boxMOI(footSizeX, footSizeY, footSizeZ)     // R_R_FOOT
+    { 3.*boxMOI(pelvisSizeX, pelvisSizeY, pelvisSizeZ), // R_ROOT
+         cylinderMOI(thighSizeZ, thighDiameter/2.),     // R_L_THIGH
+         cylinderMOI(shankSizeZ, shankDiameter/2.),     // R_L_SHANK
+         cylinderMOI(thighSizeZ, thighDiameter/2.),     // R_R_THIGH
+         cylinderMOI(shankSizeZ, shankDiameter/2.),     // R_R_SHANK
+      3.*boxMOI(footSizeX, footSizeY, footSizeZ),       // R_L_FOOT
+      3.*boxMOI(footSizeX, footSizeY, footSizeZ)        // R_R_FOOT
     };
     
     assert(id < R_MAX);

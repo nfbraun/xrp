@@ -52,17 +52,17 @@ void CWRobot::create(dWorldID world)
     
     fCharacter = new Character();
     
-    ArticulatedRigidBody* torso = createARB(R_ROOT, Point3d(0, 0, torsoPosZ));
-    fCharacter->setRoot(torso);
+    ArticulatedRigidBody* pelvis = createARB(R_ROOT, Point3d(0, 0, pelvisPosZ));
+    fCharacter->setRoot(pelvis);
     
     ArticulatedRigidBody* lThigh = createARB(R_L_THIGH,
         Point3d(0., legPosY_L, thighPosZ));
     fCharacter->addArticulatedRigidBody(lThigh, R_L_THIGH);
     
     Joint* joint2 = new Joint();
-    joint2->setParentJointPosition(Point3d(0., torsoRadius*legRelativeAnchorY, -torsoSizeZ/2.0));
+    joint2->setParentJointPosition(Point3d(0., pelvisRadius*legRelativeAnchorY, -pelvisSizeZ/2.0));
     joint2->setChildJointPosition(Point3d(0, 0, thighSizeZ/2.0));
-    joint2->setParent(torso);
+    joint2->setParent(pelvis);
     joint2->setChild(lThigh);
     fCharacter->addJoint(joint2, J_L_HIP);
     
@@ -71,9 +71,9 @@ void CWRobot::create(dWorldID world)
     fCharacter->addArticulatedRigidBody(rThigh, R_R_THIGH);
     
     Joint* joint3 = new Joint();
-    joint3->setParentJointPosition(Point3d(0., -torsoRadius*legRelativeAnchorY, -torsoSizeZ/2.0));
+    joint3->setParentJointPosition(Point3d(0., -pelvisRadius*legRelativeAnchorY, -pelvisSizeZ/2.0));
     joint3->setChildJointPosition(Point3d(0, 0, thighSizeZ/2.0));
-    joint3->setParent(torso);
+    joint3->setParent(pelvis);
     joint3->setChild(rThigh);
     fCharacter->addJoint(joint3, J_R_HIP);
     
@@ -121,7 +121,7 @@ void CWRobot::create(dWorldID world)
     joint7->setChild(rFoot);
     fCharacter->addJoint(joint7, J_R_ANKLE);
     
-    fTorsoB = makeODEARB(world, R_ROOT, torso);
+    fPelvisB = makeODEARB(world, R_ROOT, pelvis);
     
     fLThighB = makeODEARB(world, R_L_THIGH, lThigh);
     fLShankB = makeODEARB(world, R_L_SHANK, lShank);
@@ -140,7 +140,7 @@ void CWRobot::create(dWorldID world)
     fRFootRB = rFoot;
     
     fLHipJ = dJointCreateBall(world, 0);
-    dJointAttach(fLHipJ, fLThighB, fTorsoB);
+    dJointAttach(fLHipJ, fLThighB, fPelvisB);
     dJointSetBallAnchor(fLHipJ, 0., legPosY_L, hipPosZ);
     
     //we'll assume that:
@@ -168,7 +168,7 @@ void CWRobot::create(dWorldID world)
     dJointSetAMotorParam(aMotor, dParamHiStop3, 1.0); */
     
     fRHipJ = dJointCreateBall(world, 0);
-    dJointAttach(fRHipJ, fRThighB, fTorsoB);
+    dJointAttach(fRHipJ, fRThighB, fPelvisB);
     dJointSetBallAnchor(fRHipJ, 0., legPosY_R, hipPosZ);
     
     //we'll assume that:
@@ -233,7 +233,7 @@ void CWRobot::create(dWorldID world)
     
     #ifdef DEBUG_FIXED_TORSO
     dJointID fix = dJointCreateFixed(world, 0);
-    dJointAttach(fix, 0, fTorsoB);
+    dJointAttach(fix, 0, fPelvisB);
     dJointSetFixed(fix);
     #endif
 }
