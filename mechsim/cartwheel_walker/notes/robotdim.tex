@@ -34,6 +34,8 @@
 \pgfmathsetmacro{\legPosYL}{\pelvisSizeY/2.*\legRelativeAnchorY}
 \pgfmathsetmacro{\legPosYR}{-\pelvisSizeY/2.*\legRelativeAnchorY}
 
+\pgfmathsetmacro{\footPosX}{\footSizeX * 0.33 - \legDiameter/2.}
+
 \maketitle
 \textbf{Notes:}
 \begin{itemize}
@@ -99,8 +101,8 @@
 \cmpos{0}{\shankPosZ}
 
 % Foot
-\rect{0.016}{\footPosZ}{\footSizeX}{\footSizeZ}
-\cmpos{0.016}{\footPosZ}
+\rect{\footPosX}{\footPosZ}{\footSizeX}{\footSizeZ}
+\cmpos{\footPosX}{\footPosZ}
 \end{scope}
 
 \begin{scope}[xshift=20]
@@ -189,6 +191,8 @@ pelvisPosZ$^*$ & \pelvisPosZ \\
 \hline
 legPosY\_L$^*$ & \legPosYL \\
 legPosY\_R$^*$ & \legPosYR \\
+\hline
+footPosX$^*$ & \footPosX\\
 \hline
 \end{tabular}
 

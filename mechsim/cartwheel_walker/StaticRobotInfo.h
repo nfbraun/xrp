@@ -44,6 +44,8 @@ namespace CharacterConst {
     
     const double legPosY_L = pelvisSizeY/2.0*legRelativeAnchorY;
     const double legPosY_R = -pelvisSizeY/2.0*legRelativeAnchorY;
+    
+    const double footPosX = footSizeX*0.33 - legDiameter/2.;
 } // end namespace CharacterConst
 
 inline double boxMass(double sx, double sy, double sz)
