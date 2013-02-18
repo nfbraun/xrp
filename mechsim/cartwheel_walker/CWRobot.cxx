@@ -24,8 +24,6 @@ dBodyID CWRobot::makeODEARB(dWorldID world, BodyID id, ArticulatedRigidBody* arb
     
     dBodySetPosition(body, arb->getState().position.x(), arb->getState().position.y(), arb->getState().position.z());
     dBodySetQuaternion(body, tempQ);
-
-    fODEMap[arb] = body;
     
     return body;
 }
@@ -121,26 +119,23 @@ void CWRobot::create(dWorldID world)
     joint7->setChild(rFoot);
     fCharacter->addJoint(joint7, J_R_ANKLE);
     
-    fPelvisB = makeODEARB(world, B_PELVIS, pelvis);
+    fBodies[B_PELVIS] = makeODEARB(world, B_PELVIS, pelvis);
     
-    fLThighB = makeODEARB(world, B_L_THIGH, lThigh);
-    fLShankB = makeODEARB(world, B_L_SHANK, lShank);
-    fRThighB = makeODEARB(world, B_R_THIGH, rThigh);
-    fRShankB = makeODEARB(world, B_R_SHANK, rShank);
+    fBodies[B_L_THIGH] = makeODEARB(world, B_L_THIGH, lThigh);
+    fBodies[B_L_SHANK] = makeODEARB(world, B_L_SHANK, lShank);
+    fBodies[B_R_THIGH] = makeODEARB(world, B_R_THIGH, rThigh);
+    fBodies[B_R_SHANK] = makeODEARB(world, B_R_SHANK, rShank);
     
-    fLFootB = makeODEARB(world, B_L_FOOT, lFoot);
-    fRFootB = makeODEARB(world, B_R_FOOT, rFoot);
+    fBodies[B_L_FOOT] = makeODEARB(world, B_L_FOOT, lFoot);
+    fBodies[B_R_FOOT] = makeODEARB(world, B_R_FOOT, rFoot);
     
     fLFootG = makeODEBoxGeom(footSizeX, footSizeY, footSizeZ);
     fRFootG = makeODEBoxGeom(footSizeX, footSizeY, footSizeZ);
-    dGeomSetBody(fLFootG, fLFootB);
-    dGeomSetBody(fRFootG, fRFootB);
-    
-    fLFootRB = lFoot;
-    fRFootRB = rFoot;
+    dGeomSetBody(fLFootG, fBodies[B_L_FOOT]);
+    dGeomSetBody(fRFootG, fBodies[B_R_FOOT]);
     
     fLHipJ = dJointCreateBall(world, 0);
-    dJointAttach(fLHipJ, fLThighB, fPelvisB);
+    dJointAttach(fLHipJ, fBodies[B_L_THIGH], fBodies[B_PELVIS]);
     dJointSetBallAnchor(fLHipJ, 0., legPosY_L, hipPosZ);
     
     //we'll assume that:
@@ -168,7 +163,7 @@ void CWRobot::create(dWorldID world)
     dJointSetAMotorParam(aMotor, dParamHiStop3, 1.0); */
     
     fRHipJ = dJointCreateBall(world, 0);
-    dJointAttach(fRHipJ, fRThighB, fPelvisB);
+    dJointAttach(fRHipJ, fBodies[B_R_THIGH], fBodies[B_PELVIS]);
     dJointSetBallAnchor(fRHipJ, 0., legPosY_R, hipPosZ);
     
     //we'll assume that:
@@ -196,19 +191,19 @@ void CWRobot::create(dWorldID world)
     dJointSetAMotorParam(aMotor, dParamHiStop3, 1.0); */
     
     fLKneeJ = dJointCreateHinge(world, 0);
-    dJointAttach(fLKneeJ, fLShankB, fLThighB);
+    dJointAttach(fLKneeJ, fBodies[B_L_SHANK], fBodies[B_L_THIGH]);
     dJointSetHingeAnchor(fLKneeJ, 0., legPosY_L, kneePosZ);
     dJointSetHingeAxis(fLKneeJ, 0., 1., 0.);
     // setJointLimits(0, 2.5); //?
     
     fRKneeJ = dJointCreateHinge(world, 0);
-    dJointAttach(fRKneeJ, fRShankB, fRThighB);
+    dJointAttach(fRKneeJ, fBodies[B_R_SHANK], fBodies[B_R_THIGH]);
     dJointSetHingeAnchor(fRKneeJ, 0., legPosY_R, kneePosZ);
     dJointSetHingeAxis(fRKneeJ, 0., 1., 0.);
     // setJointLimits(0, 2.5); //?
     
     fLAnkleJ = dJointCreateUniversal(world, 0);
-    dJointAttach(fLAnkleJ, fLFootB, fLShankB);
+    dJointAttach(fLAnkleJ, fBodies[B_L_FOOT], fBodies[B_L_SHANK]);
     dJointSetUniversalAnchor(fLAnkleJ, 0., legPosY_L, anklePosZ);
 
     dJointSetUniversalAxis1(fLAnkleJ, 1., 0., 0.);
@@ -220,7 +215,7 @@ void CWRobot::create(dWorldID world)
     dJointSetUniversalParam(fLAnkleJ, dParamHiStop2,  0.75);
     
     fRAnkleJ = dJointCreateUniversal(world, 0);
-    dJointAttach(fRAnkleJ, fRFootB, fRShankB);
+    dJointAttach(fRAnkleJ, fBodies[B_R_FOOT], fBodies[B_R_SHANK]);
     dJointSetUniversalAnchor(fRAnkleJ, 0., legPosY_R, anklePosZ);
 
     dJointSetUniversalAxis1(fRAnkleJ, -1., 0., 0.);

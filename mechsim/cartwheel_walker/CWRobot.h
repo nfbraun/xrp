@@ -3,23 +3,16 @@
 #include "StaticRobotInfo.h"
 #include <Core/Character.h>
 #include <ode/ode.h>
-#include <map>
 
 class CWRobot
 {
 public:
-    dBodyID fPelvisB;
-    dBodyID fLThighB, fLShankB, fRThighB, fRShankB;
-    dBodyID fLFootB, fRFootB;
+    dBodyID fBodies[B_MAX];
     dGeomID fLFootG, fRFootG;
-    RigidBody* fLFootRB, *fRFootRB;
     dJointID fLAnkleJ, fLKneeJ, fLHipJ;
     dJointID fRAnkleJ, fRKneeJ, fRHipJ;
     
     Character* fCharacter;
-    
-    std::map<RigidBody*, dBodyID> fODEMap;
-    dBodyID getODEBody(RigidBody* rb) { return fODEMap[rb]; }
     
     CWRobot() {}
     void create(dWorldID world);

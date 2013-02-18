@@ -199,7 +199,7 @@ class Cartwheel: public Simulation {
     
     void AdvanceInTime(double dt, const JointSpTorques& torques);
     void ApplyTorques(const JointSpTorques& jt);
-    void setRBStateFromODE(RigidBody* rb);
+    void setRBState(RigidBody* rb, const BodyQ& q);
     
     void BodyAddTorque(dBodyID body, Vector3d torque);
     
