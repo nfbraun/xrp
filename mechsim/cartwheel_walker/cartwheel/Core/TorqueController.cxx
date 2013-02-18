@@ -189,14 +189,14 @@ JointSpTorques TorqueController::transformTorques(const RobotInfo& rinfo, const 
     
     /*** Left leg ***/
     Vector3d cf_lKneeAxis(0., 1., 0.);
-    Eigen::Vector3d lKneeAxis = character->getARBs()[R_L_THIGH]->getOrientation().rotate(cf_lKneeAxis).toEigen();
+    Eigen::Vector3d lKneeAxis = character->getARBs()[B_L_THIGH]->getOrientation().rotate(cf_lKneeAxis).toEigen();
     
     Vector3d cf_lAnkleAxis1(1., 0., 0.);
     Vector3d cf_lAnkleAxis2(0., 1., 0.);
-    Eigen::Vector3d lAnkleAxis1 = character->getARBs()[R_L_FOOT]->getOrientation().rotate(cf_lAnkleAxis1).toEigen();
-    Eigen::Vector3d lAnkleAxis2 = character->getARBs()[R_L_SHANK]->getOrientation().rotate(cf_lAnkleAxis2).toEigen();
+    Eigen::Vector3d lAnkleAxis1 = character->getARBs()[B_L_FOOT]->getOrientation().rotate(cf_lAnkleAxis1).toEigen();
+    Eigen::Vector3d lAnkleAxis2 = character->getARBs()[B_L_SHANK]->getOrientation().rotate(cf_lAnkleAxis2).toEigen();
     
-    Vector3d lHipTorque = character->getARBs()[R_ROOT]->getOrientation().inverseRotate(torques.get(J_L_HIP));
+    Vector3d lHipTorque = character->getARBs()[B_PELVIS]->getOrientation().inverseRotate(torques.get(J_L_HIP));
     jt.fLeftLeg[0] = lHipTorque.x();
     jt.fLeftLeg[1] = lHipTorque.y();
     jt.fLeftLeg[2] = lHipTorque.z();
@@ -207,14 +207,14 @@ JointSpTorques TorqueController::transformTorques(const RobotInfo& rinfo, const 
     
     /*** Right leg ***/
     Vector3d cf_rKneeAxis(0., 1., 0.);
-    Eigen::Vector3d rKneeAxis = character->getARBs()[R_R_THIGH]->getOrientation().rotate(cf_rKneeAxis).toEigen();
+    Eigen::Vector3d rKneeAxis = character->getARBs()[B_R_THIGH]->getOrientation().rotate(cf_rKneeAxis).toEigen();
     
     Vector3d cf_rAnkleAxis1(-1., 0., 0.);
     Vector3d cf_rAnkleAxis2(0., 1., 0.);
-    Eigen::Vector3d rAnkleAxis1 = character->getARBs()[R_R_FOOT]->getOrientation().rotate(cf_rAnkleAxis1).toEigen();
-    Eigen::Vector3d rAnkleAxis2 = character->getARBs()[R_R_SHANK]->getOrientation().rotate(cf_rAnkleAxis2).toEigen();
+    Eigen::Vector3d rAnkleAxis1 = character->getARBs()[B_R_FOOT]->getOrientation().rotate(cf_rAnkleAxis1).toEigen();
+    Eigen::Vector3d rAnkleAxis2 = character->getARBs()[B_R_SHANK]->getOrientation().rotate(cf_rAnkleAxis2).toEigen();
     
-    Vector3d rHipTorque = character->getARBs()[R_ROOT]->getOrientation().inverseRotate(torques.get(J_R_HIP));
+    Vector3d rHipTorque = character->getARBs()[B_PELVIS]->getOrientation().inverseRotate(torques.get(J_R_HIP));
     
     jt.fRightLeg[0] = rHipTorque.x();
     jt.fRightLeg[1] = rHipTorque.y();

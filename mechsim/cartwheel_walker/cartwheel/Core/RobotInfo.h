@@ -27,17 +27,17 @@ class RobotInfo {
     double headingAngle() const { return fCharacter->getHeadingAngle(); }
     
     RigidBody* root() const { return fCharacter->getRoot(); }
-    RigidBody* lFoot() const { return fCharacter->getARB(R_L_FOOT); }
-    RigidBody* rFoot() const { return fCharacter->getARB(R_R_FOOT); }
+    RigidBody* lFoot() const { return fCharacter->getARB(B_L_FOOT); }
+    RigidBody* rFoot() const { return fCharacter->getARB(B_R_FOOT); }
     
     Quaternion rootOrient() const { return root()->getOrientation(); }
     Vector3d rootAngVel() const { return root()->getAngularVelocity(); }
     
     double rbMass(unsigned int index) const
-        { assert(index < R_MAX); return fCharacter->getArticulatedRigidBody(index)->getMass(); }
+        { assert(index < B_MAX); return fCharacter->getArticulatedRigidBody(index)->getMass(); }
     
     Vector3d rbPos(unsigned int index) const
-        { assert(index < R_MAX); return fCharacter->getArticulatedRigidBody(index)->state.position; }
+        { assert(index < B_MAX); return fCharacter->getArticulatedRigidBody(index)->state.position; }
     
     // Return joint position in global coordinates
     Vector3d jPos(unsigned int index) const
@@ -52,20 +52,20 @@ class RobotInfo {
         return pc;
     }
     
-    unsigned int rootIndex() const { return R_ROOT; }
+    unsigned int rootIndex() const { return B_PELVIS; }
     
     unsigned int stanceThighIndex() const
-        { return (fStance == LEFT_STANCE) ? (R_L_THIGH) : (R_R_THIGH); }
+        { return (fStance == LEFT_STANCE) ? (B_L_THIGH) : (B_R_THIGH); }
     unsigned int swingThighIndex() const
-        { return (fStance == LEFT_STANCE) ? (R_R_THIGH) : (R_L_THIGH); }
+        { return (fStance == LEFT_STANCE) ? (B_R_THIGH) : (B_L_THIGH); }
     unsigned int stanceShankIndex() const
-        { return (fStance == LEFT_STANCE) ? (R_L_SHANK) : (R_R_SHANK); }
+        { return (fStance == LEFT_STANCE) ? (B_L_SHANK) : (B_R_SHANK); }
     unsigned int swingShankIndex() const
-        { return (fStance == LEFT_STANCE) ? (R_R_SHANK) : (R_L_SHANK); }
+        { return (fStance == LEFT_STANCE) ? (B_R_SHANK) : (B_L_SHANK); }
     unsigned int stanceFootIndex() const
-        { return (fStance == LEFT_STANCE) ? (R_L_FOOT) : (R_R_FOOT); }
+        { return (fStance == LEFT_STANCE) ? (B_L_FOOT) : (B_R_FOOT); }
     unsigned int swingFootIndex() const
-        { return (fStance == LEFT_STANCE) ? (R_R_FOOT) : (R_L_FOOT); }
+        { return (fStance == LEFT_STANCE) ? (B_R_FOOT) : (B_L_FOOT); }
     
     unsigned int stanceHipIndex() const
         { return (fStance == LEFT_STANCE) ? (J_L_HIP) : (J_R_HIP); }

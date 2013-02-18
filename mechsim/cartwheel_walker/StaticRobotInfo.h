@@ -6,8 +6,8 @@
 enum JointID { J_L_HIP, J_R_HIP, J_L_KNEE, J_R_KNEE,
     J_L_ANKLE, J_R_ANKLE, J_MAX };
 
-enum ArbID { R_ROOT, R_L_THIGH, R_L_SHANK, R_R_THIGH,
-    R_R_SHANK, R_L_FOOT, R_R_FOOT, R_MAX };
+enum BodyID { B_L_THIGH, B_L_SHANK, B_L_FOOT, B_R_THIGH, B_R_SHANK, B_R_FOOT, B_PELVIS, B_MAX };
+enum RBodyID { B_THIGH, B_SHANK, B_FOOT, RBODY_MAX };
 
 enum PhiID { LH0, LH1, LH2, LK, LA0, LA1, RH0, RH1, RH2, RK, RA0, RA1 };
 
@@ -78,17 +78,17 @@ inline double rbMass(unsigned int id)
 {
     using namespace CharacterConst;
     
-    const double masses[R_MAX] =
-    { boxMass(pelvisSizeX, pelvisSizeY, pelvisSizeZ), // R_ROOT
-      cylinderMass(thighSizeZ, thighDiameter/2.),     // R_L_THIGH
-      cylinderMass(shankSizeZ, shankDiameter/2.),     // R_L_SHANK
-      cylinderMass(thighSizeZ, thighDiameter/2.),     // R_R_THIGH
-      cylinderMass(shankSizeZ, shankDiameter/2.),     // R_R_SHANK
-      boxMass(footSizeX, footSizeY, footSizeZ),       // R_L_FOOT
-      boxMass(footSizeX, footSizeY, footSizeZ)        // R_R_FOOT
+    const double masses[B_MAX] =
+    { cylinderMass(thighSizeZ, thighDiameter/2.),     // B_L_THIGH
+      cylinderMass(shankSizeZ, shankDiameter/2.),     // B_L_SHANK
+      boxMass(footSizeX, footSizeY, footSizeZ),       // B_L_FOOT
+      cylinderMass(thighSizeZ, thighDiameter/2.),     // B_R_THIGH
+      cylinderMass(shankSizeZ, shankDiameter/2.),     // B_R_SHANK
+      boxMass(footSizeX, footSizeY, footSizeZ),       // B_R_FOOT
+      boxMass(pelvisSizeX, pelvisSizeY, pelvisSizeZ)  // B_PELVIS
     };
     
-    assert(id < R_MAX);
+    assert(id < B_MAX);
     return masses[id];
 }
 
@@ -96,19 +96,18 @@ inline Eigen::Vector3d rbMOI(unsigned int id)
 {
     using namespace CharacterConst;
     
-    const Eigen::Vector3d mois[R_MAX] =
-    { 3.*boxMOI(pelvisSizeX, pelvisSizeY, pelvisSizeZ), // R_ROOT
-         cylinderMOI(thighSizeZ, thighDiameter/2.),     // R_L_THIGH
-         cylinderMOI(shankSizeZ, shankDiameter/2.),     // R_L_SHANK
-         cylinderMOI(thighSizeZ, thighDiameter/2.),     // R_R_THIGH
-         cylinderMOI(shankSizeZ, shankDiameter/2.),     // R_R_SHANK
-      3.*boxMOI(footSizeX, footSizeY, footSizeZ),       // R_L_FOOT
-      3.*boxMOI(footSizeX, footSizeY, footSizeZ)        // R_R_FOOT
+    const Eigen::Vector3d mois[B_MAX] =
+    {    cylinderMOI(thighSizeZ, thighDiameter/2.),     // B_L_THIGH
+         cylinderMOI(shankSizeZ, shankDiameter/2.),     // B_L_SHANK
+      3.*boxMOI(footSizeX, footSizeY, footSizeZ),       // B_L_FOOT
+         cylinderMOI(thighSizeZ, thighDiameter/2.),     // B_R_THIGH
+         cylinderMOI(shankSizeZ, shankDiameter/2.),     // B_R_SHANK
+      3.*boxMOI(footSizeX, footSizeY, footSizeZ),       // B_R_FOOT
+      3.*boxMOI(pelvisSizeX, pelvisSizeY, pelvisSizeZ)  // B_PELVIS
     };
     
-    assert(id < R_MAX);
+    assert(id < B_MAX);
     return mois[id];
-
 }
 
 #endif

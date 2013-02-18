@@ -15,11 +15,11 @@ Vector3d ContactInfo::getForceOnFoot(unsigned int rb_id) const
 {
     Vector3d fNet = Vector3d(0., 0., 0.);
     
-    if(rb_id == R_L_FOOT) {
+    if(rb_id == B_L_FOOT) {
         for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
             fNet += fCData.pLeft[i].f;
         }
-    } else if(rb_id == R_R_FOOT) {
+    } else if(rb_id == B_R_FOOT) {
         for (unsigned int i=0; i<fCData.pRight.size(); i++) {
             fNet += fCData.pRight[i].f;
         }
@@ -49,12 +49,12 @@ bool ContactInfo::toeInContact(unsigned int rb_id, const RigidBody* rb) const
     //figure out if the toe/heel are in contact...
     bool toeForce = false;
     
-    if(rb_id == R_L_FOOT) {
+    if(rb_id == B_L_FOOT) {
         for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
             Point3d tmpP = rb->getLocalCoordinatesForPoint(fCData.pLeft[i].cp);
             if (tmpP.x() > 0) toeForce = true;
         }
-    } else if(rb_id == R_R_FOOT) {
+    } else if(rb_id == B_R_FOOT) {
         for (unsigned int i=0; i<fCData.pRight.size(); i++) {
             Point3d tmpP = rb->getLocalCoordinatesForPoint(fCData.pRight[i].cp);
             if (tmpP.x() > 0) toeForce = true;

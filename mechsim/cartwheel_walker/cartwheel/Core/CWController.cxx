@@ -50,10 +50,10 @@ JointSpTorques CWController::Run(double dt, const ContactData& cdata, double des
     fDbg.stance = fStateMachine.stance();
     fDbg.phi = fStateMachine.phi();
     
-    fDbg.lFootNF = cinfo.getNormalForceOnFoot(R_L_FOOT);
-    fDbg.lFootTF = cinfo.getTangentialForceOnFoot(R_L_FOOT);
-    fDbg.rFootNF = cinfo.getNormalForceOnFoot(R_R_FOOT);
-    fDbg.rFootTF = cinfo.getTangentialForceOnFoot(R_R_FOOT);
+    fDbg.lFootNF = cinfo.getNormalForceOnFoot(B_L_FOOT);
+    fDbg.lFootTF = cinfo.getTangentialForceOnFoot(B_L_FOOT);
+    fDbg.rFootNF = cinfo.getNormalForceOnFoot(B_R_FOOT);
+    fDbg.rFootTF = cinfo.getTangentialForceOnFoot(B_R_FOOT);
     
 #ifndef USE_WALK_CONTROLLER
     fHighCtrl.requestHeading(rinfo, desiredHeading);

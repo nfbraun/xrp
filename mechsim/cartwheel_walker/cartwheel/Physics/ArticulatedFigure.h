@@ -19,7 +19,7 @@ protected:
 	//keep a list of the character's joints, for easy access
 	KTJoint* joints[J_MAX];
 
-	ArticulatedRigidBody* arbs[R_MAX];
+	ArticulatedRigidBody* arbs[B_MAX];
 
 
 public:
@@ -43,7 +43,7 @@ public:
 		returns the root of the current articulated figure.
 	*/
 	inline ArticulatedRigidBody* getRoot(){
-		return arbs[R_ROOT];
+		return arbs[B_PELVIS];
 	}
 	
 	KTJoint* const* getJoints() const { return joints; }
@@ -53,10 +53,10 @@ public:
 		This method adds one rigid body (articulated or not).
 	*/
 	virtual void addArticulatedRigidBody( ArticulatedRigidBody* articulatedRigidBody_disown,
-	    ArbID id);
+	    BodyID id);
 	
 	ArticulatedRigidBody* getArticulatedRigidBody( int i ) { return arbs[i]; }
-	int getArticulatedRigidBodyCount() const { return R_MAX; }
+	int getArticulatedRigidBodyCount() const { return B_MAX; }
 
 	/**
 		This method returns an ARB that is a child of this articulated figure
@@ -119,7 +119,7 @@ public:
 	}
 	
 	ArticulatedRigidBody* getARB(int i) {
-	    if(i < 0 || i >= R_MAX)
+	    if(i < 0 || i >= B_MAX)
 	        return 0;
 	    return arbs[i];
 	}

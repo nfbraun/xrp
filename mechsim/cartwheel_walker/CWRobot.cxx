@@ -4,7 +4,7 @@
 #include <Physics/Joint.h>
 #include <ode/ode.h>
 
-dBodyID CWRobot::makeODEARB(dWorldID world, ArbID id, ArticulatedRigidBody* arb)
+dBodyID CWRobot::makeODEARB(dWorldID world, BodyID id, ArticulatedRigidBody* arb)
 {
     dBodyID body = dBodyCreate(world);
     dMass ODEmass;
@@ -52,12 +52,12 @@ void CWRobot::create(dWorldID world)
     
     fCharacter = new Character();
     
-    ArticulatedRigidBody* pelvis = createARB(R_ROOT, Point3d(0, 0, pelvisPosZ));
+    ArticulatedRigidBody* pelvis = createARB(B_PELVIS, Point3d(0, 0, pelvisPosZ));
     fCharacter->setRoot(pelvis);
     
-    ArticulatedRigidBody* lThigh = createARB(R_L_THIGH,
+    ArticulatedRigidBody* lThigh = createARB(B_L_THIGH,
         Point3d(0., legPosY_L, thighPosZ));
-    fCharacter->addArticulatedRigidBody(lThigh, R_L_THIGH);
+    fCharacter->addArticulatedRigidBody(lThigh, B_L_THIGH);
     
     Joint* joint2 = new Joint();
     joint2->setParentJointPosition(Point3d(0., pelvisRadius*legRelativeAnchorY, -pelvisSizeZ/2.0));
@@ -66,9 +66,9 @@ void CWRobot::create(dWorldID world)
     joint2->setChild(lThigh);
     fCharacter->addJoint(joint2, J_L_HIP);
     
-    ArticulatedRigidBody* rThigh = createARB(R_R_THIGH,
+    ArticulatedRigidBody* rThigh = createARB(B_R_THIGH,
         Point3d(0., legPosY_R, thighPosZ));
-    fCharacter->addArticulatedRigidBody(rThigh, R_R_THIGH);
+    fCharacter->addArticulatedRigidBody(rThigh, B_R_THIGH);
     
     Joint* joint3 = new Joint();
     joint3->setParentJointPosition(Point3d(0., -pelvisRadius*legRelativeAnchorY, -pelvisSizeZ/2.0));
@@ -77,9 +77,9 @@ void CWRobot::create(dWorldID world)
     joint3->setChild(rThigh);
     fCharacter->addJoint(joint3, J_R_HIP);
     
-    ArticulatedRigidBody* lShank = createARB(R_L_SHANK,
+    ArticulatedRigidBody* lShank = createARB(B_L_SHANK,
         Point3d(0., legPosY_L, shankPosZ));
-    fCharacter->addArticulatedRigidBody(lShank, R_L_SHANK);
+    fCharacter->addArticulatedRigidBody(lShank, B_L_SHANK);
     
     Joint* joint4 = new Joint();
     joint4->setParentJointPosition(Point3d(0, 0, -thighSizeZ/2.0));
@@ -88,9 +88,9 @@ void CWRobot::create(dWorldID world)
     joint4->setChild(lShank);
     fCharacter->addJoint(joint4, J_L_KNEE);
     
-    ArticulatedRigidBody* rShank = createARB(R_R_SHANK,
+    ArticulatedRigidBody* rShank = createARB(B_R_SHANK,
         Point3d(0., legPosY_R, shankPosZ));
-    fCharacter->addArticulatedRigidBody(rShank, R_R_SHANK);
+    fCharacter->addArticulatedRigidBody(rShank, B_R_SHANK);
     
     Joint* joint5 = new Joint();
     joint5->setParentJointPosition(Point3d(0, 0, -thighSizeZ/2.0));
@@ -99,9 +99,9 @@ void CWRobot::create(dWorldID world)
     joint5->setChild(rShank);
     fCharacter->addJoint(joint5, J_R_KNEE);
     
-    ArticulatedRigidBody* lFoot = createARB(R_L_FOOT,
+    ArticulatedRigidBody* lFoot = createARB(B_L_FOOT,
         Point3d(footPosX, legPosY_L, footPosZ));
-    fCharacter->addArticulatedRigidBody( lFoot, R_L_FOOT );
+    fCharacter->addArticulatedRigidBody( lFoot, B_L_FOOT );
     
     Joint* joint6 = new Joint();
     joint6->setParentJointPosition(Point3d(0, 0, -shankSizeZ/2.0));
@@ -110,9 +110,9 @@ void CWRobot::create(dWorldID world)
     joint6->setChild(lFoot);
     fCharacter->addJoint(joint6, J_L_ANKLE);
     
-    ArticulatedRigidBody* rFoot = createARB(R_R_FOOT,
+    ArticulatedRigidBody* rFoot = createARB(B_R_FOOT,
         Point3d(footPosX, legPosY_R, footPosZ));
-    fCharacter->addArticulatedRigidBody( rFoot, R_R_FOOT );
+    fCharacter->addArticulatedRigidBody( rFoot, B_R_FOOT );
     
     Joint* joint7 = new Joint();
     joint7->setParentJointPosition(Point3d(0, 0, -shankSizeZ/2.0));
@@ -121,15 +121,15 @@ void CWRobot::create(dWorldID world)
     joint7->setChild(rFoot);
     fCharacter->addJoint(joint7, J_R_ANKLE);
     
-    fPelvisB = makeODEARB(world, R_ROOT, pelvis);
+    fPelvisB = makeODEARB(world, B_PELVIS, pelvis);
     
-    fLThighB = makeODEARB(world, R_L_THIGH, lThigh);
-    fLShankB = makeODEARB(world, R_L_SHANK, lShank);
-    fRThighB = makeODEARB(world, R_R_THIGH, rThigh);
-    fRShankB = makeODEARB(world, R_R_SHANK, rShank);
+    fLThighB = makeODEARB(world, B_L_THIGH, lThigh);
+    fLShankB = makeODEARB(world, B_L_SHANK, lShank);
+    fRThighB = makeODEARB(world, B_R_THIGH, rThigh);
+    fRShankB = makeODEARB(world, B_R_SHANK, rShank);
     
-    fLFootB = makeODEARB(world, R_L_FOOT, lFoot);
-    fRFootB = makeODEARB(world, R_R_FOOT, rFoot);
+    fLFootB = makeODEARB(world, B_L_FOOT, lFoot);
+    fRFootB = makeODEARB(world, B_R_FOOT, rFoot);
     
     fLFootG = makeODEBoxGeom(footSizeX, footSizeY, footSizeZ);
     fRFootG = makeODEBoxGeom(footSizeX, footSizeY, footSizeZ);

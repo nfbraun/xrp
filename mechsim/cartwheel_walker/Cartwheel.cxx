@@ -378,7 +378,7 @@ void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
     dWorldStep(fWorld, dt);
     
     //copy over the state of the ODE bodies to the rigid bodies...
-    for(int rid=0; rid<R_MAX; rid++)
+    for(int rid=0; rid<B_MAX; rid++)
     {
         ArticulatedRigidBody* rb = fCharacter->getARBs()[rid];
         setRBStateFromODE(rb);

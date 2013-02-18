@@ -15,12 +15,12 @@ ArticulatedFigure::~ArticulatedFigure(void){
 	Sets the root
 */
 void ArticulatedFigure::setRoot( ArticulatedRigidBody* root ) {
-	this->arbs[R_ROOT] = root;
+	this->arbs[B_PELVIS] = root;
 }
 
-void ArticulatedFigure::addArticulatedRigidBody( ArticulatedRigidBody* arb, ArbID id)
+void ArticulatedFigure::addArticulatedRigidBody( ArticulatedRigidBody* arb, BodyID id)
 {
-    if(id < 0 || id >= R_MAX)
+    if(id < 0 || id >= B_MAX)
         throw std::runtime_error("Add invalid ARB");
     arbs[id] = arb;
 }

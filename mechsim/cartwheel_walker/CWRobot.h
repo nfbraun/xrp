@@ -24,7 +24,7 @@ public:
     CWRobot() {}
     void create(dWorldID world);
     
-    dBodyID makeODEARB(dWorldID world, ArbID id, ArticulatedRigidBody* arb);
+    dBodyID makeODEARB(dWorldID world, BodyID id, ArticulatedRigidBody* arb);
 };
 
 #endif
