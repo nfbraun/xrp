@@ -17,8 +17,6 @@ class BodyQ {
     BodyQ(Eigen::Vector3d pos, Eigen::Quaterniond rot,
           Eigen::Vector3d vel, Eigen::Vector3d avel)
         : fPos(pos), fRot(rot), fVel(vel), fAVel(avel) {}
-    static BodyQ FromODE(dBodyID id);
-    void TransformGL() const;
     
     inline Eigen::Vector3d pos() const { return fPos; }
     inline Eigen::Quaterniond rot() const { return fRot; }
@@ -125,6 +123,9 @@ class CartState: public SimulationState {
     static const double DISP_SLIDEWIDTH;
     static const int DISP_SLIDELEN2;
 };
+
+BodyQ QFromODE(dBodyID id);
+void TransformGL(const BodyQ& q);
 
 class Cartwheel: public Simulation {
   public:

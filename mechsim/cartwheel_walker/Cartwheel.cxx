@@ -31,7 +31,7 @@ const double CartState::DISP_SLIDEWIDTH = 1.0;
 // Half-length of slide
 const int CartState::DISP_SLIDELEN2 = 30;
 
-BodyQ BodyQ::FromODE(dBodyID id)
+BodyQ QFromODE(dBodyID id)
 {
     return BodyQ(ODE::BodyGetPosition(id),
                  ODE::BodyGetQuaternion(id),
@@ -39,11 +39,11 @@ BodyQ BodyQ::FromODE(dBodyID id)
                  ODE::BodyGetAngularVel(id));
 }
 
-void BodyQ::TransformGL() const
+void TransformGL(const BodyQ& q)
 {
     glPushMatrix();
-    GL::Translate(fPos);
-    GL::Rotate(fRot);
+    GL::Translate(q.pos());
+    GL::Rotate(q.rot());
 }
 
 void CartState::Draw(int mode) const
@@ -85,32 +85,32 @@ void CartState::DrawRobot(bool shadowmode) const
     GL::drawUnitCube();
     glPopMatrix(); */
     
-    fPelvisQ.TransformGL();
+    TransformGL(fPelvisQ);
     glScalef(CharacterConst::pelvisSizeX, CharacterConst::pelvisSizeY, CharacterConst::pelvisSizeZ);
     GL::drawUnitCube();
     glPopMatrix();
     
     if(!shadowmode) glColor3f(.5, 0., .5);
     
-    fLThighQ.TransformGL();
+    TransformGL(fLThighQ);
     GL::drawTube(CharacterConst::legDiameter/2.,
                  -CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ(),
                  CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
-    fLShankQ.TransformGL();
+    TransformGL(fLShankQ);
     GL::drawTube(CharacterConst::legDiameter/2.,
                  -CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ(),
                  CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
-    fRThighQ.TransformGL();
+    TransformGL(fRThighQ);
     GL::drawTube(CharacterConst::legDiameter/2.,
                  -CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ(),
                  CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
-    fRShankQ.TransformGL();
+    TransformGL(fRShankQ);
     GL::drawTube(CharacterConst::legDiameter/2.,
                  -CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ(),
                  CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ());
@@ -118,7 +118,7 @@ void CartState::DrawRobot(bool shadowmode) const
     
     if(!shadowmode) glColor3f(.5, .5, .5);
     
-    fLFootQ.TransformGL();
+    TransformGL(fLFootQ);
     glScalef(CharacterConst::footSizeX, CharacterConst::footSizeY,
         CharacterConst::footSizeZ);
     GL::drawUnitCube();
@@ -130,7 +130,7 @@ void CartState::DrawRobot(bool shadowmode) const
     glEnd(); */
     glPopMatrix();
     
-    fRFootQ.TransformGL();
+    TransformGL(fRFootQ);
     glScalef(CharacterConst::footSizeX, CharacterConst::footSizeY,
         CharacterConst::footSizeZ);
     GL::drawUnitCube();
@@ -152,7 +152,7 @@ void CartState::DrawRobotOutline() const
     
     glColor3f(1., 1., 1.);
     
-    fLFootQ.TransformGL();
+    TransformGL(fLFootQ);
     glScalef(CharacterConst::footSizeX, CharacterConst::footSizeY,
         CharacterConst::footSizeZ);
     glBegin(GL_LINE_LOOP);
@@ -163,7 +163,7 @@ void CartState::DrawRobotOutline() const
     glEnd();
     glPopMatrix();
     
-    fRFootQ.TransformGL();
+    TransformGL(fRFootQ);
     glScalef(CharacterConst::footSizeX, CharacterConst::footSizeY,
         CharacterConst::footSizeZ);
     glBegin(GL_LINE_LOOP);
@@ -488,15 +488,15 @@ CartState Cartwheel::GetCurrentState()
     CartState state;
     
     state.fParent = this;
-    state.fPelvisQ = BodyQ::FromODE(fRobot->fPelvisB);
+    state.fPelvisQ = QFromODE(fRobot->fPelvisB);
     
-    state.fLThighQ = BodyQ::FromODE(fRobot->fLThighB);
-    state.fLShankQ = BodyQ::FromODE(fRobot->fLShankB);
-    state.fRThighQ = BodyQ::FromODE(fRobot->fRThighB);
-    state.fRShankQ = BodyQ::FromODE(fRobot->fRShankB);
+    state.fLThighQ = QFromODE(fRobot->fLThighB);
+    state.fLShankQ = QFromODE(fRobot->fLShankB);
+    state.fRThighQ = QFromODE(fRobot->fRThighB);
+    state.fRShankQ = QFromODE(fRobot->fRShankB);
     
-    state.fLFootQ = BodyQ::FromODE(fRobot->fLFootB);
-    state.fRFootQ = BodyQ::FromODE(fRobot->fRFootB);
+    state.fLFootQ = QFromODE(fRobot->fLFootB);
+    state.fRFootQ = QFromODE(fRobot->fRFootB);
     
     dJointGetUniversalAnchor(fRobot->fLAnkleJ, tmp);
     state.fJPos[J_L_ANKLE] = Eigen::Vector3d(tmp);
