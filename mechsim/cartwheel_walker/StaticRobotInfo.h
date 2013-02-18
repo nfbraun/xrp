@@ -3,6 +3,8 @@
 
 #include <Eigen/Dense>
 
+enum SideID { LEFT=0, RIGHT=1, SIDE_MAX=2 };
+
 enum JointID { J_L_HIP, J_R_HIP, J_L_KNEE, J_R_KNEE,
     J_L_ANKLE, J_R_ANKLE, J_MAX };
 

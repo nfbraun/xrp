@@ -85,32 +85,32 @@ void CartState::DrawRobot(bool shadowmode) const
     GL::drawUnitCube();
     glPopMatrix(); */
     
-    TransformGL(fPelvisQ);
+    TransformGL(fFState.q(B_PELVIS));
     glScalef(CharacterConst::pelvisSizeX, CharacterConst::pelvisSizeY, CharacterConst::pelvisSizeZ);
     GL::drawUnitCube();
     glPopMatrix();
     
     if(!shadowmode) glColor3f(.5, 0., .5);
     
-    TransformGL(fLThighQ);
+    TransformGL(fFState.q(B_L_THIGH));
     GL::drawTube(CharacterConst::legDiameter/2.,
                  -CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ(),
                  CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
-    TransformGL(fLShankQ);
+    TransformGL(fFState.q(B_L_SHANK));
     GL::drawTube(CharacterConst::legDiameter/2.,
                  -CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ(),
                  CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
-    TransformGL(fRThighQ);
+    TransformGL(fFState.q(B_R_THIGH));
     GL::drawTube(CharacterConst::legDiameter/2.,
                  -CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ(),
                  CharacterConst::thighSizeZ / 2. * Eigen::Vector3d::UnitZ());
     glPopMatrix();
     
-    TransformGL(fRShankQ);
+    TransformGL(fFState.q(B_R_SHANK));
     GL::drawTube(CharacterConst::legDiameter/2.,
                  -CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ(),
                  CharacterConst::shankSizeZ / 2. * Eigen::Vector3d::UnitZ());
@@ -118,7 +118,7 @@ void CartState::DrawRobot(bool shadowmode) const
     
     if(!shadowmode) glColor3f(.5, .5, .5);
     
-    TransformGL(fLFootQ);
+    TransformGL(fFState.q(B_L_FOOT));
     glScalef(CharacterConst::footSizeX, CharacterConst::footSizeY,
         CharacterConst::footSizeZ);
     GL::drawUnitCube();
@@ -130,7 +130,7 @@ void CartState::DrawRobot(bool shadowmode) const
     glEnd(); */
     glPopMatrix();
     
-    TransformGL(fRFootQ);
+    TransformGL(fFState.q(B_R_FOOT));
     glScalef(CharacterConst::footSizeX, CharacterConst::footSizeY,
         CharacterConst::footSizeZ);
     GL::drawUnitCube();
@@ -152,7 +152,7 @@ void CartState::DrawRobotOutline() const
     
     glColor3f(1., 1., 1.);
     
-    TransformGL(fLFootQ);
+    TransformGL(fFState.q(B_L_FOOT));
     glScalef(CharacterConst::footSizeX, CharacterConst::footSizeY,
         CharacterConst::footSizeZ);
     glBegin(GL_LINE_LOOP);
@@ -163,7 +163,7 @@ void CartState::DrawRobotOutline() const
     glEnd();
     glPopMatrix();
     
-    TransformGL(fRFootQ);
+    TransformGL(fFState.q(B_R_FOOT));
     glScalef(CharacterConst::footSizeX, CharacterConst::footSizeY,
         CharacterConst::footSizeZ);
     glBegin(GL_LINE_LOOP);
@@ -488,15 +488,15 @@ CartState Cartwheel::GetCurrentState()
     CartState state;
     
     state.fParent = this;
-    state.fPelvisQ = QFromODE(fRobot->fPelvisB);
+    state.fFState.q(B_PELVIS) = QFromODE(fRobot->fPelvisB);
     
-    state.fLThighQ = QFromODE(fRobot->fLThighB);
-    state.fLShankQ = QFromODE(fRobot->fLShankB);
-    state.fRThighQ = QFromODE(fRobot->fRThighB);
-    state.fRShankQ = QFromODE(fRobot->fRShankB);
+    state.fFState.q(B_L_THIGH) = QFromODE(fRobot->fLThighB);
+    state.fFState.q(B_L_SHANK) = QFromODE(fRobot->fLShankB);
+    state.fFState.q(B_R_THIGH) = QFromODE(fRobot->fRThighB);
+    state.fFState.q(B_R_SHANK) = QFromODE(fRobot->fRShankB);
     
-    state.fLFootQ = QFromODE(fRobot->fLFootB);
-    state.fRFootQ = QFromODE(fRobot->fRFootB);
+    state.fFState.q(B_L_FOOT) = QFromODE(fRobot->fLFootB);
+    state.fFState.q(B_R_FOOT) = QFromODE(fRobot->fRFootB);
     
     dJointGetUniversalAnchor(fRobot->fLAnkleJ, tmp);
     state.fJPos[J_L_ANKLE] = Eigen::Vector3d(tmp);

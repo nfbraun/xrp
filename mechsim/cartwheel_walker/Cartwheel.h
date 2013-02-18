@@ -3,6 +3,7 @@
 
 #include "Simulation.h"
 
+#include "RobotState.h"
 #include "CWRobot.h"
 #include <Core/CWController.h>
 #include <Core/Debug.h>
@@ -10,25 +11,6 @@
 #include <ode/ode.h>
 
 #include <Eigen/Dense>
-
-class BodyQ {
-  public:
-    BodyQ() {}
-    BodyQ(Eigen::Vector3d pos, Eigen::Quaterniond rot,
-          Eigen::Vector3d vel, Eigen::Vector3d avel)
-        : fPos(pos), fRot(rot), fVel(vel), fAVel(avel) {}
-    
-    inline Eigen::Vector3d pos() const { return fPos; }
-    inline Eigen::Quaterniond rot() const { return fRot; }
-    inline Eigen::Vector3d vel() const { return fVel; }
-    inline Eigen::Vector3d avel() const { return fAVel; }
-    
-  private:
-    Eigen::Vector3d fPos;
-    Eigen::Quaterniond fRot;
-    Eigen::Vector3d fVel;
-    Eigen::Vector3d fAVel;
-};
 
 extern const char* PhiNames[];
 
@@ -45,9 +27,7 @@ class CartState: public SimulationState {
     Cartwheel* fParent;
     double fT;
     
-    BodyQ fPelvisQ;
-    BodyQ fLThighQ, fLShankQ, fRThighQ, fRShankQ;
-    BodyQ fLFootQ, fRFootQ;
+    FullState fFState;
     
     Eigen::Vector3d fJPos[J_MAX];
     double fTorques[12];
@@ -63,7 +43,7 @@ class CartState: public SimulationState {
     void DrawRobot(bool shadowmode) const;
     
     Eigen::Vector3d GetCenter() const
-        { return fPelvisQ.pos(); }
+        { return fFState.pos(B_PELVIS); }
     
     virtual double GetData(int ch) const {
         switch(ch) {
