@@ -11,6 +11,9 @@ enum JointID { J_L_HIP, J_R_HIP, J_L_KNEE, J_R_KNEE,
 enum BodyID { B_L_THIGH, B_L_SHANK, B_L_FOOT, B_R_THIGH, B_R_SHANK, B_R_FOOT, B_PELVIS, B_MAX };
 enum RBodyID { B_THIGH, B_SHANK, B_FOOT, RBODY_MAX };
 
+enum DoFID { LHZ, LHY, LHX, LKY, LAY, LAX, RHZ, RHY, RHX, RKY, RAY, RAX, DOF_MAX };
+enum RDoFID { HZ, HY, HX, KY, AY, AX, RDOF_MAX };
+
 enum PhiID { LH0, LH1, LH2, LK, LA0, LA1, RH0, RH1, RH2, RK, RA0, RA1 };
 
 namespace CharacterConst {

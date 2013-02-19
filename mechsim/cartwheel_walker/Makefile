@@ -1,5 +1,5 @@
-SOURCES = Cartwheel.cxx CWRobot.cxx
-HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h
+SOURCES = Cartwheel.cxx CWRobot.cxx DynTransform.cxx
+HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h AffineTransform.h DynTransform.h
 
 CW_SOURCES = \
 cartwheel/MathLib/Quaternion.cxx \
@@ -61,9 +61,10 @@ CFLAGS = -I../common/mechsim -I$(CARTWHEEL) -I../../eigen-eigen-3.0.1 $(shell od
 LDFLAGS = -L../common/mechsim
 LIBS = -lode -lmechsim -lgsl -lblas
 
-.PHONY: all clean
+.PHONY: all tests clean
 
 all: simview simprint
+tests: test_trans test_sim
 
 clean:
 	rm -f $(OBJS)
@@ -75,6 +76,12 @@ simview: $(OBJS) simview.o
 
 simprint: $(OBJS) simprint.o
 	g++ -o $@ $(LDFLAGS) $(LIBS) $(CARTWHEEL_LIBS) $(OBJS) simprint.o
+
+test_trans: DynTransform.o test_trans.o
+	g++ -o $@ DynTransform.o test_trans.o
+
+test_sim: $(OBJS) test_sim.o
+	g++ -o $@ $(LDFLAGS) $(LIBS) $(CARTWHEEL_LIBS) $(OBJS) test_sim.o
 
 %.o: %.cxx $(HEADERS) $(CW_HEADERS) Makefile
 	g++ $(CFLAGS) -o $@ -c $<

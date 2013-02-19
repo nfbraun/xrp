@@ -69,4 +69,34 @@ class FullState {
     BodyQ fQ[B_MAX];
 };
 
+/* Joint space state of the robot, i.e. generalized positions and velocities for
+   all its degrees of freedom.
+   Note that this contains less information than the FullState, as the 6d
+   position and velocity of the system as a whole is not fixed. */
+class JSpState {
+  public:
+    double phi(unsigned int id) const
+        { assert(id < DOF_MAX); return fPhi[id]; }
+    double omega(unsigned int id) const
+        { assert(id < DOF_MAX); return fOmega[id]; }
+    
+    double& phi(unsigned int id)
+        { assert(id < DOF_MAX); return fPhi[id]; }
+    double& omega(unsigned int id)
+        { assert(id < DOF_MAX); return fOmega[id]; }
+    
+    double phi(unsigned int side, unsigned int id) const
+        { assert(side < SIDE_MAX); assert(id < RDOF_MAX); return fPhi[side*RDOF_MAX+id]; }
+    double omega(unsigned int side, unsigned int id) const
+        { assert(side < SIDE_MAX); assert(id < RDOF_MAX); return fOmega[side*RDOF_MAX+id]; }
+    
+    double& phi(unsigned int side, unsigned int id)
+        { assert(side < SIDE_MAX); assert(id < RDOF_MAX); return fPhi[side*RDOF_MAX+id]; }
+    double& omega(unsigned int side, unsigned int id)
+        { assert(side < SIDE_MAX); assert(id < RDOF_MAX); return fOmega[side*RDOF_MAX+id]; }
+    
+    double fPhi[DOF_MAX];
+    double fOmega[DOF_MAX];
+};
+
 #endif

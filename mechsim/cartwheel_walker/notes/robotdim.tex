@@ -37,6 +37,7 @@
 \pgfmathsetmacro{\footPosX}{\footSizeX * 0.33 - \legDiameter/2.}
 
 \maketitle
+\section{Dimensions and DoFs}
 \textbf{Notes:}
 \begin{itemize}
 \item The coordinate system described here differs from that in the original Cartwheel paper.
@@ -147,11 +148,11 @@
 
 \begin{scope}[xshift=0]
 \draw (0,\pelvisPosZ) node[anchor=center]{Pelvis/torso};
-\draw (0,\hipPosZ) node[anchor=center]{Hip};
+\draw (0,\hipPosZ) node[anchor=center]{Hip (HZ, HY, HX)};
 \draw (0,\thighPosZ) node[anchor=center]{Thigh};
-\draw (0,\kneePosZ) node[anchor=center]{Knee};
+\draw (0,\kneePosZ) node[anchor=center]{Knee (KY)};
 \draw (0,\shankPosZ) node[anchor=center]{Shank};
-\draw (0,\anklePosZ) node[anchor=center]{Ankle};
+\draw (0,\anklePosZ) node[anchor=center]{Ankle (AY, AX)};
 \draw (0,\footPosZ) node[anchor=north]{Foot};
 \end{scope}
 
@@ -198,4 +199,160 @@ footPosX$^*$ & \footPosX\\
 
 \noindent Note: Quantities marked with an asterisk (*) are computed.
 \end{center}
+
+\section{Transformation matrices}
+Define
+\begin{eqnarray}
+R_x(\phi_x) &=& \left(\begin{array}{ccc}
+1 & 0 & 0\\
+0 & c_x & -s_x\\
+0 & s_x &  c_x\\
+\end{array}\right)\\
+R_y(\phi_y) &=& \left(\begin{array}{ccc}
+c_y & 0 & s_y\\
+0 & 1 & 0\\
+-s_y & 0 & c_y\\
+\end{array}\right)\\
+R_z(\phi_z) &=& \left(\begin{array}{ccc}
+c_z & -s_z & 0\\
+s_z & c_z & 0\\
+0 & 0 & 1\\
+\end{array}\right)
+\end{eqnarray}
+where $c_x = \cos(\phi_x)$, $s_x = \sin(\phi_x)$, etc. We then have
+\begin{eqnarray}
+R_y R_x &=& \left( \begin{array}{ccc}
+c_y  & s_y s_x & s_y c_x\\
+0    & c_x     & -s_x\\
+-s_y & c_y s_x & c_y c_x\\
+\end{array}\right)\\
+R_z R_y R_x &=& \left( \begin{array}{ccc}
+c_z c_y & c_z s_y s_x - s_z c_x & c_z s_y c_x + s_z s_x\\
+s_z c_y & s_z s_y s_x + c_z c_x & s_z s_y c_x - c_z s_x\\
+-s_y    & c_y s_x               & c_y c_x              \\
+\end{array}\right)
+\end{eqnarray}
+
+\section{Affine transformations}
+An \textit{affine transformation} is defined via
+\begin{equation}
+T(x) = R x + c
+\end{equation}
+where $R$ is a rotation matrix (i.e. $R^\top = R^{-1}$) and $c$ is a vector.
+
+The affine transformation associated with a rigid body is the transformation that turns vectors in the \textit{body frame} into vector in the \textit{global (world) frame}. In ODE, the transformation associated with a body is returned by $R = \mathtt{dBodyGetRotation}$ and $c = \mathtt{dBodyGetPosition}$. The position of the center of mass is zero in body coordinates, with implies that $c$ is the position of the bodies center of mass in world coordinates.
+
+For a joint joining a parent and a child body, we define the affine transformation $t$ associated with the joint via
+\begin{equation}
+T_\mathrm{c} = T_\mathrm{p} \cdot t
+\end{equation}
+which implies
+\begin{equation}
+t = T_\mathrm{p}^{-1} T_\mathrm{c}
+\end{equation}
+
+For the hip joint, the torso is the parent, the thigh is the child, and the associated transform is
+\begin{equation}
+t_\mathrm{H} = R_z(\phi_\mathrm{HZ})\,R_y(\phi_\mathrm{HY})\,R_x(\phi_\mathrm{HX})
+\end{equation}
+
+For the knee joint, the thigh is the parent, the shank is the child, and the associated transform is
+\begin{equation}
+t_\mathrm{K} = R_y(\phi_\mathrm{KY})
+\end{equation}
+
+For the ankle joint, the shank is the parent, the foot is the child, and the associated transform is
+\begin{equation}
+t_\mathrm{A} = R_y(\phi_\mathrm{AY})\,R_x(\phi_\mathrm{AX})
+\end{equation}
+
+\subsection{Angular velocities}
+From $R R^\top = 1$ we get
+\begin{eqnarray}
+&&\dot{R} R^\top + R \dot{R}^\top = 0\\
+&&\dot{R} R^\top = -(\dot{R} R^\top)^\top
+\end{eqnarray}
+i.e. $\dot{R} R^\top$ is skew-symmetric.
+\begin{equation}
+\dot{R} R^\top =: \Omega =: \left(\begin{array}{ccc}
+0 & -\omega_3 & \omega_2\\
+\omega_3 & 0 & -\omega_1\\
+-\omega_2 & \omega_1 & 0\\
+\end{array}\right)
+\end{equation}
+
+Now consider the velocity of a point with body coordinates $x^\prime$:
+\begin{equation}
+x = T(x^\prime) = R x^\prime + c
+\end{equation}
+Time derivative (note $\dot{x}^\prime = 0$):
+\begin{eqnarray}
+\dot{x} &=& \dot{R} x^\prime + \dot{c}\\
+&=& \dot{R}R^\top(x - c) + \dot{c}\\
+&=& \Omega (x - c) + \dot{c}\\
+&=:& \omega \times (x - c) + \dot{c}
+\end{eqnarray}
+
+\section{Joint angular velocities}
+\subsection{Hip joint}
+The angular velocity difference across the hip joint, expressed in the pelvis frame, is
+\begin{equation}
+a_H^{(P)} = \omega_\mathrm{HX} R_z(\phi_\mathrm{HZ}) R_y(\phi_\mathrm{HY}) e_x
++ \omega_\mathrm{HY} R_z(\phi_\mathrm{HZ}) e_y
++ \omega_\mathrm{HZ} e_z
+\end{equation}
+
+We define a transformation matrix $Q$ via
+\begin{equation}
+a_H^{(P)} = Q \left(\begin{array}{c}
+\omega_\mathrm{HX} \\ \omega_\mathrm{HY} \\ \omega_\mathrm{HZ}
+\end{array}\right)
+\end{equation}
+
+We find
+\begin{equation}
+Q = \left(\begin{array}{ccc}
+c_z c_y & -s_z & 0\\
+s_z c_y & c_z  & 0\\
+-s_y    & 0    & 1
+\end{array}\right)
+\end{equation}
+with $c_z = \cos(\phi_\mathrm{HZ})$, etc., and
+\begin{equation}
+\det(Q) = c_y
+\end{equation}
+which represents the well-known fact that Euler-type angles become singular if the second transform aligns the axes of the first and the third.
+
+The inverse of $Q$ is given by
+\begin{equation}
+Q^{-1} = \left(\begin{array}{ccc}
+c_z/c_y & s_z/c_y & 0\\
+-s_z & c_z & 0\\
+s_y c_z / c_y & s_y s_z / c_y & 1
+\end{array}\right)
+\end{equation}
+
+\subsection{Knee joint}
+The angular velocity difference across the knee joint, expressed in the thigh frame, is
+\begin{equation}
+a_K^{(T)} = \omega_\mathrm{KY} e_y
+\end{equation}
+
+\subsection{Ankle joint}
+The angular velocity difference across the ankle joint, expressed in the shank frame, is
+\begin{equation}
+a_A^{(S)} = \omega_{AX} R_y(\phi_\mathrm{AY}) e_x + \omega_\mathrm{AY} e_y
+\end{equation}
+so we have
+\begin{equation}
+a_A^{(S)} = \left( \begin{array}{c}
+c_y \omega_\mathrm{AX}\\ \omega_\mathrm{AY}\\ -s_y \omega_\mathrm{AX}
+\end{array}\right)
+\end{equation}
+with $c_y = \cos(\phi_\mathrm{AY})$, etc.
+
+To extract $\omega_\mathrm{AX}$, note that
+\begin{equation}
+c_y \cdot (c_y \omega_\mathrm{AX}) - s_y \cdot(-s_y \omega_\mathrm{AX}) = \omega_\mathrm{AX}
+\end{equation}
 \end{document}
