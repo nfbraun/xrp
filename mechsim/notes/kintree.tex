@@ -66,12 +66,12 @@ E_\mathrm{kin} = \sum_i E_{\mathrm{kin},i}
 Making use of the linearity of the trace, we rewrite this as
 \begin{equation}
 \label{eqn:ekindef}
-E_\mathrm{kin} = \operatorname{tr} \left( \dot{T} \left( \frac{1}{2} \sum_i m_i \overline{x}^\prime_i {\overline{x}_i^\prime}^\top \right) \dot{T}^\top \right)
-:= \operatorname{tr} (\dot{T} J \dot{T}^\top )
+E_\mathrm{kin} = \frac{1}{2}\operatorname{tr} \left( \dot{T} \left(\sum_i m_i \overline{x}^\prime_i {\overline{x}_i^\prime}^\top \right) \dot{T}^\top \right)
+:= \frac{1}{2} \operatorname{tr} (\dot{T} J \dot{T}^\top )
 \end{equation}
 where
 \begin{equation}
-J = \frac{1}{2} \sum_i m_i \overline{x}^\prime {\overline{x}_i^\prime}^\top
+J = \sum_i m_i \overline{x}_i^\prime {\overline{x}_i^\prime}^\top
 \end{equation}
 
 This naturally generalizes to the case of mass distributions:
@@ -117,7 +117,7 @@ Now we can calculate the moment of inertia about the body frame origin,
 \nonumber&=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( (x^\prime - x_c^\prime + x_c^\prime)^\top (x^\prime - x_c^\prime + x_c^\prime) - (x^\prime - x_c^\prime + x_c^\prime)(x^\prime - x_c^\prime + x_c^\prime)^\top \right)\\
 \nonumber&=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( (x^\prime - x_c^\prime)^\top (x^\prime - x_c^\prime) - (x^\prime - x_c^\prime)(x^\prime - x_c^\prime)^\top \right.\\
 \nonumber && \left. + 2 {x_c^\prime}^\top (x^\prime - x_c^\prime) - 2 x_c^\prime (x^\prime - x_c^\prime)^\top + {x_c^\prime}^\top x_c^\prime - x_c^\prime {x_c^\prime}^\top \right)\\
-&=& I_c + {x_c^\prime}^\top x_c^\prime - x_c^\prime {x_c^\prime}^\top
+&=& I_c + m_\mathrm{tot}{x_c^\prime}^\top x_c^\prime - m_\mathrm{tot}x_c^\prime {x_c^\prime}^\top
 \end{eqnarray}
 
 Let us now examine $J = \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \overline{x}^\prime\,{\overline{x}^\prime}^\top$ in more detail. Keeping in mind that $\mathbb{R}^4 \ni \overline{x}^\prime = (x^\prime, 1)$, we have that
@@ -140,7 +140,7 @@ where
 \begin{eqnarray}
 \nonumber \tilde{J} &=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) x^\prime\,{x^\prime}^\top\\
 \nonumber &=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left(x^\prime\,{x^\prime}^\top - {x^\prime}^\top x^\prime \right) + \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) {x^\prime}^\top{x^\prime}\\
-&=& I + \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) {x^\prime}^\top{x^\prime}
+&=& -I + \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) {x^\prime}^\top{x^\prime}
 \end{eqnarray}
 For the last step, we calculate
 \begin{eqnarray}
@@ -158,7 +158,7 @@ Due to the linearity of the trace, we conclude that
 which gives
 \begin{equation}
 \label{eqn:jtilde}
-\tilde{J} = I + \frac{1}{2} \operatorname{tr}(I)
+\tilde{J} = -I + \frac{1}{2} \operatorname{tr}(I)
 \end{equation}
 By (\ref{eqn:j}), (\ref{eqn:jtilde}) and (\ref{eqn:i}), we have thus succeeded in expressing $J$ in terms of $m_\mathrm{tot}$, $x_c^\prime$ and $I_c$.
 
@@ -199,22 +199,22 @@ Let the affine transforms be parameterized by generalized coordinates $q_j$. The
 
 By (\ref{eqn:ekindef}), the kinetic energy of the rigid body is given by
 \begin{equation}
-E_{\mathrm{kin},i} = \operatorname{tr} (\dot{T}_i J_i \dot{T}_i^\top)
+E_{\mathrm{kin},i} = \frac{1}{2} \operatorname{tr} (\dot{T}_i J_i \dot{T}_i^\top)
 \end{equation}
 (note that the index now refers to a rigid body, no longer to a point mass inside a rigid body). This can be written in terms of the generalized coordinates as
 \begin{equation}
-E_{\mathrm{kin},i} = \operatorname{tr} (\sum_{jk} \frac{\partial T_i}{\partial q_j} \dot{q}_j J_i \frac{\partial T_i^\top}{\partial q_k} \dot{q}_k)
-= \sum_{jk} \operatorname{tr} (\frac{\partial T_i}{\partial q_j} J_i \frac{\partial T_i^\top}{\partial q_k}) \dot{q}_j \dot{q}_k
+E_{\mathrm{kin},i} = \frac{1}{2} \operatorname{tr} (\sum_{jk} \frac{\partial T_i}{\partial q_j} \dot{q}_j J_i \frac{\partial T_i^\top}{\partial q_k} \dot{q}_k)
+= \frac{1}{2} \sum_{jk} \operatorname{tr} (\frac{\partial T_i}{\partial q_j} J_i \frac{\partial T_i^\top}{\partial q_k}) \dot{q}_j \dot{q}_k
 \end{equation}
 
 The kinetic energy of the whole kinematic tree is then given by
 \begin{equation}
-E_\mathrm{kin} = \sum_i E_{\mathrm{kin},i} = \sum_{ijk} \operatorname{tr} (\frac{\partial T_i}{\partial q_j} J_i \frac{\partial T_i^\top}{\partial q_k}) \dot{q}_j \dot{q}_k
+E_\mathrm{kin} = \sum_i E_{\mathrm{kin},i} = \frac{1}{2} \sum_{ijk} \operatorname{tr} (\frac{\partial T_i}{\partial q_j} J_i \frac{\partial T_i^\top}{\partial q_k}) \dot{q}_j \dot{q}_k
 \end{equation}
 
 This is a quadratic form in the generalized velocities $\dot{q}$. We write it as
 \begin{equation}
-E_\mathrm{kin} = \dot{q}^\top M(q) \dot{q}
+E_\mathrm{kin} = \frac{1}{2} \dot{q}^\top M(q) \dot{q}
 \end{equation}
 where the mass matrix $M(q)$ is given by
 \begin{equation}
