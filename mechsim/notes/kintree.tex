@@ -90,7 +90,7 @@ x_c^\prime := \frac{1}{m_\mathrm{tot}} \int \operatorname{d}^3\!x^\prime\; \rho(
 \end{equation}
 and the moment of inertia about the center of gravity,
 \begin{equation}
-I_c := \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( (x^\prime - x_c^\prime)^\top (x^\prime - x_c^\prime) - (x^\prime - x_c^\prime)(x^\prime - x_c^\prime)^\top \right)
+I_c := \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( ( (x^\prime - x_c^\prime)^\top (x^\prime - x_c^\prime) ) \mathbb{1} - (x^\prime - x_c^\prime)(x^\prime - x_c^\prime)^\top \right)
 \end{equation}
 
 To continue, we note that
@@ -100,7 +100,7 @@ To continue, we note that
 - x_c^\prime \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime)\\
 &=& m_\mathrm{tot} x_c^\prime - x_c^\prime m_\mathrm{tot} = 0
 \end{eqnarray}
-which implies, for arbitrary $a \in \mathbb{R}^3$,
+which implies, for arbitrary (constant) $a \in \mathbb{R}^3$,
 \begin{equation}
 \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) a^\top (x^\prime - x_c^\prime) = 0
 \end{equation}
@@ -113,11 +113,11 @@ and
 Now we can calculate the moment of inertia about the body frame origin,
 \begin{eqnarray}
 \label{eqn:i}
-\nonumber I &:=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( {x^\prime}^\top x^\prime - x^\prime {x^\prime}^\top \right)\\
-\nonumber&=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( (x^\prime - x_c^\prime + x_c^\prime)^\top (x^\prime - x_c^\prime + x_c^\prime) - (x^\prime - x_c^\prime + x_c^\prime)(x^\prime - x_c^\prime + x_c^\prime)^\top \right)\\
-\nonumber&=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( (x^\prime - x_c^\prime)^\top (x^\prime - x_c^\prime) - (x^\prime - x_c^\prime)(x^\prime - x_c^\prime)^\top \right.\\
-\nonumber && \left. + 2 {x_c^\prime}^\top (x^\prime - x_c^\prime) - 2 x_c^\prime (x^\prime - x_c^\prime)^\top + {x_c^\prime}^\top x_c^\prime - x_c^\prime {x_c^\prime}^\top \right)\\
-&=& I_c + m_\mathrm{tot}{x_c^\prime}^\top x_c^\prime - m_\mathrm{tot}x_c^\prime {x_c^\prime}^\top
+\nonumber I &:=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( ({x^\prime}^\top x^\prime) \mathbb{1} - x^\prime {x^\prime}^\top \right)\\
+\nonumber&=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( ((x^\prime - x_c^\prime + x_c^\prime)^\top (x^\prime - x_c^\prime + x_c^\prime)) \mathbb{1} - (x^\prime - x_c^\prime + x_c^\prime)(x^\prime - x_c^\prime + x_c^\prime)^\top \right)\\
+\nonumber&=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( ((x^\prime - x_c^\prime)^\top (x^\prime - x_c^\prime)) \mathbb{1} - (x^\prime - x_c^\prime)(x^\prime - x_c^\prime)^\top \right.\\
+\nonumber && \left. + 2 ({x_c^\prime}^\top (x^\prime - x_c^\prime)) \mathbb{1} - 2 x_c^\prime (x^\prime - x_c^\prime)^\top + ({x_c^\prime}^\top x_c^\prime) \mathbb{1} - x_c^\prime {x_c^\prime}^\top \right)\\
+&=& I_c + m_\mathrm{tot}({x_c^\prime}^\top x_c^\prime) \mathbb{1} - m_\mathrm{tot}x_c^\prime {x_c^\prime}^\top
 \end{eqnarray}
 
 Let us now examine $J = \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \overline{x}^\prime\,{\overline{x}^\prime}^\top$ in more detail. Keeping in mind that $\mathbb{R}^4 \ni \overline{x}^\prime = (x^\prime, 1)$, we have that
@@ -139,28 +139,36 @@ J = \left(\begin{array}{cc}
 where
 \begin{eqnarray}
 \nonumber \tilde{J} &=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) x^\prime\,{x^\prime}^\top\\
-\nonumber &=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left(x^\prime\,{x^\prime}^\top - {x^\prime}^\top x^\prime \right) + \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) {x^\prime}^\top{x^\prime}\\
-&=& -I + \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) {x^\prime}^\top{x^\prime}
+\nonumber &=& \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left(x^\prime\,{x^\prime}^\top - ({x^\prime}^\top x^\prime) \mathbb{1} \right) + \left( \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) ({x^\prime}^\top{x^\prime}) \right) \mathbb{1}\\
+&=& -I + \left( \int \operatorname{d}^3\!x^\prime\; \rho(x^\prime) ({x^\prime}^\top{x^\prime}) \right) \mathbb{1}
 \end{eqnarray}
 For the last step, we calculate
 \begin{eqnarray}
-\nonumber&&\operatorname{tr}(x^\top x - x x^\top)
-= x^\top x \operatorname{tr}(\mathbb{1}) - \operatorname{tr}(xx^\top)
+\nonumber \operatorname{tr}((x^\top x) \mathbb{1} - x x^\top)
+&=& x^\top x \operatorname{tr}(\mathbb{1}) - \operatorname{tr}(xx^\top)
 = x^\top x \operatorname{tr}(\mathbb{1}) - x^\top x\\
-&&= (\operatorname{tr}(\mathbb{1}) - 1) x^\top x
+&=& (\operatorname{tr}(\mathbb{1}) - 1) x^\top x
 = 2 x^\top x
 \end{eqnarray}
 Due to the linearity of the trace, we conclude that
 \begin{equation}
 \int\operatorname{d}^3\!x^\prime\; \rho(x^\prime) {x^\prime}^\top x^\prime
-= \frac{1}{2} \operatorname{tr} \left( \int\operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( {x^\prime}^\top x^\prime - x^\prime {x^\prime}^\top \right) \right)
+= \frac{1}{2} \operatorname{tr} \left( \int\operatorname{d}^3\!x^\prime\; \rho(x^\prime) \left( ({x^\prime}^\top x^\prime) \mathbb{1} - x^\prime {x^\prime}^\top \right) \right)
 \end{equation}
 which gives
 \begin{equation}
 \label{eqn:jtilde}
-\tilde{J} = -I + \frac{1}{2} \operatorname{tr}(I)
+\tilde{J} = -I + \frac{1}{2} \operatorname{tr}(I) \mathbb{1}
 \end{equation}
-By (\ref{eqn:j}), (\ref{eqn:jtilde}) and (\ref{eqn:i}), we have thus succeeded in expressing $J$ in terms of $m_\mathrm{tot}$, $x_c^\prime$ and $I_c$.
+Combining (\ref{eqn:jtilde}) and (\ref{eqn:i}), we get
+\begin{eqnarray}
+\label{eqn:jtilde2}
+\nonumber \tilde{J} &=& -I_c - m_\mathrm{tot}({x_c^\prime}^\top x_c^\prime) \mathbb{1} + m_\mathrm{tot} x_c^\prime {x_c^\prime}^\top
++ \frac{1}{2} \operatorname{tr}\left(I_c + m_\mathrm{tot} ({x_c^\prime}^\top x_c^\prime) \mathbb{1} - m_\mathrm{tot} x_c^\prime {x_c^\prime}^\top\right)\\
+\nonumber &=& -I_c - m_\mathrm{tot} ({x_c^\prime}^\top x_c^\prime) \mathbb{1} + m_\mathrm{tot} x_c^\prime {x_c^\prime}^\top + \frac{1}{2} \operatorname{tr}\left(I_c\right) \mathbb{1} + \frac{1}{2} m_\mathrm{tot} \left({x_c^\prime}^\top x_c^\prime (\operatorname{tr}(\mathbb{1}) - 1)\right) \mathbb{1}\\
+&=& -I_c + m_\mathrm{tot} x_c^\prime {x_c^\prime}^\top + \frac{1}{2} \operatorname{tr}\left(I_c\right) \mathbb{1}
+\end{eqnarray}
+By (\ref{eqn:j}) and (\ref{eqn:jtilde2}), we have thus succeeded in expressing $J$ in terms of $m_\mathrm{tot}$, $x_c^\prime$ and $I_c$.
 
 \section{Potential energy}
 We restrict our analysis to the case of a homogeneous gravitational field, where the potential energy of a point mass at position $x_i$ (in world coordinates!) is given by
