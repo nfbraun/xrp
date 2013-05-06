@@ -1,0 +1,35 @@
+# Tree status as of 2012-10-10 (before cleanup)
+## Documentation
+Documentation is mostly in form of LaTeX files in the repository. Most of this should go into the Wiki. However, some of the files use TikZ, and there is nothing like mathjax for TikZ...
+* <code>doc/bootloader.txt</code> How to use a serial bootloader on the ATMega8 / 328.
+* <code>mechsim/notes/</code>
+* <code>mechsim/acrobot/theory/</code>
+
+## Mechsim
+Mechsim is a framework to interactively view the results of mechanics simulations, using OpenGL and Qt.
+
+Most simulations use ODE as the physics engine.
+
+* <code>mechsim/commmon/mechsim/</code> the mechsim display library
+* <code>mechsim/common/gijit/</code> library to compile, at run-time, functions defined in the GiNaC C++ computer algebra system to machine code. Uses the LLVM library. Does not depend on the rest of mechsim.
+* <code>mechsim/tests/</code>simple examples
+* <code>mechsim/acrobot/</code>The Acrobot. Has code to simulate the free Acrobot, and to display trajectories calculated elsewhere.
+* <code>mechsim/mcgeer_walker/</code> McGeers classic passive dynamic walker (see [Tad McGeer: Passive Walking with Knees](http://medesign.seas.upenn.edu/uploads/Courses/McGeer90-ICRA-knees.pdf))
+* <code>mechsim/hobbelen_walker/</code> D. Hobbelens Limit Cycle Walker. Unfinished.
+* <code>mechsim/cartwheel_walker/</code> Import of the cartwheel3d software, ported to use mechsim for display. I tried to simplify the software as much as possible, still work in progress. This may have introduced subtle bugs.
+* <code>mechsim/kintree/</code> Code to simulate kinematic trees via Lagrangian mechanics. The algorithm is probably much too inefficient.
+
+## Numerical optimization
+* <code>ipopt_test/</code> Experiments with the ipopt library. Also contains first experiments on direct collocation.
+* <code>psopt/</code> Experiments with the psopt library. Has code to calculate a trajectory for the Acrobot.
+* <code>mechsim/acrobot/ana/</code> Code to stabilize (i.e. eliminate small deviations) Acrobot trajectories using LTV-LQR.
+
+## Firmware for two-wheel balancing robot
+* <code>robot_fw/src/</code> Firmware for the two-wheel balancing robot, written for ATMega8.
+* <code>robot_fw/lib/</code> Library used by the firmware, written for ATMega8 and ATMega328. Uses avrlibc.
+* <code>robot_fw/test/</code> Code to display the current state of the two-wheel balancing robot, using softscope (see below).
+* <code>inv_pendulum/ana/twowheel.oct</code> Simulate the two-wheel balancer and calculate coefficients for its LQR controller. Uses GNU Octave.
+
+## Utilities
+* <code>dataplot/</code> Utility to plot values from csv files. Has interactive pan/zoom (unlike e.g. gnuplot). Written using Qt.
+* <code>softscope/</code> Utility to plot values/measurements online from a data stream. Display resembles DSO with slow timebase, not a stripchart. Written using Qt.
