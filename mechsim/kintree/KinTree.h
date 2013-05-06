@@ -26,6 +26,7 @@ class RigidBody {
     const Eigen::Vector3d& pos() const { return fPos; }
     
     void setMass(double m, double Ixx, double Iyy, double Izz, double Ixy, double Ixz, double Iyz);
+    void setMass(double m, const Eigen::Vector3d& Idiag);
     
     void setMassBox(double density, double sx, double sy, double sz);
     void setMassCylinder(double density, double h, double r);
@@ -53,6 +54,16 @@ class RigidBody {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
+
+Eigen::Matrix4d S_x(double phi);
+Eigen::Matrix4d S_y(double phi);
+Eigen::Matrix4d S_z(double phi);
+Eigen::Matrix4d dS_x_dp(double phi);
+Eigen::Matrix4d dS_y_dp(double phi);
+Eigen::Matrix4d dS_z_dp(double phi);
+Eigen::Matrix4d d2S_x_dpp(double phi);
+Eigen::Matrix4d d2S_y_dpp(double phi);
+Eigen::Matrix4d d2S_z_dpp(double phi);
 
 class Joint {
   friend class RigidBody;

@@ -4,8 +4,11 @@ EIGEN_INCL = -I../../eigen-eigen-3.0.1/
 
 all: kintree cartwheel
 
-kintree: test.cxx KinTree.cxx Makefile
-	g++ -O3 $(EIGEN_INCL) -o kintree KinTree.cxx test.cxx
+kintree: test.o KinTree.o Makefile
+	g++ -O3 -o $@ KinTree.o test.o
 
-cartwheel: cartwheel.cxx KinTree.cxx Makefile
-	g++ -O3 -o $@ -lgsl -lblas $(EIGEN_INCL) -I../acrobot/ana ../acrobot/ana/RawODESolver.o KinTree.cxx cartwheel.cxx
+cartwheel: cartwheel.o CWJoints.o KinTree.o Makefile
+	g++ -O3 -o $@ -lgsl -lblas ../acrobot/ana/RawODESolver.o KinTree.o CWJoints.o cartwheel.o
+
+%.o: %.cxx Makefile
+	g++ $(EIGEN_INCL) -O3 -I../acrobot/ana -o $@ -c $<

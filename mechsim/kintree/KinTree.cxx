@@ -24,6 +24,11 @@ void RigidBody::setMass(double m, double Ixx, double Iyy, double Izz, double Ixy
           m*rp.transpose(),                                                      m;
 }
 
+void RigidBody::setMass(double m, const Eigen::Vector3d& Idiag)
+{
+    setMass(m, Idiag.x(), Idiag.y(), Idiag.z(), 0., 0., 0.);
+}
+
 void RigidBody::setMassBox(double density, double sx, double sy, double sz)
 {
     const double m = density * sx * sy * sz;
