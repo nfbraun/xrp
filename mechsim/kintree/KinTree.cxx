@@ -20,16 +20,8 @@ void RigidBody::setMass(double m, double Ixx, double Iyy, double Izz, double Ixy
     if(pJoint())
         rp -= pJoint()->pos();
     
-    const double x = rp.x(), y = rp.y(), z = rp.z();
-    
-    const double Jxx = (-Ixx + Iyy + Izz)/2.;
-    const double Jyy = ( Ixx - Iyy + Izz)/2.;
-    const double Jzz = ( Ixx + Iyy - Izz)/2.;
-    
-    fJ << Jxx + m*x*x, Ixy - m*x*y, Ixz - m*x*z, m*x,
-          Ixy - m*x*y, Jyy + m*y*y, Iyz - m*y*z, m*y,
-          Ixz - m*x*z, Iyz - m*y*z, Jzz + m*z*z, m*z,
-          m*x,   m*y,   m*z,     m;
+    fJ << -fI + m*rp*rp.transpose() + fI.trace()/2.*Eigen::Matrix3d::Identity(), m*rp,
+          m*rp.transpose(),                                                      m;
 }
 
 void RigidBody::setMassBox(double density, double sx, double sy, double sz)
