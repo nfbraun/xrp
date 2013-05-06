@@ -1,0 +1,149 @@
+\documentclass[a4paper]{article}
+\begin{document}
+\title{Transformation behaviour of spatial vectors}
+\maketitle
+We define an \textit{affine transform} $T(x)$
+\begin{equation}
+\label{eqn:atdef}
+T(x) = Rx + c
+\end{equation}
+with $R$ an orthogonal matrix ($R R^\top = R^\top R = 1$) and $c$ a vector.
+
+Now consider a position vector $x(t)$ given by a time-dependant transform applied to a fixed position vector $x_0$,
+\begin{equation}
+x(t) = T_t(x_0) = R x_0 + c
+\end{equation}
+where $\dot{x_0} = 0$. We then have
+\begin{equation}
+\label{eqn:dotx}
+\dot{x} = \dot{R} x_0 + \dot{c}
+\end{equation}
+Differentiating the orthogonality relation for $R$ gives
+\begin{equation}
+0 = \dot{R} R^\top + R \dot{R}^\top = \dot{R} R^\top + (\dot{R} R^\top)^\top
+\end{equation}
+so $\dot{R} R^\top =: \Omega$ is an antisymmetric matrix. Using $\Omega$, we write (\ref{eqn:dotx}) as
+\begin{equation}
+\dot{x} = \Omega R x_0 + \dot{c} = \Omega (x - c) + \dot{c} = \Omega x - \Omega c + \dot{c}
+\end{equation}
+The application of an antisymmetric matrix to a vector can be written as a cross product. Let $\Omega . =: \omega \times .$ to obtain
+\begin{equation}
+\label{eqn:assspvel}
+\dot{x} = \omega \times x + (\dot{c} - \omega \times c) =: \omega \times x + v_0
+\end{equation}
+
+The motion of a rigid body therefore induces a velocity field,
+\begin{equation}
+v(x) = \omega \times x + v_0
+\end{equation}
+$(\omega, v_0)$ can be understood as a six-dimensional vector called a \textit{spatial motion vector}. The behaviour of such spatial motion vectors under coordinate transforms follows from the requirement that
+\begin{equation}
+\label{eqn:trequality}
+v^\prime(x^\prime) \stackrel{!}{=} (v(x))^\prime
+\end{equation}
+Under an affine transform (\ref{eqn:atdef}), $v(x)$ transforms as
+\begin{equation}
+(v(x))^\prime = R v(x)
+\end{equation}
+so (\ref{eqn:trequality}) can be written as
+\begin{eqnarray}
+\omega^\prime \times (Rx + c) + v_0^\prime &\stackrel{!}{=}& R(\omega \times x + v_0)\\
+\omega^\prime \times (Rx) + \omega^\prime \times c + v_0^\prime
+&\stackrel{!}{=}& (R\omega) \times (Rx) + R v_0
+\end{eqnarray}
+From this, we can conclude that
+\begin{equation}
+\omega^\prime = R \omega
+\end{equation}
+and
+\begin{eqnarray}
+\nonumber v_0^\prime &=& - \omega^\prime \times c + R v_0\\
+\nonumber &=& - (R \omega) \times c + R v_0\\
+&=& c \times (R \omega) + R v_0
+\end{eqnarray}
+
+The elements of the dual vector space of the spatial motion vectors are called \textit{spatial force vectors}. The scalar product is given by
+\begin{equation}
+(m, f) \cdot (\omega, v_0) = m \cdot \omega + f \cdot v_0 = m^\top \omega + f^\top v_0
+\end{equation}
+It has a physical interpretation as the power delivered by the spatial force for a given spatial velocity. The transformation behaviour of the spatial force vectors is given by the requirement that the scalar product be invariant under coordinate transforms, i.e.
+\begin{eqnarray}
+(m, f) \cdot (\omega, v_0) &\stackrel{!}{=}& (m^\prime, f^\prime) \cdot (\omega^\prime, v_0^\prime)\\
+(m, f) \cdot (\omega, v_0) &\stackrel{!}{=}& (m^\prime, f^\prime) \cdot (R \omega, c \times (R \omega) + R v_0)\\
+m \cdot \omega + f \cdot v_0 &\stackrel{!}{=}& m^\prime \cdot (R \omega) + f^\prime \cdot (c \times (R \omega) + R v_0)\\
+m \cdot \omega + f \cdot v_0 &\stackrel{!}{=}& m^\prime \cdot (R \omega) + f^\prime \cdot (c \times (R \omega)) + f^\prime \cdot (R v_0)\\
+m \cdot \omega + f \cdot v_0 &\stackrel{!}{=}& m^\prime \cdot (R \omega) + (R \omega) \cdot (f^\prime \times c) + f^\prime \cdot (R v_0)\\
+m \cdot \omega + f \cdot v_0 &\stackrel{!}{=}& (m^\prime + f^\prime \times c) \cdot (R \omega)  + f^\prime \cdot (R v_0)\\
+(R m) \cdot (R \omega) + (R f) \cdot (R v_0) &\stackrel{!}{=}& (m^\prime + f^\prime \times c) \cdot (R \omega)  + f^\prime \cdot (R v_0)
+\end{eqnarray}
+from which we can conclude that
+\begin{equation}
+f^\prime = R f
+\end{equation}
+and
+\begin{eqnarray}
+\nonumber m^\prime &=& Rm - f^\prime \times c\\
+\nonumber &=& Rm - (Rf) \times c\\
+&=& Rm + c \times (Rf)
+\end{eqnarray}
+
+In the next step, we wish to examine the behaviour of derivatives of spatial motion vectors. To that end, let $(\chi, u)$ be a spatial motion vector given by a time-varying transform applied to a fixed vector $(\chi_0, u_0)$:
+\begin{equation}
+\left(\begin{array}{c}\chi\\u\end{array}\right) = 
+\left(\begin{array}{c}
+R \chi_0\\
+c \times (R \chi_0) + R u_0
+\end{array}\right)
+=\left(\begin{array}{c}
+R \chi_0\\
+R((R^\top c) \times \chi_0) + R u_0
+\end{array}\right)
+\end{equation}
+The time derivative is then given by ($\dot{\chi_0} = \dot{u_0} = 0$):
+\begin{eqnarray}
+\left(\begin{array}{c} \dot{\chi} \\ \dot{u} \end{array}\right) &=&
+\left(\begin{array}{c} \dot{R} \chi_0 \\ \dot{R}((R^\top c) \times \chi_0) + R((\dot{R}^\top c + R^\top \dot{c}) \times \chi_0) + \dot{R}u_0 \end{array}\right)\\
+&=& \left(\begin{array}{c}\Omega R \chi_0\\ \Omega R ((R^\top c) \times \chi_0) + \Omega R u_0 + (R \dot{R}^\top c + \dot{c}) \times (R \chi_0)\end{array}\right)\\
+&=& \left(\begin{array}{c}\Omega \chi\\ \Omega (c \times (R \chi_0)) + \Omega R u_0 + (R (\Omega R)^\top c + \dot{c}) \times (R \chi_0)\end{array}\right)\\
+&=& \left(\begin{array}{c} \Omega \chi\\ \Omega u + (R R^\top \Omega^\top c + \dot{c}) \times \chi\end{array}\right)\\
+&=& \left(\begin{array}{c} \Omega \chi\\ \Omega u + (\dot{c} - \Omega c) \times \chi \end{array}\right)
+\end{eqnarray}
+Now, let $(\omega, v_0)$ be the spatial motion vector associated with the time-varying transform (\ref{eqn:assspvel}):
+\begin{equation}
+\left(\begin{array}{c}\dot{\chi}\\ \dot{u}\end{array} \right) =
+\left(\begin{array}{c} \omega \times \chi\\ \omega \times u + (\dot{c} - \omega \times c) \times \chi \end{array}\right) =
+\left(\begin{array}{c} \omega \times \chi\\ \omega \times u + v_0 \times \chi \end{array}\right)
+\end{equation}
+
+Likewise, let $(m, f)$ be a spatial force vector given by a time-varying transform applied to a constant spatial force vector $(m_0, f_0)$:
+\begin{equation}
+\left(\begin{array}{c}m\\f\end{array}\right) =
+\left(\begin{array}{c}R m_0 + c \times (R f_0)\\R f_0\end{array}\right) =
+\left(\begin{array}{c}R m_0 + R((R^\top c) \times f_0)\\ R f_0\end{array}\right)
+\end{equation}
+
+The time derivative is then given by ($\dot{m_0} = \dot{f_0} = 0$):
+\begin{eqnarray}
+\left(\begin{array}{c} \dot{m}\\ \dot{f} \end{array}\right) &=&
+\left(\begin{array}{c} \dot{R}m_0 + \dot{R}((R^\top c) \times f_0) + R((\dot{R}^\top c + R^\top \dot{c}) \times f_0)\\ \dot{R} f_0 \end{array}\right)\\
+&=& \left(\begin{array}{c} \Omega R m_0 + \Omega R ((R^\top c) \times f_0) + (R (\Omega R)^\top c + \dot{c})\times (R f_0)\\ \Omega R f_0 \end{array}\right)\\
+&=& \left( \begin{array}{c} \Omega R m_0 + \Omega (c \times (R f_0)) + (\Omega^\top c + \dot{c})\times (R f_0)\\\Omega R f_0 \end{array}\right)\\
+&=& \left( \begin{array}{c} \Omega m + (\dot{c} - \Omega c) \times f\\ \Omega f \end{array} \right)
+\end{eqnarray}
+Again, let $(\omega, v_0)$ be the spatial motion vector associated with the time-varying transform (\ref{eqn:assspvel}):
+\begin{equation}
+\left(\begin{array}{c} \dot{m} \\ \dot{f} \end{array} \right) = \left(\begin{array}{c} \omega \times m + v_0 \times f\\ \omega \times f \end{array}\right)
+\end{equation}
+
+This suggests defining spatial cross products via
+\begin{equation}
+\left(\begin{array}{c}\dot{\chi}\\\dot{u} \end{array}\right) =
+\left(\begin{array}{c}\omega\\ v\end{array}\right) \times \left(\begin{array}{c} \chi\\u \end{array}\right)
+\end{equation}
+for spatial motion vectors and
+\begin{equation}
+\left(\begin{array}{c}\dot{m}\\\dot{f} \end{array}\right) =
+\left(\begin{array}{c}\omega\\ v\end{array}\right) \times^* \left(\begin{array}{c} m\\f \end{array}\right)
+\end{equation}
+for spatial force vectors.
+\end{document}
