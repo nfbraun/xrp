@@ -75,8 +75,8 @@ inline Eigen::Vector3d cylinderMOI(double h, double r)
 {
     return cylinderMass(h, r) *
         Eigen::Vector3d( (3.*r*r + h*h) / 12.,
-                         r*r / 2.,
-                         (3.*r*r + h*h) / 12.);
+                         (3.*r*r + h*h) / 12.,
+                         r*r / 2.);
 }
 
 inline double rbMass(unsigned int id)
