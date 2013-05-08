@@ -22,4 +22,11 @@ class ContactData {
     
     std::vector<ContactPoint> pLeft;
     std::vector<ContactPoint> pRight;
+    
+    // Left and right foot positions, in world coordinates
+    Vector3d lPos, rPos;
+    
+    // Total force and torque, in world coordinates
+    Vector3d lFtot, lTtot;
+    Vector3d rFtot, rTtot;
 };

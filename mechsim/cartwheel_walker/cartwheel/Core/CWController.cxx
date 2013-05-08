@@ -55,6 +55,12 @@ JointSpTorques CWController::Run(double dt, const ContactData& cdata, double des
     fDbg.rFootNF = cinfo.getNormalForceOnFoot(B_R_FOOT);
     fDbg.rFootTF = cinfo.getTangentialForceOnFoot(B_R_FOOT);
     
+    ArticulatedRigidBody* lFootRB = rinfo.character()->getARBs()[B_L_FOOT];
+    ArticulatedRigidBody* rFootRB = rinfo.character()->getARBs()[B_R_FOOT];
+    
+    fDbg.lCoP = cinfo.getCoP2(B_L_FOOT, lFootRB);
+    fDbg.rCoP = cinfo.getCoP2(B_R_FOOT, rFootRB);
+    
 #ifndef USE_WALK_CONTROLLER
     fHighCtrl.requestHeading(rinfo, desiredHeading);
 #endif

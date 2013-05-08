@@ -293,10 +293,12 @@ void Cartwheel::LockStanceFoot(int stance)
         fLFootStickyJ = dJointCreateFixed(fWorld, 0);
         dJointAttach(fLFootStickyJ, 0, fRobot->fBodies[B_L_FOOT]);
         dJointSetFixed(fLFootStickyJ);
+        dJointSetFeedback(fLFootStickyJ, &fLeftFeedback[0]);
     } else {
         fRFootStickyJ = dJointCreateFixed(fWorld, 0);
         dJointAttach(fRFootStickyJ, 0, fRobot->fBodies[B_R_FOOT]);
         dJointSetFixed(fRFootStickyJ);
+        dJointSetFeedback(fRFootStickyJ, &fRightFeedback[0]);
     }
 }
 
@@ -325,8 +327,18 @@ void Cartwheel::SetFakeContactData(int stance)
     fCData.pRight.clear();
     
     if(stance == LEFT_STANCE) {
+        fCData.lFtot = Vector3d(fLeftFeedback[0].f1[0], fLeftFeedback[0].f1[1], fLeftFeedback[0].f1[2]);
+        fCData.lTtot = Vector3d(fLeftFeedback[0].t1[0], fLeftFeedback[0].t1[1], fLeftFeedback[0].t1[2]);
+        fCData.rFtot = Vector3d(0., 0., 0.);
+        fCData.rTtot = Vector3d(0., 0., 0.);
+        
         SetFakeContactDataForFoot(fCData.pLeft, ODE::BodyGetPosition(fRobot->fBodies[B_L_FOOT]));
     } else {
+        fCData.lFtot = Vector3d(0., 0., 0.);
+        fCData.lTtot = Vector3d(0., 0., 0.);
+        fCData.rFtot = Vector3d(fRightFeedback[0].f1[0], fRightFeedback[0].f1[1], fRightFeedback[0].f1[2]);
+        fCData.rTtot = Vector3d(fRightFeedback[0].t1[0], fRightFeedback[0].t1[1], fRightFeedback[0].t1[2]);
+        
         SetFakeContactDataForFoot(fCData.pRight, ODE::BodyGetPosition(fRobot->fBodies[B_R_FOOT]));
     }
 }
@@ -374,6 +386,9 @@ void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
     Collide(fRobot->fRFootG, fFloorG, fCData.pRight, fRightFeedback);
     #endif
     
+    fCData.lPos = ODE::BodyGetPosition(fRobot->fBodies[B_L_FOOT]);
+    fCData.rPos = ODE::BodyGetPosition(fRobot->fBodies[B_R_FOOT]);
+    
     //advance the simulation
     dWorldStep(fWorld, dt);
     
@@ -389,11 +404,34 @@ void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
     assert(fCData.pLeft.size() < MAX_CONTACTS);
     assert(fCData.pRight.size() < MAX_CONTACTS);
     
+    fCData.lFtot = Vector3d(0., 0., 0.);
+    fCData.lTtot = Vector3d(0., 0., 0.);
+    fCData.rFtot = Vector3d(0., 0., 0.);
+    fCData.rTtot = Vector3d(0., 0., 0.);
+    
     for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
         fCData.pLeft[i].f = Vector3d(fLeftFeedback[i].f1[0], fLeftFeedback[i].f1[1], fLeftFeedback[i].f1[2]);
+        
+        Vector3d f(fLeftFeedback[i].f1[0], fLeftFeedback[i].f1[1], fLeftFeedback[i].f1[2]);
+        Vector3d t(fLeftFeedback[i].t1[0], fLeftFeedback[i].t1[1], fLeftFeedback[i].t1[2]);
+        /* BEGIN test */
+        Vector3d r = Eigen::Vector3d(fCData.pLeft[i].cp.x(), fCData.pLeft[i].cp.y(), fCData.pLeft[i].cp.z());
+        Vector3d tp = (r - fCData.lPos).cross(f);
+        assert((tp - t).squaredNorm() < 1e-12);
+        assert(std::abs(r.z()) < 1e-3);
+        /* END test */
+        
+        fCData.lFtot += f;
+        fCData.lTtot += t;
     }
     for (unsigned int i=0; i<fCData.pRight.size(); i++) {
         fCData.pRight[i].f = Vector3d(fRightFeedback[i].f1[0], fRightFeedback[i].f1[1], fRightFeedback[i].f1[2]);
+        
+        Vector3d f(fRightFeedback[i].f1[0], fRightFeedback[i].f1[1], fRightFeedback[i].f1[2]);
+        Vector3d t(fRightFeedback[i].t1[0], fRightFeedback[i].t1[1], fRightFeedback[i].t1[2]);
+        
+        fCData.rFtot += f;
+        fCData.rTtot += t;
     }
     #endif
     

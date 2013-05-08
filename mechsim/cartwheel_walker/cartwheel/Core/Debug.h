@@ -15,4 +15,6 @@ class DebugInfo {
     
     double lFootNF, lFootTF;
     double rFootNF, rFootTF;
+    
+    Vector3d lCoP, rCoP;
 };

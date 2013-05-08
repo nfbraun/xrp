@@ -13,19 +13,13 @@ ContactInfo::ContactInfo(const ContactData& cdata)
 */
 Vector3d ContactInfo::getForceOnFoot(unsigned int rb_id) const
 {
-    Vector3d fNet = Vector3d(0., 0., 0.);
-    
     if(rb_id == B_L_FOOT) {
-        for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
-            fNet += fCData.pLeft[i].f;
-        }
+        return fCData.lFtot;
     } else if(rb_id == B_R_FOOT) {
-        for (unsigned int i=0; i<fCData.pRight.size(); i++) {
-            fNet += fCData.pRight[i].f;
-        }
+        return fCData.rFtot;
+    } else {
+        assert(false); // invalid argument
     }
-    
-    return fNet;
 }
 
 double ContactInfo::getNormalForceOnFoot(unsigned int rb_id) const
@@ -39,6 +33,57 @@ double ContactInfo::getTangentialForceOnFoot(unsigned int rb_id) const
     const Vector3d n = PhysicsGlobals::up;
     
     return (f - n*(f.dot(n))).norm();
+}
+
+Vector3d ContactInfo::getCoP(unsigned int rb_id, const RigidBody* rb) const
+{
+    double fn_tot = 0.;
+    Point3d cop(0., 0., 0.);
+    
+    if(rb_id == B_L_FOOT) {
+        for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
+            double fn = fCData.pLeft[i].f.dot(PhysicsGlobals::up);
+            cop += fn * fCData.pLeft[i].cp;
+            fn_tot += fn;
+        }
+    } else if(rb_id == B_R_FOOT) {
+        for (unsigned int i=0; i<fCData.pRight.size(); i++) {
+            double fn = fCData.pRight[i].f.dot(PhysicsGlobals::up);
+            cop += fn * fCData.pRight[i].cp;
+            fn_tot += fn;
+        }
+    } else {
+        assert(false); // invalid argument
+    }
+    
+    if(fn_tot < 0.0001)
+        return cop;
+    else
+        return rb->getLocalCoordinatesForPoint(cop/fn_tot);
+}
+
+Vector3d ContactInfo::getCoP2(unsigned int rb_id, const RigidBody* rb) const
+{
+    const double h = CharacterConst::footSizeZ / 2.;
+    const Vector3d n = PhysicsGlobals::up;
+    
+    if(rb_id == B_L_FOOT) {
+        if(fCData.lFtot.dot(n) < 0.0001) {
+            return Vector3d(0., 0., 0.);
+        } else {
+            Point3d p = (n.cross(fCData.lTtot) - h*fCData.lFtot)/(fCData.lFtot.dot(n));
+            return rb->getLocalCoordinatesForVector(p);
+        }
+    } else if(rb_id == B_R_FOOT) {
+        if(fCData.rFtot.dot(n) < 0.0001) {
+            return Vector3d(0., 0., 0.);
+        } else {
+            Point3d p = (n.cross(fCData.rTtot) - h*fCData.rFtot)/(fCData.rFtot.dot(n));
+            return rb->getLocalCoordinatesForVector(p);
+        }
+    } else {
+        assert(false); // invalid argument
+    }
 }
 
 /**
