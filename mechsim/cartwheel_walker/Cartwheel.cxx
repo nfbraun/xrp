@@ -2,6 +2,7 @@
 #include "RotMotion.h"
 #include "GLHelper.h"
 #include "ODEHelper.h"
+#include "DynTransform.h"
 #include <GL/gl.h>
 #include <cmath>
 
@@ -471,60 +472,17 @@ void Cartwheel::Advance()
     }
 }
 
-void printMat(const dReal* x)
-{
-    std::cout << x[0] << " " << x[1] << " " << x[2] << std::endl;
-    std::cout << x[4] << " " << x[5] << " " << x[6] << std::endl;
-    std::cout << x[8] << " " << x[9] << " " << x[10] << std::endl;
-    std::cout << std::endl;
-}
-
-void decompRot3(const dReal* R_p, const dReal* R_c, double& phi0, double& phi1, double& phi2)
-{
-    const double R0 = R_p[0]*R_c[0] + R_p[4]*R_c[4] + R_p[8]*R_c[8];
-    const double R1 = R_p[0]*R_c[1] + R_p[4]*R_c[5] + R_p[8]*R_c[9];
-    const double R2 = R_p[0]*R_c[2] + R_p[4]*R_c[6] + R_p[8]*R_c[10];
-    const double R6 = R_p[1]*R_c[2] + R_p[5]*R_c[6] + R_p[9]*R_c[10];
-    const double R10 = R_p[2]*R_c[2] + R_p[6]*R_c[6] + R_p[10]*R_c[10];
-    
-    phi1 = asin(-R2);
-    const double c_phi1 = cos(phi1);
-    
-    phi0 = atan2(R1/c_phi1, R0/c_phi1);
-    phi2 = atan2(R6/c_phi1, R10/c_phi1);
-}
-
-void transformOmega(const dReal* R_c, const dReal* omega_p, const dReal* omega_c, double& omega0, double& omega1, double& omega2)
-{
-    const double omega[3] = 
-        { omega_c[0] - omega_p[0], omega_c[1] - omega_p[1], omega_c[2] - omega_p[2] };
-    
-    omega0 = R_c[0] * omega[0] + R_c[4] * omega[1] + R_c[8] * omega[2];
-    omega1 = R_c[1] * omega[0] + R_c[5] * omega[1] + R_c[9] * omega[2];
-    omega2 = R_c[2] * omega[0] + R_c[6] * omega[1] + R_c[10] * omega[2];
-}
-
-void transformTorque(const dReal* R, const Eigen::Vector3d& torque, double& t0, double& t1, double& t2)
-{
-    t0 = R[0] * torque[0] + R[4] * torque[1] + R[8] * torque[2];
-    t1 = R[1] * torque[0] + R[5] * torque[1] + R[9] * torque[2];
-    t2 = R[2] * torque[0] + R[6] * torque[1] + R[10] * torque[2];
-}
-
-void printVector(const Eigen::Vector3d& vec)
-{
-    std::cout << "(" << vec.x() << ", " << vec.y() << ", " << vec.z() << ")";
-}
-
 CartState Cartwheel::GetCurrentState()
 {
-    double tmp[4];
     CartState state;
     
     state.fParent = this;
     for(unsigned int b=0; b<B_MAX; b++)
         state.fFState.q(b) = QFromODE(fRobot->fBodies[b]);
     
+    state.fJState = jointFromFull(state.fFState);
+    
+    double tmp[4];
     dJointGetUniversalAnchor(fRobot->fLAnkleJ, tmp);
     state.fJPos[J_L_ANKLE] = Eigen::Vector3d(tmp);
     dJointGetHingeAnchor(fRobot->fLKneeJ, tmp);
@@ -538,28 +496,7 @@ CartState Cartwheel::GetCurrentState()
     dJointGetBallAnchor(fRobot->fRHipJ, tmp); 
     state.fJPos[J_R_HIP] = Eigen::Vector3d(tmp);
     
-    Vector3d com = fRobot->fCharacter->getCOM();
-    state.fCoM = Eigen::Vector3d(com.x(), com.y(), com.z());
-    
     /*** left leg ***/
-    Eigen::Vector3d lKneeAxis = ODE::JointGetHingeAxis(fRobot->fLKneeJ);
-    
-    // FIXME: figure out the signs
-    decompRot3(dBodyGetRotation(fRobot->fBodies[B_PELVIS]), dBodyGetRotation(fRobot->fBodies[B_L_THIGH]),
-        state.fRobot.phi[LH0], state.fRobot.phi[LH1], state.fRobot.phi[LH2]);
-    state.fRobot.phi[LK] = -dJointGetHingeAngle(fRobot->fLKneeJ);
-    state.fRobot.phi[LA0] = -dJointGetUniversalAngle1(fRobot->fLAnkleJ);
-    state.fRobot.phi[LA1] = -dJointGetUniversalAngle2(fRobot->fLAnkleJ);
-    
-    transformOmega(dBodyGetRotation(fRobot->fBodies[B_L_FOOT]),
-                   dBodyGetAngularVel(fRobot->fBodies[B_L_SHANK]),
-                   dBodyGetAngularVel(fRobot->fBodies[B_L_FOOT]),
-                   state.fRobot.omega[LH0], state.fRobot.omega[LH1], state.fRobot.omega[LH2]);
-    
-    state.fRobot.omega[LK] = dJointGetHingeAngleRate(fRobot->fLKneeJ);
-    state.fRobot.omega[LA0] = dJointGetUniversalAngle1Rate(fRobot->fLAnkleJ);
-    state.fRobot.omega[LA1] = dJointGetUniversalAngle2Rate(fRobot->fLAnkleJ);
-    
     state.fTorques[LH0] = fDebugJTorques.fLeftLeg[0];
     state.fTorques[LH1] = fDebugJTorques.fLeftLeg[1];
     state.fTorques[LH2] = fDebugJTorques.fLeftLeg[2];
@@ -568,24 +505,6 @@ CartState Cartwheel::GetCurrentState()
     state.fTorques[LA1] = fDebugJTorques.fLeftLeg[5];
     
     /*** right leg ***/
-    Eigen::Vector3d rKneeAxis = ODE::JointGetHingeAxis(fRobot->fRKneeJ);
-    
-    // FIXME: figure out the signs
-    decompRot3(dBodyGetRotation(fRobot->fBodies[B_PELVIS]), dBodyGetRotation(fRobot->fBodies[B_R_THIGH]),
-        state.fRobot.phi[RH0], state.fRobot.phi[RH1], state.fRobot.phi[RH2]);
-    state.fRobot.phi[RK] = -dJointGetHingeAngle(fRobot->fRKneeJ);
-    state.fRobot.phi[RA0] = -dJointGetUniversalAngle1(fRobot->fRAnkleJ);
-    state.fRobot.phi[RA1] = -dJointGetUniversalAngle2(fRobot->fRAnkleJ);
-    
-    transformOmega(dBodyGetRotation(fRobot->fBodies[B_R_FOOT]),
-                   dBodyGetAngularVel(fRobot->fBodies[B_R_SHANK]),
-                   dBodyGetAngularVel(fRobot->fBodies[B_R_FOOT]),
-                   state.fRobot.omega[RH0], state.fRobot.omega[RH1], state.fRobot.omega[RH2]);
-    
-    state.fRobot.omega[RK] = dJointGetHingeAngleRate(fRobot->fRKneeJ);
-    state.fRobot.omega[RA0] = dJointGetUniversalAngle1Rate(fRobot->fRAnkleJ);
-    state.fRobot.omega[RA1] = dJointGetUniversalAngle2Rate(fRobot->fRAnkleJ);
-    
     state.fTorques[RH0] = fDebugJTorques.fRightLeg[0];
     state.fTorques[RH1] = fDebugJTorques.fRightLeg[1];
     state.fTorques[RH2] = fDebugJTorques.fRightLeg[2];
@@ -594,8 +513,6 @@ CartState Cartwheel::GetCurrentState()
     state.fTorques[RA1] = fDebugJTorques.fRightLeg[5];
     
     state.fDbg = fController->fDbg;
-    
-    // state.fSwingPos = ODE::JointGetUniversalAnchor(fRobot->fLKneeJ);
     
     return state;
 }

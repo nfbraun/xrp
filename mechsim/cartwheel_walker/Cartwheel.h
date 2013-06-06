@@ -14,12 +14,6 @@
 
 extern const char* PhiNames[];
 
-class RobotState {
-  public:
-    double phi[12];
-    double omega[12];
-};
-
 class Cartwheel;
 
 class CartState: public SimulationState {
@@ -28,13 +22,10 @@ class CartState: public SimulationState {
     double fT;
     
     FullState fFState;
+    JSpState fJState;
     
     Eigen::Vector3d fJPos[J_MAX];
     double fTorques[12];
-    
-    Eigen::Vector3d fCoM;
-    
-    RobotState fRobot;
     
     DebugInfo fDbg;
     
@@ -46,53 +37,31 @@ class CartState: public SimulationState {
         { return fFState.pos(B_PELVIS); }
     
     virtual double GetData(int ch) const {
-        switch(ch) {
-            case 0: return fRobot.phi[LH0];
-            case 1: return fRobot.phi[LH1];
-            case 2: return fRobot.phi[LH2];
-            case 3: return fRobot.phi[LK];
-            case 4: return fRobot.phi[LA0];
-            case 5: return fRobot.phi[LA1];
-            
-            case 6: return fRobot.phi[RH0];
-            case 7: return fRobot.phi[RH1];
-            case 8: return fRobot.phi[RH2];
-            case 9: return fRobot.phi[RK];
-            case 10: return fRobot.phi[RA0];
-            case 11: return fRobot.phi[RA1];
-            
-            case 12: return fRobot.omega[LH0];
-            case 13: return fRobot.omega[LH1];
-            case 14: return fRobot.omega[LH2];
-            case 15: return fRobot.omega[LK];
-            case 16: return fRobot.omega[LA0];
-            case 17: return fRobot.omega[LA1];
-            
-            case 18: return fRobot.omega[RH0];
-            case 19: return fRobot.omega[RH1];
-            case 20: return fRobot.omega[RH2];
-            case 21: return fRobot.omega[RK];
-            case 22: return fRobot.omega[RA0];
-            case 23: return fRobot.omega[RA1];
-            
-            case 24: return fTorques[LH0];
-            case 25: return fTorques[LH1];
-            case 26: return fTorques[LH2];
-            case 27: return fTorques[LK];
-            case 28: return fTorques[LA0];
-            case 29: return fTorques[LA1];
-            
-            case 30: return fTorques[RH0];
-            case 31: return fTorques[RH1];
-            case 32: return fTorques[RH2];
-            case 33: return fTorques[RK];
-            case 34: return fTorques[RA0];
-            case 35: return fTorques[RA1];
-            
-            //case 36: return fContactL;
-            //case 37: return fContactR;
-            
-            default: return std::numeric_limits<double>::quiet_NaN();
+        if(ch < DOF_MAX) {
+            return fJState.phi(ch);
+        } else if(ch < 2*DOF_MAX) {
+            return fJState.omega(ch - DOF_MAX);
+        } else {
+            switch(ch) {
+                case 24: return fTorques[LH0];
+                case 25: return fTorques[LH1];
+                case 26: return fTorques[LH2];
+                case 27: return fTorques[LK];
+                case 28: return fTorques[LA0];
+                case 29: return fTorques[LA1];
+                
+                case 30: return fTorques[RH0];
+                case 31: return fTorques[RH1];
+                case 32: return fTorques[RH2];
+                case 33: return fTorques[RK];
+                case 34: return fTorques[RA0];
+                case 35: return fTorques[RA1];
+                
+                //case 36: return fContactL;
+                //case 37: return fContactR;
+                
+                default: return std::numeric_limits<double>::quiet_NaN();
+            }
         }
     }
     
@@ -120,6 +89,7 @@ class Cartwheel: public Simulation {
     
     virtual int GetNDataCh() const { return 36; }
     virtual const char* GetChName(int ch) const {
+    // FIXME: make use of dofName()
         switch(ch) {
             case 0: return "p_LH0";
             case 1: return "p_LH1";
