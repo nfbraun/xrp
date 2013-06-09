@@ -304,6 +304,7 @@ a_H^{(P)} = \omega_\mathrm{HX} R_z(\phi_\mathrm{HZ}) R_y(\phi_\mathrm{HY}) e_x
 
 We define a transformation matrix $Q$ via
 \begin{equation}
+\label{eqn:qdef}
 a_H^{(P)} = Q \left(\begin{array}{c}
 \omega_\mathrm{HX} \\ \omega_\mathrm{HY} \\ \omega_\mathrm{HZ}
 \end{array}\right)
@@ -331,6 +332,13 @@ c_z/c_y & s_z/c_y & 0\\
 s_y c_z / c_y & s_y s_z / c_y & 1
 \end{array}\right)
 \end{equation}
+so that
+\begin{equation}
+\left(\begin{array}{c}
+\omega_\mathrm{HX} \\ \omega_\mathrm{HY} \\ \omega_\mathrm{HZ}
+\end{array}\right)
+= Q^{-1} a_H^{(P)}
+\end{equation}
 
 \subsection{Knee joint}
 The angular velocity difference across the knee joint, expressed in the thigh frame, is
@@ -354,5 +362,41 @@ with $c_y = \cos(\phi_\mathrm{AY})$, etc.
 To extract $\omega_\mathrm{AX}$, note that
 \begin{equation}
 c_y \cdot (c_y \omega_\mathrm{AX}) - s_y \cdot(-s_y \omega_\mathrm{AX}) = \omega_\mathrm{AX}
+\end{equation}
+
+\section{Generalized forces}
+To convert joint torques to generalized forces, note that the power supplied to the system by the generalized forces is given by the scalar product between generalized forces and generalized velocities. Considering the hip joint, this means that
+\begin{equation}
+\left<a_H^{(P)}, T_H^{(P)}\right> \stackrel{!}{=} \omega_\mathrm{HX} u_\mathrm{HX} + \omega_\mathrm{HY} u_\mathrm{HY} + \omega_\mathrm{HZ} u_\mathrm{HZ}
+\end{equation}
+where $T_H^{(P)}$ is the hip torque, expressed in the pelvis frame, and $u_\mathrm{HX}, u_\mathrm{HY}, u_\mathrm{HZ}$ are the generalized forces on the hip. $T_H^{(P)}$ and $u_\mathrm{HX}, u_\mathrm{HY}, u_\mathrm{HZ}$ are related by a linear map,
+\begin{equation}
+T_H^{(P)} = A \left(\begin{array}{c}
+u_\mathrm{HX} \\ u_\mathrm{HY} \\ u_\mathrm{HZ}
+\end{array}\right)
+\end{equation}
+Using (\ref{eqn:qdef}) to express $a_H^{(P)}$ in terms of $\omega_\mathrm{HX}, \omega_\mathrm{HY}, \omega_\mathrm{HZ}$, we get
+\begin{equation}
+\left<Q
+\left(\begin{array}{c}
+\omega_\mathrm{HX} \\ \omega_\mathrm{HY} \\ \omega_\mathrm{HZ}
+\end{array}\right), A
+\left(\begin{array}{c}
+u_\mathrm{HX} \\ u_\mathrm{HY} \\ u_\mathrm{HZ}
+\end{array}\right)
+\right> \stackrel{!}{=} \omega_\mathrm{HX} u_\mathrm{HX} + \omega_\mathrm{HY} u_\mathrm{HY} + \omega_\mathrm{HZ} u_\mathrm{HZ}
+\end{equation}
+which implies $Q^\top A = 1$ or $A = (Q^\top)^{-1}$. Therefore,
+\begin{equation}
+T_H^{(P)} = (Q^{-1})^\top \left(\begin{array}{c}
+u_\mathrm{HX} \\ u_\mathrm{HY} \\ u_\mathrm{HZ}
+\end{array}\right)
+\end{equation}
+and
+\begin{equation}
+\left(\begin{array}{c}
+u_\mathrm{HX} \\ u_\mathrm{HY} \\ u_\mathrm{HZ}
+\end{array}\right)
+= Q^\top T_H^{(P)}
 \end{equation}
 \end{document}

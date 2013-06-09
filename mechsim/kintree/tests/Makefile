@@ -9,13 +9,22 @@ EIGEN_INCL = -I../../../eigen-eigen-3.0.1/
 
 # joint3_ana and joint4_ana do not compile
 # (they were steps during the development of the KinTree class)
-all: rotation rotation_ana joint joint_ana joint2 joint2_ana joint3 joint5_ana
+all: rotation rotation_ana balljoint balljoint_ana joint joint_ana joint2 joint2_ana joint3 joint5_ana
 
 rotation: rotation.cxx
 	g++ -o $@ $(CFLAGS) $(LDFLAGS) $(LIBS) rotation.cxx
 
 rotation_ana: rotation_ana.cxx Makefile
 	g++ -g -o rotation_ana -lgsl -lblas $(GIJIT_INCL) -I../../acrobot/ana $(GIJIT_LIBS) ../../acrobot/ana/Lagrange.o ../../acrobot/ana/ODESolver.o ../../acrobot/ana/RawODESolver.o rotation_ana.cxx
+
+balljoint: balljoint.cxx
+	g++ -o $@ $(CFLAGS) $(LDFLAGS) $(LIBS) balljoint.cxx
+
+balljoint_ana.o: balljoint_ana.cxx Makefile
+	g++ $(EIGEN_INCL) -O3 -I../../acrobot/ana -o $@ -c $<
+
+balljoint_ana: balljoint_ana.o ../KinTree.o ../CWJoints.o Makefile
+	g++ -O3 -o $@ -lgsl -lblas ../../acrobot/ana/RawODESolver.o ../KinTree.o ../CWJoints.o balljoint_ana.o
 
 joint: joint.cxx
 	g++ -o $@ $(CFLAGS) $(LDFLAGS) $(LIBS) joint.cxx
