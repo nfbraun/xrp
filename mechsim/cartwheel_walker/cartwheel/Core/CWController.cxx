@@ -83,6 +83,15 @@ JSpTorques CWController::Run(double dt, const ContactData& cdata, double desired
         desiredPos, desiredVel, highTarget.swingFootHeight, highTarget.swingFootHeightVel);
     
     const double comOffsetCoronal = fInvPendCtrl.calcComOffsetCoronal(rinfo);
+    
+    fDbg.offCoronal = rinfo.getD().y();
+    fDbg.velCoronal = rinfo.getV().y();
+    fDbg.velSagittal = rinfo.getV().x();
+    
+    fDbg.desOffCoronal = comOffsetCoronal;
+    fDbg.desVelCoronal = highTarget.velDCoronal;
+    fDbg.desVelSagittal = highTarget.velDSagittal;
+    
     return fTorqueCtrl.computeTorques(rinfo, cinfo, swingLegTarget,
         comOffsetCoronal, highTarget.velDSagittal, highTarget.velDCoronal,
         highTarget.desiredHeading);

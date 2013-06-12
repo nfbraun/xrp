@@ -45,6 +45,12 @@ int main(int argc, char** argv)
     
     vectHeader("swp");    // desired swing foot pos
     vectHeader("swv");    // desired swing foot velocity
+    scalarHeader("oc");   // CoM offset coronal
+    scalarHeader("vc");   // CoM velocity coronal
+    scalarHeader("vs");   // CoM velocity sagittal
+    scalarHeader("doc");  // desired CoM offset coronal
+    scalarHeader("dvc");  // desired CoM velocity coronal
+    scalarHeader("dvs");  // desired CoM velocity sagittal
     vectHeader("vrf");    // virtual root force
     vectHeader("vrt");    // virtual root torque
     
@@ -73,6 +79,14 @@ int main(int argc, char** argv)
         
         printVect(state.fDbg.desSwingPos);
         printVect(state.fDbg.desSwingVel);
+        
+        printScalar(state.fDbg.offCoronal);
+        printScalar(state.fDbg.velCoronal);
+        printScalar(state.fDbg.velSagittal);
+        printScalar(state.fDbg.desOffCoronal);
+        printScalar(state.fDbg.desVelCoronal);
+        printScalar(state.fDbg.desVelSagittal);
+        
         printVect(state.fDbg.virtualRootForce);
         printVect(state.fDbg.virtualRootTorque);
         
