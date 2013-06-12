@@ -3,6 +3,34 @@
 
 /* See DynTransform.h for function documentation. */
 
+Eigen::Vector3d transformHipTorque(double hz, double hy, double hx, double thz, double thy, double thx)
+{
+    const double cz = cos(hz);
+    const double sz = sin(hz);
+    const double cy = cos(hy);
+    const double sy = sin(hy);
+    
+    Eigen::Matrix3d QinvT;
+    
+    QinvT << cz/cy, -sz, sy*cz/cy,
+             sz/cy,  cz, sy*sz/cy,
+             0.,     0.,       1.;
+    
+    return QinvT * Eigen::Vector3d(thx, thy, thz);
+}
+
+void invTransformHipTorque(double hz, double hy, double hx, const Eigen::Vector3d& T, double& thz, double& thy, double& thx)
+{
+    const double cz = cos(hz);
+    const double sz = sin(hz);
+    const double cy = cos(hy);
+    const double sy = sin(hy);
+    
+    thx = cy*cz*T.x() + cy*sz*T.y() - sy*T.z();
+    thy = -sz*T.x() + cz*T.y();
+    thz = T.z();
+}
+
 void decompYRot(const Eigen::Quaterniond q, double& y)
 {
     y = 2. * atan(q.y() / q.w());

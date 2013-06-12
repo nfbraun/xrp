@@ -16,12 +16,12 @@ class IKSwingLegTarget {
 class TorqueController {
   public:
     TorqueController();
-    JointSpTorques computeTorques(const RobotInfo& rinfo, const ContactInfo& cfs, const IKSwingLegTarget& desiredPose, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading);
+    JSpTorques computeTorques(const RobotInfo& rinfo, const ContactInfo& cfs, const IKSwingLegTarget& desiredPose, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading);
     
     DebugInfo* dbg;
     
   private:
-    JointSpTorques transformTorques(const RobotInfo& rinfo, const RawTorques& torques);
+    JSpTorques transformTorques(const RobotInfo& rinfo, const RawTorques& torques);
     
     /**
         This method computes the torques that cancel out the effects of gravity, 

@@ -73,6 +73,8 @@ public:
 		this->v = rhs.vec();
 		return *this;
 	}
+	
+	Eigen::Quaterniond toEigen() const { return Eigen::Quaterniond(this->s, this->v.x(), this->v.y(), this->v.z()); }
 
 	static Quaternion QFromAngleAndAxis(double angle, const Vector3d& axis) {
 		const double s = cos(angle/2.);
@@ -117,6 +119,8 @@ public:
 		Returns the complex conjugate of the current quaternion.
 	*/
 	Quaternion getComplexConjugate() const;
+	
+	Quaternion conjugate() const { return getComplexConjugate(); }
 
 	/**
 		Returns the inverse of the current quaternion: q * q^-1 = identity quaternion: s = 1, v = (0,0,0)

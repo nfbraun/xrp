@@ -37,7 +37,7 @@ void CWController::Init()
 #endif
 }
 
-JointSpTorques CWController::Run(double dt, const ContactData& cdata, double desiredHeading)
+JSpTorques CWController::Run(double dt, const ContactData& cdata, double desiredHeading)
 {
     RobotInfo rinfo(fCharacter, fStateMachine.stance(), fStateMachine.phi());
     ContactInfo cinfo(cdata);

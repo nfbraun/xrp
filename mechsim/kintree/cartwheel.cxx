@@ -33,6 +33,20 @@ int calc_xdot(double t, const double x_raw[], double xdot_raw[], void *_p)
     Eigen::VectorXd u(data->kt->npar());
     u.setZero();
     
+    u(0) = -1.5;  // LAY
+    u(1) =  2.3;   // LAX
+    u(2) = -0.9;  // LKY
+    u(3) = 1.0 * cos(6*t);   // LHZ
+    u(4) = 1.4 * cos(4*t);  // LHY
+    u(5) = 2.5 * cos(9*t);  // LHX
+    
+    u(6) = 0.02 * sin(4*t);   // RHZ
+    u(7) = -0.5 * sin(5*t); // RHY
+    u(8) = 0.1 * sin(7*t);  // RHX
+    u(9) = -0.02;   // RKY
+    u(10) = 0.01;  // RAY
+    u(11) = 0.006; // RAX
+    
     Eigen::Map<Eigen::VectorXd> dq_dt(xdot_raw, data->ndim);
     dq_dt = qdot;
     // calculate qdotdot = M^{-1} * (u - C - dVdq)
@@ -90,13 +104,22 @@ RigidBody* construct()
     return lFoot;
 }
 
+double normalizeAngle(double x)
+{
+    if(x > 0)
+        return fmod(x + M_PI, 2*M_PI) - M_PI;
+    else
+        return fmod(x - M_PI, 2*M_PI) + M_PI;
+}
+
 int main()
 {
     struct JointSysData fData;
     
     KinTree kt(construct());
     kt.AssignParamIDs();
-    kt.setG(Eigen::Vector3d(0., 0., -9.81));
+    // kt.setG(Eigen::Vector3d(0., 0., -9.81));
+    kt.setG(Eigen::Vector3d(0., 0., 0.));
     
     std::vector<double> x_ini(2*kt.npar(), 0.0);
     const double tstep = 1./160.;
@@ -107,7 +130,7 @@ int main()
     
     RawODESolver solver(2*kt.npar(), calc_xdot, 0, x_ini.data(), &fData);
     
-    const char* names[] = { "LA0", "LA1", "LK", "LH0", "LH1", "LH2", "RH0", "RH1", "RH2", "RK", "RA0", "RA1" };
+    const char* names[] = { "LAY", "LAX", "LKY", "LHZ", "LHY", "LHX", "RHZ", "RHY", "RHX", "RKY", "RAY", "RAX" };
     
     assert(kt.npar() == 12);
     
@@ -117,12 +140,14 @@ int main()
     for(unsigned int i=0; i<kt.npar(); i++)
         std::cout << "#:" << i+1+kt.npar() << ":o_" << names[i] << "_ana" << std::endl;
     
-    for(i=0; i<160; ++i) {
+    for(i=0; i<4*160; ++i) {
         solver.EvolveFwd(i * tstep);
         std::cout << solver.t() << " ";
         
-        for(unsigned int i=0; i<(2*kt.npar()); i++)
-            std::cout << solver.y()[i] << " ";
+        for(unsigned int i=0; i<kt.npar(); i++)
+            std::cout << normalizeAngle(solver.y()[i]) << " ";
+        for(unsigned int i=0; i<kt.npar(); i++)
+            std::cout << solver.y()[i+kt.npar()] << " ";
         std::cout << std::endl;
     }
     

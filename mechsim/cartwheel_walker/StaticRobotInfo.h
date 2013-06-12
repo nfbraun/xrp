@@ -14,9 +14,6 @@ enum RBodyID { B_THIGH, B_SHANK, B_FOOT, RBODY_MAX };
 enum DoFID { LHZ, LHY, LHX, LKY, LAY, LAX, RHZ, RHY, RHX, RKY, RAY, RAX, DOF_MAX };
 enum RDoFID { HZ, HY, HX, KY, AY, AX, RDOF_MAX };
 
-// FIXME
-enum PhiID { LH0, LH1, LH2, LK, LA0, LA1, RH0, RH1, RH2, RK, RA0, RA1 };
-
 inline const char* dofName(unsigned int id)
 {
     static const char* names[] = { "LHZ", "LHY", "LHX", "LKY", "LAY", "LAX",

@@ -1,4 +1,5 @@
 #include "TorqueController.h"
+#include "../../DynTransform.h"
 #include <Core/VirtualModelController.h>
 
 TorqueController::TorqueController()
@@ -182,9 +183,9 @@ Vector3d TorqueController::computeRootTorque(const RobotInfo& rinfo, double desH
 	return rootTorque;
 }
 
-JointSpTorques TorqueController::transformTorques(const RobotInfo& rinfo, const RawTorques& torques)
+JSpTorques TorqueController::transformTorques(const RobotInfo& rinfo, const RawTorques& torques)
 {
-    JointSpTorques jt;
+    JSpTorques jt;
     const Character* character = rinfo.character();
     
     /*** Left leg ***/
@@ -196,33 +197,40 @@ JointSpTorques TorqueController::transformTorques(const RobotInfo& rinfo, const 
     Eigen::Vector3d lAnkleAxis1 = character->getARBs()[B_L_FOOT]->getOrientation().rotate(cf_lAnkleAxis1).toEigen();
     Eigen::Vector3d lAnkleAxis2 = character->getARBs()[B_L_SHANK]->getOrientation().rotate(cf_lAnkleAxis2).toEigen();
     
-    Vector3d lHipTorque = character->getARBs()[B_PELVIS]->getOrientation().inverseRotate(torques.get(J_L_HIP));
-    jt.fLeftLeg[0] = lHipTorque.x();
-    jt.fLeftLeg[1] = lHipTorque.y();
-    jt.fLeftLeg[2] = lHipTorque.z();
+    Eigen::Vector3d lHipTorque = character->getARBs()[B_PELVIS]->getOrientation().inverseRotate(torques.get(J_L_HIP)).toEigen();
     
-    jt.fLeftLeg[3] = lKneeAxis.dot(torques.get(J_L_KNEE).toEigen());
-    jt.fLeftLeg[4] = lAnkleAxis1.dot(torques.get(J_L_ANKLE).toEigen());
-    jt.fLeftLeg[5] = lAnkleAxis2.dot(torques.get(J_L_ANKLE).toEigen());
+    Eigen::Quaterniond lHipRot = character->getARBs()[B_PELVIS]->getOrientation().conjugate().toEigen() *
+        character->getARBs()[B_L_THIGH]->getOrientation().toEigen();
+    double lhz, lhy, lhx;
+    decompZYXRot(lHipRot, lhz, lhy, lhx);
+    
+    invTransformHipTorque(lhz, lhy, lhx, -lHipTorque, jt.t(LEFT, HZ), jt.t(LEFT, HY), jt.t(LEFT, HX));
+    
+    jt.t(LEFT, KY) = -lKneeAxis.dot(torques.get(J_L_KNEE).toEigen());
+    jt.t(LEFT, AX) = -lAnkleAxis1.dot(torques.get(J_L_ANKLE).toEigen());
+    jt.t(LEFT, AY) = -lAnkleAxis2.dot(torques.get(J_L_ANKLE).toEigen());
     
     /*** Right leg ***/
     Vector3d cf_rKneeAxis(0., 1., 0.);
     Eigen::Vector3d rKneeAxis = character->getARBs()[B_R_THIGH]->getOrientation().rotate(cf_rKneeAxis).toEigen();
     
-    Vector3d cf_rAnkleAxis1(-1., 0., 0.);
+    Vector3d cf_rAnkleAxis1(1., 0., 0.);
     Vector3d cf_rAnkleAxis2(0., 1., 0.);
     Eigen::Vector3d rAnkleAxis1 = character->getARBs()[B_R_FOOT]->getOrientation().rotate(cf_rAnkleAxis1).toEigen();
     Eigen::Vector3d rAnkleAxis2 = character->getARBs()[B_R_SHANK]->getOrientation().rotate(cf_rAnkleAxis2).toEigen();
     
-    Vector3d rHipTorque = character->getARBs()[B_PELVIS]->getOrientation().inverseRotate(torques.get(J_R_HIP));
+    Eigen::Vector3d rHipTorque = character->getARBs()[B_PELVIS]->getOrientation().inverseRotate(torques.get(J_R_HIP)).toEigen();
     
-    jt.fRightLeg[0] = rHipTorque.x();
-    jt.fRightLeg[1] = rHipTorque.y();
-    jt.fRightLeg[2] = rHipTorque.z();
+    Eigen::Quaterniond rHipRot = character->getARBs()[B_PELVIS]->getOrientation().conjugate().toEigen() *
+        character->getARBs()[B_R_THIGH]->getOrientation().toEigen();
+    double rhz, rhy, rhx;
+    decompZYXRot(rHipRot, rhz, rhy, rhx);
     
-    jt.fRightLeg[3] = rKneeAxis.dot(torques.get(J_R_KNEE).toEigen());
-    jt.fRightLeg[4] = rAnkleAxis1.dot(torques.get(J_R_ANKLE).toEigen());
-    jt.fRightLeg[5] = rAnkleAxis2.dot(torques.get(J_R_ANKLE).toEigen());
+    invTransformHipTorque(rhz, rhy, rhx, -rHipTorque, jt.t(RIGHT, HZ), jt.t(RIGHT, HY), jt.t(RIGHT, HX));
+    
+    jt.t(RIGHT, KY) = -rKneeAxis.dot(torques.get(J_R_KNEE).toEigen());
+    jt.t(RIGHT, AX) = -rAnkleAxis1.dot(torques.get(J_R_ANKLE).toEigen());
+    jt.t(RIGHT, AY) = -rAnkleAxis2.dot(torques.get(J_R_ANKLE).toEigen());
     
     return jt;
 }
@@ -230,7 +238,7 @@ JointSpTorques TorqueController::transformTorques(const RobotInfo& rinfo, const 
 /**
 	This method is used to compute the torques
 */
-JointSpTorques TorqueController::computeTorques(const RobotInfo& rinfo, const ContactInfo& cfs, const IKSwingLegTarget& desiredPose, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
+JSpTorques TorqueController::computeTorques(const RobotInfo& rinfo, const ContactInfo& cfs, const IKSwingLegTarget& desiredPose, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
 {
 	RawTorques torques;
 	

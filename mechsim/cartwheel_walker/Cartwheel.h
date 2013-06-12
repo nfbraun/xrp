@@ -12,8 +12,6 @@
 
 #include <Eigen/Dense>
 
-extern const char* PhiNames[];
-
 class Cartwheel;
 
 class CartState: public SimulationState {
@@ -25,7 +23,8 @@ class CartState: public SimulationState {
     JSpState fJState;
     
     Eigen::Vector3d fJPos[J_MAX];
-    double fTorques[12];
+    
+    JSpTorques fTorques;
     
     DebugInfo fDbg;
     
@@ -41,27 +40,10 @@ class CartState: public SimulationState {
             return fJState.phi(ch);
         } else if(ch < 2*DOF_MAX) {
             return fJState.omega(ch - DOF_MAX);
+        } else if(ch < 3*DOF_MAX) {
+            return fTorques.t(ch - 2*DOF_MAX);
         } else {
-            switch(ch) {
-                case 24: return fTorques[LH0];
-                case 25: return fTorques[LH1];
-                case 26: return fTorques[LH2];
-                case 27: return fTorques[LK];
-                case 28: return fTorques[LA0];
-                case 29: return fTorques[LA1];
-                
-                case 30: return fTorques[RH0];
-                case 31: return fTorques[RH1];
-                case 32: return fTorques[RH2];
-                case 33: return fTorques[RK];
-                case 34: return fTorques[RA0];
-                case 35: return fTorques[RA1];
-                
-                //case 36: return fContactL;
-                //case 37: return fContactR;
-                
-                default: return std::numeric_limits<double>::quiet_NaN();
-            }
+            return std::numeric_limits<double>::quiet_NaN();
         }
     }
     
@@ -91,47 +73,47 @@ class Cartwheel: public Simulation {
     virtual const char* GetChName(int ch) const {
     // FIXME: make use of dofName()
         switch(ch) {
-            case 0: return "p_LH0";
-            case 1: return "p_LH1";
-            case 2: return "p_LH2";
-            case 3: return "p_LK";
-            case 4: return "p_LA0";
-            case 5: return "p_LA1";
+            case 0: return "p_LHZ";
+            case 1: return "p_LHY";
+            case 2: return "p_LHX";
+            case 3: return "p_LKY";
+            case 4: return "p_LAY";
+            case 5: return "p_LAX";
             
-            case 6: return "p_RH0";
-            case 7: return "p_RH1";
-            case 8: return "p_RH2";
-            case 9: return "p_RK";
-            case 10: return "p_RA0";
-            case 11: return "p_RA1";
+            case 6: return "p_RHZ";
+            case 7: return "p_RHY";
+            case 8: return "p_RHX";
+            case 9: return "p_RKY";
+            case 10: return "p_RAY";
+            case 11: return "p_RAX";
             
-            case 12: return "o_LH0";
-            case 13: return "o_LH1";
-            case 14: return "o_LH2";
-            case 15: return "o_LK";
-            case 16: return "o_LA0";
-            case 17: return "o_LA1";
+            case 12: return "o_LHZ";
+            case 13: return "o_LHY";
+            case 14: return "o_LHX";
+            case 15: return "o_LKY";
+            case 16: return "o_LAY";
+            case 17: return "o_LAX";
             
-            case 18: return "o_RH0";
-            case 19: return "o_RH1";
-            case 20: return "o_RH2";
-            case 21: return "o_RK";
-            case 22: return "o_RA0";
-            case 23: return "o_RA1";
+            case 18: return "o_RHZ";
+            case 19: return "o_RHY";
+            case 20: return "o_RHX";
+            case 21: return "o_RKY";
+            case 22: return "o_RAY";
+            case 23: return "o_RAX";
             
-            case 24: return "t_LH0";
-            case 25: return "t_LH1";
-            case 26: return "t_LH2";
-            case 27: return "t_LK";
-            case 28: return "t_LA0";
-            case 29: return "t_LA1";
+            case 24: return "t_LHZ";
+            case 25: return "t_LHY";
+            case 26: return "t_LHX";
+            case 27: return "t_LKY";
+            case 28: return "t_LAY";
+            case 29: return "t_LAX";
             
-            case 30: return "t_RH0";
-            case 31: return "t_RH1";
-            case 32: return "t_RH2";
-            case 33: return "t_RK";
-            case 34: return "t_RA0";
-            case 35: return "t_RA1";
+            case 30: return "t_RHZ";
+            case 31: return "t_RHY";
+            case 32: return "t_RHX";
+            case 33: return "t_RKY";
+            case 34: return "t_RAY";
+            case 35: return "t_RAX";
             
             //case 36: return "con_L";
             //case 37: return "con_R";
@@ -167,8 +149,8 @@ class Cartwheel: public Simulation {
     void InitLeg(HobLeg& leg, ChainSegment upperLegC, ChainSegment lowerLegC,
              FootSegment footC); */
     
-    void AdvanceInTime(double dt, const JointSpTorques& torques);
-    void ApplyTorques(const JointSpTorques& jt);
+    void AdvanceInTime(double dt, const JSpTorques& torques);
+    void ApplyTorques(const JSpTorques& jt);
     void setRBState(RigidBody* rb, const BodyQ& q);
     
     void BodyAddTorque(dBodyID body, Vector3d torque);
@@ -186,7 +168,7 @@ class Cartwheel: public Simulation {
     CWRobot *fRobot;
     CWController *fController;
     
-    JointSpTorques fDebugJTorques;
+    JSpTorques fDebugJTorques;
     
     RigidBody* fFloorRB;
     dGeomID fFloorG;

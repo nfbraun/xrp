@@ -11,9 +11,6 @@
 #include <Core/TurnController.h>
 #include <Core/WorldOracle.h>
 
-const char* PhiNames[] = { "LH0", "LH1", "LH2", "LK", "LA0", "LA1",
-                           "RH0", "RH1", "RH2", "RK", "RA0", "RA1" };
-
 // ** Simulation parameters **
 // Generate contact joints between the feet and the ground
 //#define USE_FOOT_COLLISION
@@ -268,17 +265,6 @@ unsigned int Cartwheel::Collide(dGeomID g1, dGeomID g2, std::vector<ContactPoint
     return num_contacts;
 }
 
-Eigen::Vector3d invTransformTorque(const dReal* R, double t0, double t1, double t2)
-{
-    Eigen::Vector3d v;
-    
-    v(0) = R[0] * t0 + R[1] * t1 + R[2] * t2;
-    v(1) = R[4] * t0 + R[5] * t1 + R[6] * t2;
-    v(2) = R[8] * t0 + R[9] * t1 + R[10] * t2;
-    
-    return v;
-}
-
 void Cartwheel::LockStanceFoot(int stance)
 {
     if(fLFootStickyJ != 0) {
@@ -344,26 +330,36 @@ void Cartwheel::SetFakeContactData(int stance)
     }
 }
 
-void Cartwheel::ApplyTorques(const JointSpTorques& jt)
+void Cartwheel::ApplyTorques(const JSpTorques& jt)
 {
-    Eigen::Vector3d lHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fBodies[B_PELVIS]),
-        jt.fLeftLeg[0], jt.fLeftLeg[1], jt.fLeftLeg[2]);
-    ODE::BodyAddTorque(fRobot->fBodies[B_PELVIS], lHipTorque);
-    ODE::BodyAddTorque(fRobot->fBodies[B_L_THIGH], -lHipTorque);
+    Eigen::Quaterniond lHipRot = ODE::BodyGetQuaternion(fRobot->fBodies[B_PELVIS]).conjugate() *
+        ODE::BodyGetQuaternion(fRobot->fBodies[B_L_THIGH]);
+    double lhz, lhy, lhx;
+    decompZYXRot(lHipRot, lhz, lhy, lhx);
+    Eigen::Vector3d lHipTorque = transformHipTorque(lhz, lhy, lhx,
+        jt.t(LEFT, HZ), jt.t(LEFT, HY), jt.t(LEFT, HX));
+    lHipTorque = ODE::BodyGetQuaternion(fRobot->fBodies[B_PELVIS])._transformVector(lHipTorque);
+    ODE::BodyAddTorque(fRobot->fBodies[B_PELVIS], -lHipTorque);
+    ODE::BodyAddTorque(fRobot->fBodies[B_L_THIGH], lHipTorque);
     
-    dJointAddHingeTorque(fRobot->fLKneeJ, -jt.fLeftLeg[3]);
-    dJointAddUniversalTorques(fRobot->fLAnkleJ, -jt.fLeftLeg[4], -jt.fLeftLeg[5]);
+    dJointAddHingeTorque(fRobot->fLKneeJ, jt.t(LEFT, KY));
+    dJointAddUniversalTorques(fRobot->fLAnkleJ, jt.t(LEFT, AX), jt.t(LEFT, AY));
     
-    Eigen::Vector3d rHipTorque = invTransformTorque(dBodyGetRotation(fRobot->fBodies[B_PELVIS]),
-        jt.fRightLeg[0], jt.fRightLeg[1], jt.fRightLeg[2]);
-    ODE::BodyAddTorque(fRobot->fBodies[B_PELVIS], rHipTorque);
-    ODE::BodyAddTorque(fRobot->fBodies[B_R_THIGH], -rHipTorque);
+    Eigen::Quaterniond rHipRot = ODE::BodyGetQuaternion(fRobot->fBodies[B_PELVIS]).conjugate() *
+        ODE::BodyGetQuaternion(fRobot->fBodies[B_R_THIGH]);
+    double rhz, rhy, rhx;
+    decompZYXRot(rHipRot, rhz, rhy, rhx);
+    Eigen::Vector3d rHipTorque = transformHipTorque(rhz, rhy, rhx,
+        jt.t(RIGHT, HZ), jt.t(RIGHT, HY), jt.t(RIGHT, HX));
+    rHipTorque = ODE::BodyGetQuaternion(fRobot->fBodies[B_PELVIS])._transformVector(rHipTorque);
+    ODE::BodyAddTorque(fRobot->fBodies[B_PELVIS], -rHipTorque);
+    ODE::BodyAddTorque(fRobot->fBodies[B_R_THIGH], rHipTorque);
     
-    dJointAddHingeTorque(fRobot->fRKneeJ, -jt.fRightLeg[3]);
-    dJointAddUniversalTorques(fRobot->fRAnkleJ, -jt.fRightLeg[4], -jt.fRightLeg[5]);
+    dJointAddHingeTorque(fRobot->fRKneeJ, jt.t(RIGHT, KY));
+    dJointAddUniversalTorques(fRobot->fRAnkleJ, jt.t(RIGHT, AX), jt.t(RIGHT, AY));
 }
 
-void Cartwheel::AdvanceInTime(double dt, const JointSpTorques& torques)
+void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
 {
     #ifdef USE_STANCE_FOOT_LOCKING
     if((fT - fLastStanceSwitchTime) > 0.5) {
@@ -455,6 +451,26 @@ void Cartwheel::setRBState(RigidBody* rb, const BodyQ& q)
     rb->state.angularVelocity = q.avel();
 }
 
+JSpTorques getTestJSpTorques(double t)
+{
+    JSpTorques torques = JSpTorques::Zero();
+    torques.t(LAX) = 2.3;
+    torques.t(LAY) = -1.5;
+    torques.t(LKY) = -0.9;
+    torques.t(LHZ) = 1.0 * cos(6*t);
+    torques.t(LHY) = 1.4 * cos(4*t);
+    torques.t(LHX) = 2.5 * cos(9*t);
+    
+    torques.t(RHZ) = 0.02 * sin(4*t);
+    torques.t(RHY) = -0.5 * sin(5*t);
+    torques.t(RHX) = 0.1 * sin(7*t);
+    torques.t(RKY) = -0.02;
+    torques.t(RAY) = 0.01;
+    torques.t(RAX) = 0.006;
+    
+    return torques;
+}
+
 void Cartwheel::Advance()
 {
     const double dt = 1./(fStepPerSec * fIntPerStep);
@@ -463,7 +479,7 @@ void Cartwheel::Advance()
         //dBodyAddForce(fRobot->fPelvisB, 40.*sin(fT), 40.*cos(fT), 0.);
         
         const double desiredHeading = fT/4.;
-        JointSpTorques torques = fController->Run(dt, fCData, desiredHeading);
+        JSpTorques torques = fController->Run(dt, fCData, desiredHeading);
         
         AdvanceInTime(dt, torques);
         fT += dt;
@@ -496,21 +512,7 @@ CartState Cartwheel::GetCurrentState()
     dJointGetBallAnchor(fRobot->fRHipJ, tmp); 
     state.fJPos[J_R_HIP] = Eigen::Vector3d(tmp);
     
-    /*** left leg ***/
-    state.fTorques[LH0] = fDebugJTorques.fLeftLeg[0];
-    state.fTorques[LH1] = fDebugJTorques.fLeftLeg[1];
-    state.fTorques[LH2] = fDebugJTorques.fLeftLeg[2];
-    state.fTorques[LK]  = fDebugJTorques.fLeftLeg[3];
-    state.fTorques[LA0] = fDebugJTorques.fLeftLeg[4];
-    state.fTorques[LA1] = fDebugJTorques.fLeftLeg[5];
-    
-    /*** right leg ***/
-    state.fTorques[RH0] = fDebugJTorques.fRightLeg[0];
-    state.fTorques[RH1] = fDebugJTorques.fRightLeg[1];
-    state.fTorques[RH2] = fDebugJTorques.fRightLeg[2];
-    state.fTorques[RK]  = fDebugJTorques.fRightLeg[3];
-    state.fTorques[RA0] = fDebugJTorques.fRightLeg[4];
-    state.fTorques[RA1] = fDebugJTorques.fRightLeg[5];
+    state.fTorques = fDebugJTorques;
     
     state.fDbg = fController->fDbg;
     

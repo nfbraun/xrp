@@ -37,6 +37,12 @@ AffineTransform ankleTransform(double ay, double ax);
 
 AffineTransform legTransform(double hz, double hy, double hx, double ky, double ay, double ax);
 
+/* Transform hip torque from generalized forces to torque in Cartesian coordinates */
+Eigen::Vector3d transformHipTorque(double hz, double hy, double hx, double thz, double thy, double thx);
+
+/* Transform hip torque from torque in Cartesian coordinates to generalized forces */
+void invTransformHipTorque(double hz, double hy, double hx, const Eigen::Vector3d& T, double& thz, double& thy, double& thx);
+
 /* Returns a matrix transforming joint space generalized velocities for the
    hip into an angular velocity. */
 Eigen::Matrix3d hipAVelTransform(double hz, double hy, double hx);

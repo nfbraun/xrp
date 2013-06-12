@@ -1,5 +1,7 @@
 #pragma once
 
+// FIXME
+#include "../../StaticRobotInfo.h"
 #include "Character.h"
 #include <Physics/ContactPoint.h>
 #include <vector>
@@ -25,9 +27,28 @@ class RawTorques {
     std::vector<Vector3d> fTorques;
 };
 
-class JointSpTorques {
+class JSpTorques {
   public:
-    double fLeftLeg[6];
-    double fRightLeg[6];
+    static JSpTorques Zero() {
+        JSpTorques jt;
+        for(unsigned int i=0; i<DOF_MAX; i++)
+            jt.t(i) = 0.;
+        return jt;
+    }
+    
+    double t(unsigned int id) const
+        { assert(id < DOF_MAX); return fTorques[id]; }
+    
+    double& t(unsigned int id)
+        { assert(id < DOF_MAX); return fTorques[id]; }
+    
+    double t(unsigned int side, unsigned int id) const
+        { assert(side < SIDE_MAX); assert(id < RDOF_MAX); return fTorques[side*RDOF_MAX+id]; }
+    
+    double& t(unsigned int side, unsigned int id)
+        { assert(side < SIDE_MAX); assert(id < RDOF_MAX); return fTorques[side*RDOF_MAX+id]; }
+    
+  private:
+    double fTorques[DOF_MAX];
 };
 

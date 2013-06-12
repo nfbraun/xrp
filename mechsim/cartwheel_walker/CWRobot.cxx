@@ -4,6 +4,9 @@
 #include <Physics/Joint.h>
 #include <ode/ode.h>
 
+//#define DEBUG_FIXED_TORSO
+#define SET_LIMITS
+
 dBodyID CWRobot::makeODEARB(dWorldID world, BodyID id, ArticulatedRigidBody* arb)
 {
     dBodyID body = dBodyCreate(world);
@@ -209,26 +212,30 @@ void CWRobot::create(dWorldID world)
     dJointSetUniversalAxis1(fLAnkleJ, 1., 0., 0.);
     dJointSetUniversalAxis2(fLAnkleJ, 0., 1., 0.);
     
+    #ifdef SET_LIMITS
     dJointSetUniversalParam(fLAnkleJ, dParamLoStop, -0.75);
     dJointSetUniversalParam(fLAnkleJ, dParamHiStop,  0.75);
     dJointSetUniversalParam(fLAnkleJ, dParamLoStop2, -0.75);
     dJointSetUniversalParam(fLAnkleJ, dParamHiStop2,  0.75);
+    #endif
     
     fRAnkleJ = dJointCreateUniversal(world, 0);
     dJointAttach(fRAnkleJ, fBodies[B_R_FOOT], fBodies[B_R_SHANK]);
     dJointSetUniversalAnchor(fRAnkleJ, 0., legPosY_R, anklePosZ);
 
-    dJointSetUniversalAxis1(fRAnkleJ, -1., 0., 0.);
+    dJointSetUniversalAxis1(fRAnkleJ, 1., 0., 0.);
     dJointSetUniversalAxis2(fRAnkleJ, 0., 1., 0.);
     
+    #ifdef SET_LIMITS
     dJointSetUniversalParam(fRAnkleJ, dParamLoStop, -0.75);
     dJointSetUniversalParam(fRAnkleJ, dParamHiStop,  0.75);
     dJointSetUniversalParam(fRAnkleJ, dParamLoStop2, -0.75);
     dJointSetUniversalParam(fRAnkleJ, dParamHiStop2,  0.75);
+    #endif
     
     #ifdef DEBUG_FIXED_TORSO
     dJointID fix = dJointCreateFixed(world, 0);
-    dJointAttach(fix, 0, fPelvisB);
+    dJointAttach(fix, 0, fBodies[B_PELVIS]);
     dJointSetFixed(fix);
     #endif
 }

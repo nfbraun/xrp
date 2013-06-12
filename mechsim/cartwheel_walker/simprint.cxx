@@ -40,9 +40,8 @@ int main(int argc, char** argv)
         std::cout << "#:" << col++ << ":p_" << dofName(i) << "\n";
     for(unsigned int i=0; i<DOF_MAX; i++)
         std::cout << "#:" << col++ << ":o_" << dofName(i) << "\n";
-    
-    for(unsigned int i=LH0; i<=RA1; i++)
-        std::cout << "#:" << col++ << ":t_" << PhiNames[i] << "\n";
+    for(unsigned int i=0; i<DOF_MAX; i++)
+        std::cout << "#:" << col++ << ":t_" << dofName(i) << "\n";
     
     vectHeader("swp");    // desired swing foot pos
     vectHeader("swv");    // desired swing foot velocity
@@ -69,8 +68,8 @@ int main(int argc, char** argv)
         for(unsigned int i=0; i<DOF_MAX; i++)
             std::cout << state.fJState.omega(i) << " ";
         
-        for(unsigned int i=LH0; i <= RA1; i++)
-            std::cout << state.fTorques[i] << " ";
+        for(unsigned int i=0; i<DOF_MAX; i++)
+            std::cout << state.fTorques.t(i) << " ";
         
         printVect(state.fDbg.desSwingPos);
         printVect(state.fDbg.desSwingVel);
