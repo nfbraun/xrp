@@ -21,7 +21,10 @@ class TorqueController {
     DebugInfo* dbg;
     
   private:
-    JSpTorques transformTorques(const RobotInfo& rinfo, const RawTorques& torques);
+    void swingLegControl(JSpTorques& jt, const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose);
+    void stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, const ContactInfo& cfs, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading);
+    
+    void transformLegTorques(JSpTorques& jt, unsigned int side, const RobotInfo& rinfo, const RawTorques& torques);
     
     /**
         This method computes the torques that cancel out the effects of gravity, 
@@ -38,12 +41,6 @@ class TorqueController {
     This method is used to compute the force that the COM of the character should be applying.
     */
     Vector3d computeVirtualForce(const RobotInfo& rinfo, double desOffCoronal, double desVSagittal, double desVCoronal);
-    
-    /**
-    This method is used to ensure that each RB sees the net torque that the PD controller computed for it.
-    Without it, an RB sees also the sum of -t of every child.
-    */
-    void bubbleUpTorques(const RobotInfo& rinfo, RawTorques& torques);
     
     /**
     This method is used to return the ratio of the weight that is supported by the stance foot.

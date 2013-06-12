@@ -74,18 +74,6 @@ void TorqueController::COMJT(const RobotInfo& rinfo, const Vector3d& fA, Vector3
 }
 
 /**
-	This method is used to ensure that each RB sees the net torque that the PD controller computed for it.
-	Without it, an RB sees also the sum of -t of every child.
-*/
-void TorqueController::bubbleUpTorques(const RobotInfo& rinfo, RawTorques& torques)
-{
-	torques.at(J_R_KNEE) +=  torques.at(J_R_ANKLE);
-	torques.at(J_L_KNEE) +=  torques.at(J_L_ANKLE);
-	
-	torques.at(rinfo.swingHipIndex()) +=  torques.at(rinfo.swingKneeIndex());
-}
-
-/**
 	This method is used to return the ratio of the weight that is supported by the stance foot.
 */
 double TorqueController::getStanceFootWeightRatio(const RobotInfo& rinfo, const ContactInfo& cfs)
@@ -182,56 +170,99 @@ Vector3d TorqueController::computeRootTorque(const RobotInfo& rinfo, double desH
 	return rootTorque;
 }
 
-JSpTorques TorqueController::transformTorques(const RobotInfo& rinfo, const RawTorques& torques)
+void TorqueController::transformLegTorques(JSpTorques& jt, unsigned int side, const RobotInfo& rinfo, const RawTorques& torques)
 {
-    JSpTorques jt;
     const Character* character = rinfo.character();
     
-    /*** Left leg ***/
-    Vector3d cf_lKneeAxis(0., 1., 0.);
-    Eigen::Vector3d lKneeAxis = character->getARBs()[B_L_THIGH]->getOrientation().rotate(cf_lKneeAxis).toEigen();
+    unsigned int thighId = (side == LEFT ? B_L_THIGH : B_R_THIGH);
+    unsigned int shankId = (side == LEFT ? B_L_SHANK : B_R_SHANK);
+    unsigned int footId = (side == LEFT ? B_L_FOOT : B_R_FOOT);
     
-    Vector3d cf_lAnkleAxis1(1., 0., 0.);
-    Vector3d cf_lAnkleAxis2(0., 1., 0.);
-    Eigen::Vector3d lAnkleAxis1 = character->getARBs()[B_L_FOOT]->getOrientation().rotate(cf_lAnkleAxis1).toEigen();
-    Eigen::Vector3d lAnkleAxis2 = character->getARBs()[B_L_SHANK]->getOrientation().rotate(cf_lAnkleAxis2).toEigen();
+    unsigned int hipId = (side == LEFT ? J_L_HIP : J_R_HIP);
+    unsigned int kneeId = (side == LEFT ? J_L_KNEE : J_R_KNEE);
+    unsigned int ankleId = (side == LEFT ? J_L_ANKLE : J_R_ANKLE);
     
-    Eigen::Vector3d lHipTorque = character->getARBs()[B_PELVIS]->getOrientation().inverseRotate(torques.get(J_L_HIP)).toEigen();
+    Vector3d cf_KneeAxis(0., 1., 0.);
+    Eigen::Vector3d KneeAxis = character->getARBs()[thighId]->getOrientation().rotate(cf_KneeAxis).toEigen();
     
-    Eigen::Quaterniond lHipRot = character->getARBs()[B_PELVIS]->getOrientation().conjugate().toEigen() *
-        character->getARBs()[B_L_THIGH]->getOrientation().toEigen();
-    double lhz, lhy, lhx;
-    decompZYXRot(lHipRot, lhz, lhy, lhx);
+    Vector3d cf_AnkleAxis1(1., 0., 0.);
+    Vector3d cf_AnkleAxis2(0., 1., 0.);
+    Eigen::Vector3d AnkleAxis1 = character->getARBs()[footId]->getOrientation().rotate(cf_AnkleAxis1).toEigen();
+    Eigen::Vector3d AnkleAxis2 = character->getARBs()[shankId]->getOrientation().rotate(cf_AnkleAxis2).toEigen();
     
-    invTransformHipTorque(lhz, lhy, lhx, -lHipTorque, jt.t(LEFT, HZ), jt.t(LEFT, HY), jt.t(LEFT, HX));
+    Eigen::Vector3d hipTorque = character->getARBs()[B_PELVIS]->getOrientation().inverseRotate(torques.get(hipId)).toEigen();
     
-    jt.t(LEFT, KY) = -lKneeAxis.dot(torques.get(J_L_KNEE).toEigen());
-    jt.t(LEFT, AX) = -lAnkleAxis1.dot(torques.get(J_L_ANKLE).toEigen());
-    jt.t(LEFT, AY) = -lAnkleAxis2.dot(torques.get(J_L_ANKLE).toEigen());
+    Eigen::Quaterniond hipRot = character->getARBs()[B_PELVIS]->getOrientation().conjugate().toEigen() *
+        character->getARBs()[thighId]->getOrientation().toEigen();
+    double hz, hy, hx;
+    decompZYXRot(hipRot, hz, hy, hx);
     
-    /*** Right leg ***/
-    Vector3d cf_rKneeAxis(0., 1., 0.);
-    Eigen::Vector3d rKneeAxis = character->getARBs()[B_R_THIGH]->getOrientation().rotate(cf_rKneeAxis).toEigen();
+    invTransformHipTorque(hz, hy, hx, -hipTorque, jt.t(side, HZ), jt.t(side, HY), jt.t(side, HX));
     
-    Vector3d cf_rAnkleAxis1(1., 0., 0.);
-    Vector3d cf_rAnkleAxis2(0., 1., 0.);
-    Eigen::Vector3d rAnkleAxis1 = character->getARBs()[B_R_FOOT]->getOrientation().rotate(cf_rAnkleAxis1).toEigen();
-    Eigen::Vector3d rAnkleAxis2 = character->getARBs()[B_R_SHANK]->getOrientation().rotate(cf_rAnkleAxis2).toEigen();
+    jt.t(side, KY) = -KneeAxis.dot(torques.get(kneeId).toEigen());
+    jt.t(side, AX) = -AnkleAxis1.dot(torques.get(ankleId).toEigen());
+    jt.t(side, AY) = -AnkleAxis2.dot(torques.get(ankleId).toEigen());
+}
+
+/* Compute the torques for the swing leg. */
+void TorqueController::swingLegControl(JSpTorques& jt, const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose)
+{
+    RawTorques torques;
     
-    Eigen::Vector3d rHipTorque = character->getARBs()[B_PELVIS]->getOrientation().inverseRotate(torques.get(J_R_HIP)).toEigen();
+    torques.at(rinfo.swingHipIndex()) = poseControl.computePDJointTorque(rinfo,
+        rinfo.swingHipIndex(), desiredPose.swingHipOrient, desiredPose.swingHipAngVel, false);
+    torques.at(rinfo.swingKneeIndex()) = poseControl.computePDJointTorque(rinfo,
+        rinfo.swingKneeIndex(), desiredPose.swingKneeOrient, desiredPose.swingKneeAngVel, false);
+    torques.at(rinfo.swingAnkleIndex()) = poseControl.computePDJointTorque(rinfo,
+        rinfo.swingAnkleIndex(), Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), true,
+        rinfo.characterFrame());
     
-    Eigen::Quaterniond rHipRot = character->getARBs()[B_PELVIS]->getOrientation().conjugate().toEigen() *
-        character->getARBs()[B_R_THIGH]->getOrientation().toEigen();
-    double rhz, rhy, rhx;
-    decompZYXRot(rHipRot, rhz, rhy, rhx);
+    //bubble-up the torques computed from the PD controllers
+    torques.at(rinfo.swingKneeIndex()) +=  torques.at(rinfo.swingAnkleIndex());
+    torques.at(rinfo.swingHipIndex()) +=  torques.at(rinfo.swingKneeIndex());
     
-    invTransformHipTorque(rhz, rhy, rhx, -rHipTorque, jt.t(RIGHT, HZ), jt.t(RIGHT, HY), jt.t(RIGHT, HX));
+    //we'll also compute the torques that cancel out the effects of gravity, for better tracking purposes (swing leg only)
+    torques.add(computeGravityCompensationTorques(rinfo));
     
-    jt.t(RIGHT, KY) = -rKneeAxis.dot(torques.get(J_R_KNEE).toEigen());
-    jt.t(RIGHT, AX) = -rAnkleAxis1.dot(torques.get(J_R_ANKLE).toEigen());
-    jt.t(RIGHT, AY) = -rAnkleAxis2.dot(torques.get(J_R_ANKLE).toEigen());
+    transformLegTorques(jt, rinfo.stance() == LEFT_STANCE ? RIGHT : LEFT,
+                        rinfo, torques);
+}
+
+/* Compute the torques for the stance leg. */
+void TorqueController::stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, const ContactInfo& cfs, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
+{
+    RawTorques torques;
     
-    return jt;
+    torques.at(rinfo.stanceKneeIndex()) = poseControl.computePDJointTorque(rinfo,
+        rinfo.stanceKneeIndex(), Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), false);
+    
+    torques.at(rinfo.stanceAnkleIndex()) = poseControl.computePDJointTorque(rinfo,
+        rinfo.stanceAnkleIndex(), Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), true,
+        rinfo.characterFrame());
+    
+    //bubble-up the torques computed from the PD controllers
+    torques.at(rinfo.stanceKneeIndex()) +=  torques.at(rinfo.stanceAnkleIndex());
+    
+    //and now separetely compute the torques for the hips - together with the feedback term, this is what defines simbicon
+    dbg->StanceFootWeightRatio = getStanceFootWeightRatio(rinfo, cfs);
+    
+    if(getStanceFootWeightRatio(rinfo, cfs) > 0.9) {
+        Vector3d virtualRootForce = computeVirtualForce(rinfo, comOffsetCoronal, velDSagittal, velDCoronal);
+        Vector3d virtualRootTorque = computeRootTorque(rinfo, desiredHeading);
+        
+        dbg->virtualRootForce = virtualRootForce;
+        dbg->virtualRootTorque = virtualRootTorque;
+        
+        Vector3d stanceAnkleTorque, stanceKneeTorque, stanceHipTorque;
+        COMJT(rinfo, virtualRootForce, stanceAnkleTorque, stanceKneeTorque, stanceHipTorque);
+        
+        torques.at(rinfo.stanceAnkleIndex()) += preprocessAnkleVTorque(rinfo, cfs, stanceAnkleTorque, rinfo.phi());
+        torques.at(rinfo.stanceKneeIndex()) += stanceKneeTorque;
+        torques.at(rinfo.stanceHipIndex()) = stanceHipTorque - virtualRootTorque - torques.at(rinfo.swingHipIndex());
+    }
+    
+    transformLegTorques(jt, rinfo.stance() == LEFT_STANCE ? LEFT : RIGHT,
+                        rinfo, torques);
 }
 
 /**
@@ -239,46 +270,10 @@ JSpTorques TorqueController::transformTorques(const RobotInfo& rinfo, const RawT
 */
 JSpTorques TorqueController::computeTorques(const RobotInfo& rinfo, const ContactInfo& cfs, const IKSwingLegTarget& desiredPose, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
 {
-	RawTorques torques;
-	
-	torques.at(rinfo.swingHipIndex()) = poseControl.computePDJointTorque(rinfo,
-	    rinfo.swingHipIndex(), desiredPose.swingHipOrient, desiredPose.swingHipAngVel, false);
-	torques.at(rinfo.swingKneeIndex()) = poseControl.computePDJointTorque(rinfo,
-	    rinfo.swingKneeIndex(), desiredPose.swingKneeOrient, desiredPose.swingKneeAngVel, false);
-	
-	torques.at(rinfo.stanceKneeIndex()) = poseControl.computePDJointTorque(rinfo,
-	    rinfo.stanceKneeIndex(), Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), false);
-	
-	torques.at(rinfo.stanceAnkleIndex()) = poseControl.computePDJointTorque(rinfo,
-	    rinfo.stanceAnkleIndex(), Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), true,
-	    rinfo.characterFrame());
-	torques.at(rinfo.swingAnkleIndex()) = poseControl.computePDJointTorque(rinfo,
-	    rinfo.swingAnkleIndex(), Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), true,
-	    rinfo.characterFrame());
-
-	//bubble-up the torques computed from the PD controllers
-	bubbleUpTorques(rinfo, torques);
-	
-	//we'll also compute the torques that cancel out the effects of gravity, for better tracking purposes (swing leg only)
-	torques.add(computeGravityCompensationTorques(rinfo));
-
-	//and now separetely compute the torques for the hips - together with the feedback term, this is what defines simbicon
-	dbg->StanceFootWeightRatio = getStanceFootWeightRatio(rinfo, cfs);
-	
-	if(getStanceFootWeightRatio(rinfo, cfs) > 0.9) {
-	    Vector3d virtualRootForce = computeVirtualForce(rinfo, comOffsetCoronal, velDSagittal, velDCoronal);
-	    Vector3d virtualRootTorque = computeRootTorque(rinfo, desiredHeading);
-	    
-	    dbg->virtualRootForce = virtualRootForce;
-	    dbg->virtualRootTorque = virtualRootTorque;
-	    
-	    Vector3d stanceAnkleTorque, stanceKneeTorque, stanceHipTorque;
-	    COMJT(rinfo, virtualRootForce, stanceAnkleTorque, stanceKneeTorque, stanceHipTorque);
-	    
-	    torques.at(rinfo.stanceAnkleIndex()) += preprocessAnkleVTorque(rinfo, cfs, stanceAnkleTorque, rinfo.phi());
-	    torques.at(rinfo.stanceKneeIndex()) += stanceKneeTorque;
-	    torques.at(rinfo.stanceHipIndex()) = stanceHipTorque - virtualRootTorque - torques.at(rinfo.swingHipIndex());
-	}
-
-    return transformTorques(rinfo, torques);
+    JSpTorques jt;
+    
+    swingLegControl(jt, rinfo, desiredPose);
+    stanceLegControl(jt, rinfo, cfs, comOffsetCoronal, velDSagittal, velDCoronal, desiredHeading);
+    
+    return jt;
 }

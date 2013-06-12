@@ -32,20 +32,14 @@ void VirtualModelController::addJointTorquesEquivalentToForce(KTJoint* start, co
 	KTJoint* currentJoint = start;
 	Vector3d tmpV;
 	Point3d pGlobal = start->child->getWorldCoordinatesForPoint(pLocal);
+	
+	assert(end == NULL);
 
-	while (currentJoint != end){
-		if (currentJoint == NULL)
-			throw std::runtime_error("VirtualModelController::computeJointTorquesEquivalentToForce --> end was not a parent of start...");
+	while (currentJoint != NULL){
 		tmpV = pGlobal - currentJoint->parent->getWorldCoordinatesForPoint(currentJoint->getParentJointPosition());
 		Vector3d tmpT = tmpV.cross(fGlobal);
 		torques.at(currentJoint->id) -= tmpT;
 		currentJoint = currentJoint->parent->pJoint;
-	}
-	
-	//and we just have to do it once more for the end joint, if it's not NULL
-	if (end != NULL){
-		tmpV = pGlobal - currentJoint->parent->getWorldCoordinatesForPoint(currentJoint->getParentJointPosition());
-		torques.at(currentJoint->id) -= tmpV.cross(fGlobal);
 	}
 }
 
