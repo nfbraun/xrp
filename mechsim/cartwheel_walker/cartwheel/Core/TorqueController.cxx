@@ -79,11 +79,10 @@ void TorqueController::COMJT(const RobotInfo& rinfo, const Vector3d& fA, Vector3
 */
 void TorqueController::bubbleUpTorques(const RobotInfo& rinfo, RawTorques& torques)
 {
-	for (int i=J_MAX-1;i>=0;i--){
-		if (i != rinfo.stanceHipIndex() && i != rinfo.stanceKneeIndex())
-			if (rinfo.character()->getJoints()[i]->getParent() != rinfo.root())
-				torques.at(rinfo.character()->getJoints()[i]->getParent()->pJoint->id) +=  torques.at(i);
-	}
+	torques.at(J_R_KNEE) +=  torques.at(J_R_ANKLE);
+	torques.at(J_L_KNEE) +=  torques.at(J_L_ANKLE);
+	
+	torques.at(rinfo.swingHipIndex()) +=  torques.at(rinfo.swingKneeIndex());
 }
 
 /**
