@@ -486,7 +486,7 @@ void Cartwheel::Advance()
         JSpState jstate = jointFromFull(fstate);
         
         const double desiredHeading = fT/4.;
-        JSpTorques torques = fController->Run(dt, fCData, desiredHeading);
+        JSpTorques torques = fController->Run(dt, fstate, jstate, fCData, desiredHeading);
         
         fPint += Psys(torques, jstate) * dt;
         

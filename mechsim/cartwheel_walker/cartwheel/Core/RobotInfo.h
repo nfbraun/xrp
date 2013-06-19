@@ -1,10 +1,11 @@
 #pragma once
 
 #include <Core/Character.h>
+#include "../../RobotState.h"
 
 class RobotInfo {
   public:
-    RobotInfo(Character* c, int st, double p): fCharacter(c), fStance(st), fPhi(p) {}
+    RobotInfo(Character* c, const FullState& fstate, const JSpState& jstate, int st, double p): fCharacter(c), fFState(fstate), fJState(jstate), fStance(st), fPhi(p) {}
     
     const Character* character() const { return fCharacter; }
     
@@ -13,6 +14,9 @@ class RobotInfo {
     
     double phi() const { return fPhi; }
     void setPhi(double p) { fPhi = p; }
+    
+    const FullState& fstate() const { return fFState; }
+    const JSpState& jstate() const { return fJState; }
     
     double totalMass() const { return fCharacter->getMass(); }
     
@@ -108,4 +112,7 @@ class RobotInfo {
     Character* fCharacter;
     int fStance;
     double fPhi;
+    
+    FullState fFState;
+    JSpState fJState;
 };

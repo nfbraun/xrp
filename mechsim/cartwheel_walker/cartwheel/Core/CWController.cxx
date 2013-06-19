@@ -1,4 +1,5 @@
 #include "CWController.h"
+#include "../../DynTransform.h"
 
 void labelJoints(Character* character)
 {
@@ -25,7 +26,10 @@ CWController::CWController(Character* character, WorldOracle* worldOracle)
 
 void CWController::Init()
 {
-    RobotInfo rinfo(fCharacter, fStateMachine.stance(), fStateMachine.phi());
+    JSpState jnull = JSpState::Null();
+    FullState fnull = fullFromJoint(jnull);
+    
+    RobotInfo rinfo(fCharacter, fnull, jnull, fStateMachine.stance(), fStateMachine.phi());
     
 #ifndef USE_WALK_CONTROLLER
     fHighCtrl.requestHeading(rinfo, 0.);
@@ -37,9 +41,9 @@ void CWController::Init()
 #endif
 }
 
-JSpTorques CWController::Run(double dt, const ContactData& cdata, double desiredHeading)
+JSpTorques CWController::Run(double dt, const FullState& fstate, const JSpState& jstate, const ContactData& cdata, double desiredHeading)
 {
-    RobotInfo rinfo(fCharacter, fStateMachine.stance(), fStateMachine.phi());
+    RobotInfo rinfo(fCharacter, fstate, jstate, fStateMachine.stance(), fStateMachine.phi());
     ContactInfo cinfo(cdata);
     
     bool newState = fStateMachine.advanceInTime(dt, fHighCtrl.getStepTime(), rinfo, cinfo);

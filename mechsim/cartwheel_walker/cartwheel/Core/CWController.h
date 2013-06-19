@@ -15,7 +15,7 @@ class CWController {
   public:
     CWController(Character* character, WorldOracle* worldOracle);
     void Init();
-    JSpTorques Run(double dt, const ContactData& cdata, double desiredHeading);
+    JSpTorques Run(double dt, const FullState& fstate, const JSpState& jstate, const ContactData& cdata, double desiredHeading);
     
   public:
     Character* fCharacter;
