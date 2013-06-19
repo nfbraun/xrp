@@ -1,5 +1,5 @@
-SOURCES = Cartwheel.cxx CWRobot.cxx DynTransform.cxx
-HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h AffineTransform.h DynTransform.h
+SOURCES = Cartwheel.cxx CWRobot.cxx DynTransform.cxx DynInfo.cxx
+HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h AffineTransform.h DynTransform.h DynInfo.h
 
 CW_SOURCES = \
 cartwheel/MathLib/Quaternion.cxx \
@@ -84,4 +84,4 @@ test_sim: $(OBJS) test_sim.o
 	g++ -o $@ $(LDFLAGS) $(LIBS) $(CARTWHEEL_LIBS) $(OBJS) test_sim.o
 
 %.o: %.cxx $(HEADERS) $(CW_HEADERS) Makefile
-	g++ $(CFLAGS) -o $@ -c $<
+	g++ $(CFLAGS) -O2 -o $@ -c $<

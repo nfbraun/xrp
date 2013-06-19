@@ -75,6 +75,14 @@ class FullState {
    position and velocity of the system as a whole is not fixed. */
 class JSpState {
   public:
+    static JSpState Null() {
+        JSpState jstate;
+        for(unsigned int id=0; id<B_MAX; id++) {
+            jstate.phi(id) = 0.;
+            jstate.omega(id) = 0.;
+        }
+    }
+    
     double phi(unsigned int id) const
         { assert(id < DOF_MAX); return fPhi[id]; }
     double omega(unsigned int id) const

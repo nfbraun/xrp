@@ -22,6 +22,8 @@ class CartState: public SimulationState {
     FullState fFState;
     JSpState fJState;
     
+    double fPint;
+    
     Eigen::Vector3d fJPos[J_MAX];
     
     JSpTorques fTorques;
@@ -176,6 +178,8 @@ class Cartwheel: public Simulation {
     int fStance;
     double fLastStanceSwitchTime;
     dJointID fLFootStickyJ, fRFootStickyJ;
+    
+    double fPint;
 };
 
 #endif

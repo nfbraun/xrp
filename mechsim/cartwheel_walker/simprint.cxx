@@ -1,5 +1,6 @@
 #include "Cartwheel.h"
 #include "DynTransform.h"
+#include "DynInfo.h"
 
 unsigned int col = 1;
 
@@ -63,6 +64,11 @@ int main(int argc, char** argv)
     scalarHeader("rfn");  // right foot normal force
     scalarHeader("rft");  // right foot tangential force
     
+    scalarHeader("Ekin");
+    scalarHeader("Epot");
+    scalarHeader("Pint");
+    scalarHeader("Etot");
+    
     for(int t=0; t<10000; t++) {
         CartState state = sim.GetCurrentState();
         
@@ -98,6 +104,14 @@ int main(int argc, char** argv)
         printScalar(state.fDbg.lFootTF);
         printScalar(state.fDbg.rFootNF);
         printScalar(state.fDbg.rFootTF);
+        
+        double Ek = Ekin(state.fFState);
+        double Ep = Epot(state.fFState) - Epot0();
+        
+        printScalar(Ek);
+        printScalar(Ep);
+        printScalar(state.fPint);
+        printScalar(Ek + Ep - state.fPint);
         
         std::cout << std::endl;
         

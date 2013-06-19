@@ -104,6 +104,16 @@ inline double rbMass(unsigned int id)
     return masses[id];
 }
 
+inline double totalMass()
+{
+    const double mtot = \
+        rbMass(B_L_THIGH) + rbMass(B_L_SHANK) + rbMass(B_L_FOOT) +
+        rbMass(B_R_THIGH) + rbMass(B_R_SHANK) + rbMass(B_R_FOOT) +
+        rbMass(B_PELVIS);
+    
+    return mtot;
+}
+
 inline Eigen::Vector3d rbMOI(unsigned int id)
 {
     using namespace CharacterConst;

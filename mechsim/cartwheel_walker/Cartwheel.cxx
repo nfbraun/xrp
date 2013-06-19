@@ -3,6 +3,7 @@
 #include "GLHelper.h"
 #include "ODEHelper.h"
 #include "DynTransform.h"
+#include "DynInfo.h"
 #include <GL/gl.h>
 #include <cmath>
 
@@ -198,6 +199,7 @@ Cartwheel::Cartwheel(unsigned int stepPerSec, unsigned int intPerStep)
       fIntPerStep(intPerStep)   // Integration intervals per timestep
 {
     fT = 0.;
+    fPint = 0.;
     
     dInitODE();
     
@@ -478,8 +480,15 @@ void Cartwheel::Advance()
     for(int i=0; i<fIntPerStep; ++i) {
         //dBodyAddForce(fRobot->fPelvisB, 40.*sin(fT), 40.*cos(fT), 0.);
         
+        FullState fstate;
+        for(unsigned int b=0; b<B_MAX; b++)
+            fstate.q(b) = QFromODE(fRobot->fBodies[b]);
+        JSpState jstate = jointFromFull(fstate);
+        
         const double desiredHeading = fT/4.;
         JSpTorques torques = fController->Run(dt, fCData, desiredHeading);
+        
+        fPint += Psys(torques, jstate) * dt;
         
         AdvanceInTime(dt, torques);
         fT += dt;
@@ -513,6 +522,8 @@ CartState Cartwheel::GetCurrentState()
     state.fJPos[J_R_HIP] = Eigen::Vector3d(tmp);
     
     state.fTorques = fDebugJTorques;
+    
+    state.fPint = fPint;
     
     state.fDbg = fController->fDbg;
     
