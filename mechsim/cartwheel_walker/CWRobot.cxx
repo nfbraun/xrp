@@ -1,13 +1,9 @@
 #include "CWRobot.h"
-#include <MathLib/Vector3d.h>
-#include <Physics/ArticulatedRigidBody.h>
-#include <Physics/Joint.h>
-#include <ode/ode.h>
 
 //#define DEBUG_FIXED_TORSO
 #define SET_LIMITS
 
-dBodyID CWRobot::makeODEARB(dWorldID world, BodyID id, ArticulatedRigidBody* arb)
+dBodyID CWRobot::makeODEARB(dWorldID world, BodyID id, const Eigen::Vector3d& pos)
 {
     dBodyID body = dBodyCreate(world);
     dMass ODEmass;
@@ -15,125 +11,35 @@ dBodyID CWRobot::makeODEARB(dWorldID world, BodyID id, ArticulatedRigidBody* arb
             rbMOI(id).x(), rbMOI(id).y(), rbMOI(id).z(),
             0, 0, 0);
     
-    assert(rbMass(id) == arb->getMass());
-    
     dBodySetMass(body, &ODEmass);
-    
-    dQuaternion tempQ;
-    tempQ[0] = arb->getState().orientation.s;
-    tempQ[1] = arb->getState().orientation.v.x();
-    tempQ[2] = arb->getState().orientation.v.y();
-    tempQ[3] = arb->getState().orientation.v.z();
-    
-    dBodySetPosition(body, arb->getState().position.x(), arb->getState().position.y(), arb->getState().position.z());
-    dBodySetQuaternion(body, tempQ);
+    dBodySetPosition(body, pos.x(), pos.y(), pos.z());
     
     return body;
-}
-
-dGeomID makeODEBoxGeom(double sx, double sy, double sz)
-{
-    dGeomID g = dCreateBox(0, sx, sy, sz);
-    return g;
-}
-
-ArticulatedRigidBody* createARB(unsigned int id, const Vector3d& pos)
-{
-    ArticulatedRigidBody* arb = new ArticulatedRigidBody();
-    arb->setMass(rbMass(id));
-    arb->state.position = pos;
-    
-    return arb;
 }
 
 void CWRobot::create(dWorldID world)
 {
     using namespace CharacterConst;
-    const double unit = 1.0;
     
-    fCharacter = new Character();
+    fBodies[B_PELVIS] = makeODEARB(world, B_PELVIS,
+                                   Eigen::Vector3d(0., 0., pelvisPosZ));
     
-    ArticulatedRigidBody* pelvis = createARB(B_PELVIS, Point3d(0, 0, pelvisPosZ));
-    fCharacter->setRoot(pelvis);
+    fBodies[B_L_THIGH] = makeODEARB(world, B_L_THIGH,
+                                    Eigen::Vector3d(0., legPosY_L, thighPosZ));
+    fBodies[B_L_SHANK] = makeODEARB(world, B_L_SHANK,
+                                    Eigen::Vector3d(0., legPosY_L, shankPosZ));
+    fBodies[B_R_THIGH] = makeODEARB(world, B_R_THIGH,
+                                    Eigen::Vector3d(0., legPosY_R, thighPosZ));
+    fBodies[B_R_SHANK] = makeODEARB(world, B_R_SHANK,
+                                    Eigen::Vector3d(0., legPosY_R, shankPosZ));
     
-    ArticulatedRigidBody* lThigh = createARB(B_L_THIGH,
-        Point3d(0., legPosY_L, thighPosZ));
-    fCharacter->addArticulatedRigidBody(lThigh, B_L_THIGH);
+    fBodies[B_L_FOOT] = makeODEARB(world, B_L_FOOT,
+                                   Eigen::Vector3d(footPosX, legPosY_L, footPosZ));
+    fBodies[B_R_FOOT] = makeODEARB(world, B_R_FOOT,
+                                   Eigen::Vector3d(footPosX, legPosY_R, footPosZ));
     
-    Joint* joint2 = new Joint();
-    joint2->setParentJointPosition(Point3d(0., pelvisRadius*legRelativeAnchorY, -pelvisSizeZ/2.0));
-    joint2->setChildJointPosition(Point3d(0, 0, thighSizeZ/2.0));
-    joint2->setParent(pelvis);
-    joint2->setChild(lThigh);
-    fCharacter->addJoint(joint2, J_L_HIP);
-    
-    ArticulatedRigidBody* rThigh = createARB(B_R_THIGH,
-        Point3d(0., legPosY_R, thighPosZ));
-    fCharacter->addArticulatedRigidBody(rThigh, B_R_THIGH);
-    
-    Joint* joint3 = new Joint();
-    joint3->setParentJointPosition(Point3d(0., -pelvisRadius*legRelativeAnchorY, -pelvisSizeZ/2.0));
-    joint3->setChildJointPosition(Point3d(0, 0, thighSizeZ/2.0));
-    joint3->setParent(pelvis);
-    joint3->setChild(rThigh);
-    fCharacter->addJoint(joint3, J_R_HIP);
-    
-    ArticulatedRigidBody* lShank = createARB(B_L_SHANK,
-        Point3d(0., legPosY_L, shankPosZ));
-    fCharacter->addArticulatedRigidBody(lShank, B_L_SHANK);
-    
-    Joint* joint4 = new Joint();
-    joint4->setParentJointPosition(Point3d(0, 0, -thighSizeZ/2.0));
-    joint4->setChildJointPosition(Point3d(0, 0, shankSizeZ/2.0));
-    joint4->setParent(lThigh);
-    joint4->setChild(lShank);
-    fCharacter->addJoint(joint4, J_L_KNEE);
-    
-    ArticulatedRigidBody* rShank = createARB(B_R_SHANK,
-        Point3d(0., legPosY_R, shankPosZ));
-    fCharacter->addArticulatedRigidBody(rShank, B_R_SHANK);
-    
-    Joint* joint5 = new Joint();
-    joint5->setParentJointPosition(Point3d(0, 0, -thighSizeZ/2.0));
-    joint5->setChildJointPosition(Point3d(0, 0, shankSizeZ/2.0));
-    joint5->setParent(rThigh);
-    joint5->setChild(rShank);
-    fCharacter->addJoint(joint5, J_R_KNEE);
-    
-    ArticulatedRigidBody* lFoot = createARB(B_L_FOOT,
-        Point3d(footPosX, legPosY_L, footPosZ));
-    fCharacter->addArticulatedRigidBody( lFoot, B_L_FOOT );
-    
-    Joint* joint6 = new Joint();
-    joint6->setParentJointPosition(Point3d(0, 0, -shankSizeZ/2.0));
-    joint6->setChildJointPosition(Point3d(-footPosX, 0, footSizeZ/2.0));
-    joint6->setParent(lShank);
-    joint6->setChild(lFoot);
-    fCharacter->addJoint(joint6, J_L_ANKLE);
-    
-    ArticulatedRigidBody* rFoot = createARB(B_R_FOOT,
-        Point3d(footPosX, legPosY_R, footPosZ));
-    fCharacter->addArticulatedRigidBody( rFoot, B_R_FOOT );
-    
-    Joint* joint7 = new Joint();
-    joint7->setParentJointPosition(Point3d(0, 0, -shankSizeZ/2.0));
-    joint7->setChildJointPosition(Point3d(-footPosX, 0, footSizeZ/2.0));
-    joint7->setParent(rShank);
-    joint7->setChild(rFoot);
-    fCharacter->addJoint(joint7, J_R_ANKLE);
-    
-    fBodies[B_PELVIS] = makeODEARB(world, B_PELVIS, pelvis);
-    
-    fBodies[B_L_THIGH] = makeODEARB(world, B_L_THIGH, lThigh);
-    fBodies[B_L_SHANK] = makeODEARB(world, B_L_SHANK, lShank);
-    fBodies[B_R_THIGH] = makeODEARB(world, B_R_THIGH, rThigh);
-    fBodies[B_R_SHANK] = makeODEARB(world, B_R_SHANK, rShank);
-    
-    fBodies[B_L_FOOT] = makeODEARB(world, B_L_FOOT, lFoot);
-    fBodies[B_R_FOOT] = makeODEARB(world, B_R_FOOT, rFoot);
-    
-    fLFootG = makeODEBoxGeom(footSizeX, footSizeY, footSizeZ);
-    fRFootG = makeODEBoxGeom(footSizeX, footSizeY, footSizeZ);
+    fLFootG = dCreateBox(0, footSizeX, footSizeY, footSizeZ);
+    fRFootG = dCreateBox(0, footSizeX, footSizeY, footSizeZ);
     dGeomSetBody(fLFootG, fBodies[B_L_FOOT]);
     dGeomSetBody(fRFootG, fBodies[B_R_FOOT]);
     

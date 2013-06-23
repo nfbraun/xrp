@@ -212,17 +212,10 @@ Cartwheel::Cartwheel(unsigned int stepPerSec, unsigned int intPerStep)
     
     fRobot = new CWRobot();
     fRobot->create(fWorld);
-    fCharacter = fRobot->fCharacter;
-    fCharacter->computeMass();
-    
-    fFloorRB = new RigidBody();
-    //fFloorRB->lockBody(true);
-    //fFloorRB->setFrictionCoefficient(2.5);
-    //fFloorRB->setRestitutionCoefficient(0.35);
     
     WorldOracle* worldOracle = new WorldOracle();
     
-    fController = new CWController(fCharacter, worldOracle);
+    fController = new CWController(worldOracle);
     
     fContactGroup = dJointGroupCreate(0);
     
@@ -391,13 +384,6 @@ void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
     //advance the simulation
     dWorldStep(fWorld, dt);
     
-    //copy over the state of the ODE bodies to the rigid bodies...
-    for(int rid=0; rid<B_MAX; rid++)
-    {
-        ArticulatedRigidBody* rb = fCharacter->getARBs()[rid];
-        setRBState(rb, QFromODE(fRobot->fBodies[rid]));
-    }
-    
     #ifdef USE_FOOT_COLLISION
     //copy over the force information for the contact forces
     assert(fCData.pLeft.size() < MAX_CONTACTS);
@@ -437,20 +423,6 @@ void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
     #ifdef USE_STANCE_FOOT_LOCKING
     SetFakeContactData(fStance);
     #endif
-}
-
-void Cartwheel::setRBState(RigidBody* rb, const BodyQ& q)
-{
-    rb->state.position = q.pos();
-    
-    rb->state.orientation.s = q.rot().w();
-    rb->state.orientation.v.x() = q.rot().x();
-    rb->state.orientation.v.y() = q.rot().y();
-    rb->state.orientation.v.z() = q.rot().z();
-    
-    rb->state.velocity = q.vel();
-    
-    rb->state.angularVelocity = q.avel();
 }
 
 JSpTorques getTestJSpTorques(double t)

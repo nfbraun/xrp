@@ -7,7 +7,6 @@
 #include "CWRobot.h"
 #include <Core/CWController.h>
 #include <Core/Debug.h>
-#include <Physics/ArticulatedFigure.h>
 #include <ode/ode.h>
 
 #include <Eigen/Dense>
@@ -147,10 +146,6 @@ class Cartwheel: public Simulation {
     static const char TITLE[];
     
   private:
-    /* dBodyID BodyFromConfig(const BodyConf& conf);
-    void InitLeg(HobLeg& leg, ChainSegment upperLegC, ChainSegment lowerLegC,
-             FootSegment footC); */
-    
     void AdvanceInTime(double dt, const JSpTorques& torques);
     void ApplyTorques(const JSpTorques& jt);
     void setRBState(RigidBody* rb, const BodyQ& q);
@@ -166,13 +161,11 @@ class Cartwheel: public Simulation {
     dJointFeedback fRightFeedback[MAX_CONTACTS];
     ContactData fCData;
     
-    Character* fCharacter;
     CWRobot *fRobot;
     CWController *fController;
     
     JSpTorques fDebugJTorques;
     
-    RigidBody* fFloorRB;
     dGeomID fFloorG;
     
     int fStance;
