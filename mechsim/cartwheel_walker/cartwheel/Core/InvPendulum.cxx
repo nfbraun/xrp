@@ -114,10 +114,15 @@ bool InvPendulum::detectPossibleLegCrossing(const RobotInfo& rinfo, const Vector
 Vector3d InvPendulum::computeIPStepLocation(const RobotInfo& rinfo)
 {
 	Vector3d step;
-	double h = fabs(rinfo.comPos().z() - rinfo.stanceFootPos().z());
-	step.x() = rinfo.getV().x() * sqrt(h/9.8 + rinfo.getV().x() * rinfo.getV().x() / (4*9.8*9.8)) * 1.1;
-	step.y() = rinfo.getV().y() * sqrt(h/9.8 + rinfo.getV().y() * rinfo.getV().y() / (4*9.8*9.8)) * 1.3;
+	const double g = 9.8;
+	const double h = fabs(rinfo.comPos().z() - rinfo.stanceFootPos().z());
+	const double vx = rinfo.getV().x();
+	const double vy = rinfo.getV().y();
+	
+	step.x() = vx * sqrt(h/g + vx*vx / (4*g*g)) * 1.1;
+	step.y() = vy * sqrt(h/g + vy*vy / (4*g*g)) * 1.3;
 	step.z() = 0;
+	
 	return step;
 }
 
