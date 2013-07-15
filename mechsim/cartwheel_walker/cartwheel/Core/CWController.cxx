@@ -1,4 +1,5 @@
 #include "CWController.h"
+#include "SwingController.h"
 #include "../../DynTransform.h"
 
 void labelJoints(Character* character)
@@ -21,7 +22,7 @@ CWController::CWController(WorldOracle* worldOracle)
     
     labelJoints(fCharacter);
     
-    fIKVMCCtrl.dbg = &fDbg;
+    fSwingCtrl.dbg = &fDbg;
     fTorqueCtrl.dbg = &fDbg;
     
     Init();
@@ -199,7 +200,7 @@ JSpTorques CWController::Run(double dt, const FullState& fstate, const JSpState&
     fInvPendCtrl.calcDesiredSwingFootLocation(rinfo, highTarget.velDSagittal,
         highTarget.velDCoronal, desiredPos, desiredVel);
     
-    IKSwingLegTarget swingLegTarget = fIKVMCCtrl.computeIKSwingLegTargets(rinfo,
+    IKSwingLegTarget swingLegTarget = fSwingCtrl.computeIKSwingLegTargets(rinfo,
         desiredPos, desiredVel, highTarget.swingFootHeight, highTarget.swingFootHeightVel);
     
     const double comOffsetCoronal = fInvPendCtrl.calcComOffsetCoronal(rinfo);

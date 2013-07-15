@@ -3,7 +3,8 @@
 #include "RobotInfo.h"
 #include "WorldOracle.h"
 #include "StateMachine.h"
-#include "IKVMCController.h"
+#include "SwingController.h"
+#include "TorqueController.h"
 #include "TurnController.h"
 #include "WalkController.h"
 #include "Controller.h"
@@ -28,7 +29,7 @@ class CWController {
     StateMachine fStateMachine;
     TorqueController fTorqueCtrl;
     InvPendulum fInvPendCtrl;
-    IKVMCController fIKVMCCtrl;
+    SwingController fSwingCtrl;
     
 #ifdef USE_WALK_CONTROLLER
     WalkController fHighCtrl;

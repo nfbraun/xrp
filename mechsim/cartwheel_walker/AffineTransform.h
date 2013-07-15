@@ -35,8 +35,12 @@ class AffineTransform {
     static AffineTransform Translation(const Eigen::Vector3d t)
         { return AffineTransform(Eigen::Quaterniond(1., 0., 0., 0.), t); }
     
-    static AffineTransform Unit()
+    static AffineTransform Identity()
         { return AffineTransform(Eigen::Quaterniond(1., 0., 0., 0.), Eigen::Vector3d::Zero()); }
+    
+    /* FIXME: deprecated. */
+    static AffineTransform Unit()
+        { return Identity(); }
     
     Eigen::Matrix4d toMatrix() const {
         Eigen::Matrix4d M;

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Core/IKVMCController.h>
+#include "SwingController.h"
 #include <MathLib/Segment.h>
 
 #include "InvPendulum.h"
@@ -17,7 +17,7 @@ class WalkController {
     // this method gets called at every simulation time step
     HighLevelTarget simStepPlan(const RobotInfo& rinfo, double dt);
     
-    double getStepTime() const { return 0.6; }
+    double getStepTime() const { return 0.8; }
 
   private:
     double adjustStepHeight(const RobotInfo& rinfo);

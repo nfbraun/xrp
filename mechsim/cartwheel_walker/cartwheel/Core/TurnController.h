@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Core/IKVMCController.h>
+#include "SwingController.h"
 #include <MathLib/Segment.h>
 #include <Core/WorldOracle.h>
 

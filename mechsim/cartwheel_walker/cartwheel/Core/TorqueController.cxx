@@ -1,6 +1,6 @@
 #include "TorqueController.h"
 #include "../../DynTransform.h"
-#include <Core/VirtualModelController.h>
+#include "SwingController.h"
 
 TorqueController::TorqueController()
 {
@@ -23,21 +23,6 @@ void TorqueController::addControlParams(JointID jid, double kp, double kd, doubl
     poseControl.controlParams[jid].setKd(kd);
     poseControl.controlParams[jid].setMaxAbsTorque(tauMax);
     poseControl.controlParams[jid].setScale(scale);
-}
-
-/**
-	This method computes the torques that cancel out the effects of gravity, 
-	for better tracking purposes
-*/
-RawTorques TorqueController::computeGravityCompensationTorques(const RobotInfo& rinfo)
-{
-    RawTorques torques;
-    
-    VirtualModelController::addJointTorquesEquivalentToForce(rinfo.character()->getJoints()[rinfo.swingHipIndex()], Point3d(), Vector3d(0, 0, rinfo.character()->getJoints()[rinfo.swingHipIndex()]->child->getMass()*9.8), NULL, torques);
-    VirtualModelController::addJointTorquesEquivalentToForce(rinfo.character()->getJoints()[rinfo.swingKneeIndex()], Point3d(), Vector3d(0, 0, rinfo.character()->getJoints()[rinfo.swingKneeIndex()]->child->getMass()*9.8), NULL, torques);
-    VirtualModelController::addJointTorquesEquivalentToForce(rinfo.character()->getJoints()[rinfo.swingAnkleIndex()], Point3d(), Vector3d(0, 0, rinfo.character()->getJoints()[rinfo.swingAnkleIndex()]->child->getMass()*9.8), NULL, torques);
-    
-    return torques;
 }
 
 void TorqueController::COMJT(const RobotInfo& rinfo, const Vector3d& fA, Vector3d& stanceAnkleTorque, Vector3d& stanceKneeTorque, Vector3d& stanceHipTorque)
@@ -204,30 +189,6 @@ void TorqueController::transformLegTorques(JSpTorques& jt, unsigned int side, co
     jt.t(side, AY) = -AnkleAxis2.dot(torques.get(ankleId).toEigen());
 }
 
-/* Compute the torques for the swing leg. */
-void TorqueController::swingLegControl(JSpTorques& jt, const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose)
-{
-    RawTorques torques;
-    
-    torques.at(rinfo.swingHipIndex()) = poseControl.computePDJointTorque(rinfo,
-        rinfo.swingHipIndex(), desiredPose.swingHipOrient, desiredPose.swingHipAngVel, false);
-    torques.at(rinfo.swingKneeIndex()) = poseControl.computePDJointTorque(rinfo,
-        rinfo.swingKneeIndex(), desiredPose.swingKneeOrient, desiredPose.swingKneeAngVel, false);
-    torques.at(rinfo.swingAnkleIndex()) = poseControl.computePDJointTorque(rinfo,
-        rinfo.swingAnkleIndex(), Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), true,
-        rinfo.characterFrame());
-    
-    //bubble-up the torques computed from the PD controllers
-    torques.at(rinfo.swingKneeIndex()) +=  torques.at(rinfo.swingAnkleIndex());
-    torques.at(rinfo.swingHipIndex()) +=  torques.at(rinfo.swingKneeIndex());
-    
-    //we'll also compute the torques that cancel out the effects of gravity, for better tracking purposes (swing leg only)
-    torques.add(computeGravityCompensationTorques(rinfo));
-    
-    transformLegTorques(jt, rinfo.stance() == LEFT_STANCE ? RIGHT : LEFT,
-                        rinfo, torques);
-}
-
 /* Compute the torques for the stance leg. */
 void TorqueController::stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, const ContactInfo& cfs, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
 {
@@ -258,7 +219,8 @@ void TorqueController::stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, 
         
         torques.at(rinfo.stanceAnkleIndex()) += preprocessAnkleVTorque(rinfo, cfs, stanceAnkleTorque, rinfo.phi());
         torques.at(rinfo.stanceKneeIndex()) += stanceKneeTorque;
-        torques.at(rinfo.stanceHipIndex()) = stanceHipTorque - virtualRootTorque - torques.at(rinfo.swingHipIndex());
+        torques.at(rinfo.stanceHipIndex()) = stanceHipTorque - virtualRootTorque;
+        // FIXME: maybe re-include: - torques.at(rinfo.swingHipIndex());
     }
     
     transformLegTorques(jt, rinfo.stance() == LEFT_STANCE ? LEFT : RIGHT,
@@ -272,7 +234,7 @@ JSpTorques TorqueController::computeTorques(const RobotInfo& rinfo, const Contac
 {
     JSpTorques jt;
     
-    swingLegControl(jt, rinfo, desiredPose);
+    SwingController::swingLegControl(jt, rinfo, desiredPose);
     stanceLegControl(jt, rinfo, cfs, comOffsetCoronal, velDSagittal, velDCoronal, desiredHeading);
     
     return jt;

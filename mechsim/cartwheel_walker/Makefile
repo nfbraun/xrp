@@ -12,16 +12,15 @@ cartwheel/Physics/RigidBody.cxx \
 cartwheel/Core/Character.cxx \
 cartwheel/Core/ContactInfo.cxx \
 cartwheel/Core/TorqueController.cxx \
-cartwheel/Core/IKVMCController.cxx \
 cartwheel/Core/InvPendulum.cxx \
 cartwheel/Core/PoseController.cxx \
 cartwheel/Core/SimGlobals.cxx \
 cartwheel/Core/TurnController.cxx \
 cartwheel/Core/WalkController.cxx \
-cartwheel/Core/TwoLinkIK.cxx \
-cartwheel/Core/VirtualModelController.cxx \
 cartwheel/Core/CWController.cxx \
-cartwheel/Core/StateMachine.cxx
+cartwheel/Core/StateMachine.cxx \
+cartwheel/Core/LegIK.cxx \
+cartwheel/Core/SwingController.cxx
 
 CW_HEADERS = \
 cartwheel/MathLib/MathLib.h \
@@ -42,17 +41,16 @@ cartwheel/Core/ContactInfo.h \
 cartwheel/Core/RobotInfo.h \
 cartwheel/Core/Controller.h \
 cartwheel/Core/TorqueController.h \
-cartwheel/Core/IKVMCController.h \
 cartwheel/Core/InvPendulum.h \
 cartwheel/Core/PoseController.h \
 cartwheel/Core/SimGlobals.h \
 cartwheel/Core/TurnController.h \
 cartwheel/Core/WalkController.h \
-cartwheel/Core/TwoLinkIK.h \
-cartwheel/Core/VirtualModelController.h \
 cartwheel/Core/WorldOracle.h \
 cartwheel/Core/CWController.h \
 cartwheel/Core/StateMachine.h \
+cartwheel/Core/LegIK.h \
+cartwheel/Core/SwingController.h \
 cartwheel/Core/Debug.h
 
 OBJS = $(SOURCES:.cxx=.o) $(CW_SOURCES:.cxx=.o)

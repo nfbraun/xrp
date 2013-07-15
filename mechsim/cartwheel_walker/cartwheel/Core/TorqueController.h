@@ -6,12 +6,7 @@
 #include <Core/RobotInfo.h>
 #include <Core/ContactInfo.h>
 #include <Core/Debug.h>
-
-class IKSwingLegTarget {
-  public:
-    Quaternion swingHipOrient, swingKneeOrient;
-    Vector3d swingHipAngVel, swingKneeAngVel;
-};
+#include "SwingController.h"
 
 class TorqueController {
   public:
@@ -20,17 +15,10 @@ class TorqueController {
     
     DebugInfo* dbg;
     
+    static void transformLegTorques(JSpTorques& jt, unsigned int side, const RobotInfo& rinfo, const RawTorques& torques);
+    
   private:
-    void swingLegControl(JSpTorques& jt, const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose);
     void stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, const ContactInfo& cfs, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading);
-    
-    void transformLegTorques(JSpTorques& jt, unsigned int side, const RobotInfo& rinfo, const RawTorques& torques);
-    
-    /**
-        This method computes the torques that cancel out the effects of gravity, 
-        for better tracking purposes
-    */
-    RawTorques computeGravityCompensationTorques(const RobotInfo& rinfo);
     
     /**
     This method is used to compute torques for the stance leg that help achieve a desired speed in the sagittal and lateral planes

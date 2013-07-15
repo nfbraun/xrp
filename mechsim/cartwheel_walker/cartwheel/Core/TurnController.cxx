@@ -11,7 +11,7 @@ TurnController::TurnController(WorldOracle* w)
 	ll_panicHeight = 0;
 	ll_unplannedForHeight = 0;
 	
-	requestStepTime(0.6);
+	requestStepTime(0.8);
 	requestStepHeight(0.);
 
 	desiredHeading = 0;
