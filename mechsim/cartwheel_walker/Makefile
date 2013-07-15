@@ -13,7 +13,6 @@ cartwheel/Core/Character.cxx \
 cartwheel/Core/ContactInfo.cxx \
 cartwheel/Core/TorqueController.cxx \
 cartwheel/Core/InvPendulum.cxx \
-cartwheel/Core/PoseController.cxx \
 cartwheel/Core/SimGlobals.cxx \
 cartwheel/Core/TurnController.cxx \
 cartwheel/Core/WalkController.cxx \
@@ -42,7 +41,6 @@ cartwheel/Core/RobotInfo.h \
 cartwheel/Core/Controller.h \
 cartwheel/Core/TorqueController.h \
 cartwheel/Core/InvPendulum.h \
-cartwheel/Core/PoseController.h \
 cartwheel/Core/SimGlobals.h \
 cartwheel/Core/TurnController.h \
 cartwheel/Core/WalkController.h \

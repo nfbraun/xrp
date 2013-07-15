@@ -2,29 +2,6 @@
 #include "../../DynTransform.h"
 #include "SwingController.h"
 
-TorqueController::TorqueController()
-{
-    rootControlParams.setKp(1000.0);
-    rootControlParams.setKd(200.0);
-    rootControlParams.setMaxAbsTorque(200.0);
-    rootControlParams.setScale(Vector3d(1.0, 1.0, 1.0));
-    
-    addControlParams(J_L_HIP, 300.0, 35.0, 100.0, Vector3d( 1.0, 1.0, 1.0 ) );
-    addControlParams(J_R_HIP, 300.0, 35.0, 100.0, Vector3d( 1.0, 1.0, 1.0 ) );
-    addControlParams(J_L_KNEE, 300.0, 35.0, 200.0, Vector3d( 1.0, 1.0, 1.0 ) );
-    addControlParams(J_R_KNEE, 300.0, 35.0, 200.0, Vector3d( 1.0, 1.0, 1.0 ) );
-    addControlParams(J_L_ANKLE, 50.0, 15.0, 50.0, Vector3d( 0.2, 1.0, 0.2 ) );
-    addControlParams(J_R_ANKLE, 50.0, 15.0, 50.0, Vector3d( 0.2, 1.0, 0.2 ) );
-}
-
-void TorqueController::addControlParams(JointID jid, double kp, double kd, double tauMax, const Vector3d& scale)
-{
-    poseControl.controlParams[jid].setKp(kp);
-    poseControl.controlParams[jid].setKd(kd);
-    poseControl.controlParams[jid].setMaxAbsTorque(tauMax);
-    poseControl.controlParams[jid].setScale(scale);
-}
-
 void TorqueController::COMJT(const RobotInfo& rinfo, const Vector3d& fA, Vector3d& stanceAnkleTorque, Vector3d& stanceKneeTorque, Vector3d& stanceHipTorque)
 {
 	//applying a force at the COM induces the force f. The equivalent torques are given by the J' * f, where J' is
@@ -144,8 +121,24 @@ Vector3d TorqueController::computeRootTorque(const RobotInfo& rinfo, double desH
 	//qRootDW needs to also take into account the desired heading
 	qRootDW = Quaternion::getRotationQuaternion(desHeading, PhysicsGlobals::up);
 
-	//so this is the net torque that the root wants to see, in world coordinates
-	rootTorque = poseControl.computePDTorque(rinfo.rootOrient(), qRootDW, rinfo.rootAngVel(), Vector3d(0,0,0), &rootControlParams);
+	Quaternion qErr = rinfo.rootOrient().getComplexConjugate() * qRootDW;
+
+	//qErr.v also contains information regarding the axis of rotation and the angle (sin(theta)), but I want to scale it by theta instead
+	double sinTheta = qErr.v.norm();
+	if (IS_ZERO(sinTheta)){
+		//avoid the divide by close-to-zero. The orientations match, so the proportional component of the torque should be 0
+		rootTorque = Vector3d(0., 0., 0.);
+	}else{
+		double absAngle = 2 * asin(sinTheta);
+		rootTorque = qErr.v;
+		rootTorque *= 1/sinTheta * absAngle * (-1000.0) * SGN(qErr.s);
+	}
+
+	//qErr represents the rotation from the desired child frame to the actual child frame, which
+	//means that the torque is now expressed in child coordinates. We need to express it in parent coordinates!
+	rootTorque = rinfo.rootOrient().rotate(rootTorque);
+	//the angular velocities are stored in parent coordinates, so it is ok to add this term now
+	rootTorque += (-rinfo.rootAngVel()) * (-200.0);
 
 	//now, based on the ratio of the forces the feet exert on the ground, and the ratio of the forces between the two feet, we will compute the forces that need to be applied
 	//to the two hips, to make up the root makeup torque - which means the final torque the root sees is rootTorque!
@@ -194,16 +187,6 @@ void TorqueController::stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, 
 {
     RawTorques torques;
     
-    torques.at(rinfo.stanceKneeIndex()) = poseControl.computePDJointTorque(rinfo,
-        rinfo.stanceKneeIndex(), Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), false);
-    
-    torques.at(rinfo.stanceAnkleIndex()) = poseControl.computePDJointTorque(rinfo,
-        rinfo.stanceAnkleIndex(), Quaternion(1., 0., 0., 0.), Vector3d(0., 0., 0.), true,
-        rinfo.characterFrame());
-    
-    //bubble-up the torques computed from the PD controllers
-    torques.at(rinfo.stanceKneeIndex()) +=  torques.at(rinfo.stanceAnkleIndex());
-    
     //and now separetely compute the torques for the hips - together with the feedback term, this is what defines simbicon
     dbg->StanceFootWeightRatio = getStanceFootWeightRatio(rinfo, cfs);
     
@@ -225,6 +208,9 @@ void TorqueController::stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, 
     
     transformLegTorques(jt, rinfo.stance() == LEFT_STANCE ? LEFT : RIGHT,
                         rinfo, torques);
+    
+    unsigned int side = (rinfo.stance() == LEFT_STANCE ? LEFT : RIGHT);
+    jt.t(side, KY) += 300.0*(-rinfo.jstate().phi(side, KY)) + 35.0 * (-rinfo.jstate().omega(side, KY));
 }
 
 /**

@@ -2,7 +2,6 @@
 
 #include <Core/Controller.h>
 #include <Core/Character.h>
-#include <Core/PoseController.h>
 #include <Core/RobotInfo.h>
 #include <Core/ContactInfo.h>
 #include <Core/Debug.h>
@@ -10,7 +9,6 @@
 
 class TorqueController {
   public:
-    TorqueController();
     JSpTorques computeTorques(const RobotInfo& rinfo, const ContactInfo& cfs, const IKSwingLegTarget& desiredPose, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading);
     
     DebugInfo* dbg;
@@ -44,11 +42,4 @@ class TorqueController {
     This method is used to compute the torques that need to be applied to the stance and swing hips, given the desired orientation for the root and the swing hip. The coordinate frame that these orientations are expressed relative to is computed in this method. It is assumed that the stanceHipToSwingHipRatio variable is between 0 and 1, and it corresponds to the percentage of the total net vertical force that rests on the stance foot.
     */
     Vector3d computeRootTorque(const RobotInfo& rinfo, double desHeading);
-    
-  private:
-    PoseController poseControl;
-    void addControlParams(JointID jid, double kp, double kd, double tauMax, const Vector3d& scale);
-
-    //the root is not directly controlled by any joint, so we will store its Kp, Kd and maxTorque separated here.
-    ControlParams rootControlParams;
 };
