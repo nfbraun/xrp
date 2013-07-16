@@ -56,7 +56,7 @@ double TorqueController::getStanceFootWeightRatio(const RobotInfo& rinfo, const 
 */
 Vector3d TorqueController::preprocessAnkleVTorque(const RobotInfo& rinfo, const ContactInfo& cfs, const Vector3d& ankleVTorque, double phi)
 {
-	AffineTransform footTr = rinfo.fstate().trToWorld(rinfo.stanceFootIndex());
+	SE3Tr footTr = rinfo.fstate().trToWorld(rinfo.stanceFootIndex());
 	
 	Eigen::Vector3d ankleVTorque_local = footTr.inverse().onVector(ankleVTorque.toEigen());
 	

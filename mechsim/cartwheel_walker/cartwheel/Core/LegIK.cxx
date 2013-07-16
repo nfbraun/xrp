@@ -77,10 +77,10 @@ IKSwingLegTarget getSwingLegTarget(const Eigen::Vector3d& d, const Eigen::Vector
 
 Eigen::Vector3d swingLegFK(const IKSwingLegTarget& target)
 {
-    AffineTransform T = hipTransform(target.phz, target.phy, target.phx)
-                        * AffineTransform::Translation(0., 0., -CharacterConst::thighSizeZ)
-                        * kneeTransform(target.pky)
-                        * AffineTransform::Translation(0., 0., -CharacterConst::shankSizeZ);
+    SE3Tr T = hipTransform(target.phz, target.phy, target.phx)
+              * SE3Tr::Trans(0., 0., -CharacterConst::thighSizeZ)
+              * kneeTransform(target.pky)
+              * SE3Tr::Trans(0., 0., -CharacterConst::shankSizeZ);
     
     return T.trans();
 }
@@ -103,7 +103,7 @@ Eigen::Matrix<double, 6, 6> swingLegFK_S(double hz, double hy, double hx, double
     const Eigen::Vector3d relFootPos(0.016, 0., -footSizeZ/2.);
     
     /*** Thigh ***/
-    AffineTransform T = AffineTransform::Identity();
+    SE3Tr T = SE3Tr::Identity();
     const Eigen::Vector3d hipPos = T.trans();
     T = T * hipTransform(hz, hy, hx);
     Eigen::Quaterniond thighRot = T.rot();
@@ -126,7 +126,7 @@ Eigen::Matrix<double, 6, 6> swingLegFK_S(double hz, double hy, double hx, double
     // Angular velocity difference across knee, expressed in global frame
     const Eigen::Matrix<double, 3, 1> M_avel_K = T.rot().toRotationMatrix() * M_avel_K_T;
     
-    T = T * AffineTransform::Translation(Eigen::Vector3d(0., 0., -thighSizeZ));
+    T = T * SE3Tr::Trans(Eigen::Vector3d(0., 0., -thighSizeZ));
     const Eigen::Vector3d kneePos = T.trans();
     T = T * kneeTransform(ky);
     
@@ -139,7 +139,7 @@ Eigen::Matrix<double, 6, 6> swingLegFK_S(double hz, double hy, double hx, double
     
     const Eigen::Matrix<double, 3, 2> M_avel_A = T.rot().toRotationMatrix() * M_avel_A_S;
     
-    T = T * AffineTransform::Translation(Eigen::Vector3d(0., 0., -shankSizeZ));
+    T = T * SE3Tr::Trans(Eigen::Vector3d(0., 0., -shankSizeZ));
     const Eigen::Vector3d anklePos = T.trans();
     
     /* Assemble matrix */
@@ -234,11 +234,11 @@ void legik_test_3()
     double hz, hy, hx, ky, ay, ax;
     LegIK(Eigen::Vector3d(.6, -.5, .5), hz, hy, hx, ky, ay, ax);
     
-    AffineTransform T = hipTransform(hz, hy, hx)
-                        * AffineTransform::Translation(0., 0., -0.6)
-                        * kneeTransform(ky)
-                        * AffineTransform::Translation(0., 0., -0.4)
-                        * ankleTransform(ay, ax);
+    SE3Tr T = hipTransform(hz, hy, hx)
+              * SE3Tr::Trans(0., 0., -0.6)
+              * kneeTransform(ky)
+              * SE3Tr::Trans(0., 0., -0.4)
+              * ankleTransform(ay, ax);
     
     std::cout << ky << " " << ay << " " << ax << std::endl;
     

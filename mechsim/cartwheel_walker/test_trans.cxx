@@ -1,5 +1,5 @@
 #include "Cartwheel.h"
-#include "AffineTransform.h"
+#include "SE3Tr.h"
 #include "StaticRobotInfo.h"
 #include "RobotState.h"
 #include "DynTransform.h"
@@ -15,7 +15,7 @@ void foo_leg_FullFromJoint(unsigned int side, FullState& fstate, const JSpState&
 {
     using namespace CharacterConst;
     
-    AffineTransform T = AffineTransform(
+    SE3Tr T = SE3Tr(
         Eigen::Quaterniond(sqrt(4./12.), sqrt(3./12.), sqrt(2./12.), -sqrt(3./12.)),
         Eigen::Vector3d(1., 5.,2.));
     
@@ -34,7 +34,7 @@ void foo_leg_FullFromJoint(unsigned int side, FullState& fstate, const JSpState&
     Eigen::Vector3d v0 = Eigen::Vector3d(-3., -.5, -.7) - w.cross(Eigen::Vector3d(1., 5.,2.));
     
     /*** Thigh ***/
-    T = T * AffineTransform::Translation(relHipPos);
+    T = T * SE3Tr::Trans(relHipPos);
     const Eigen::Vector3d hipPos = T.trans();
     T = T * hipTransform(jstate.phi(side, HZ), jstate.phi(side, HY), jstate.phi(side, HX));
     fstate.pos(side, B_THIGH) = T.onPoint(relThighPos);
@@ -55,7 +55,7 @@ void foo_leg_FullFromJoint(unsigned int side, FullState& fstate, const JSpState&
     fstate.vel(side, B_THIGH) = v0 + w.cross(fstate.pos(side, B_THIGH));
     
     /*** Shank ***/
-    T = T * AffineTransform::Translation(Eigen::Vector3d(0., 0., -thighSizeZ));
+    T = T * SE3Tr::Trans(Eigen::Vector3d(0., 0., -thighSizeZ));
     const Eigen::Vector3d kneePos = T.trans();
     T = T * kneeTransform(jstate.phi(side, KY));
     fstate.pos(side, B_SHANK) = T.onPoint(relShankPos);
@@ -73,7 +73,7 @@ void foo_leg_FullFromJoint(unsigned int side, FullState& fstate, const JSpState&
     fstate.vel(side, B_SHANK) = v0 + w.cross(fstate.pos(side, B_SHANK));
     
     /*** Foot ***/
-    T = T * AffineTransform::Translation(Eigen::Vector3d(0., 0., -shankSizeZ));
+    T = T * SE3Tr::Trans(Eigen::Vector3d(0., 0., -shankSizeZ));
     const Eigen::Vector3d anklePos = T.trans();
     T = T * ankleTransform(jstate.phi(side, AY), jstate.phi(side, AX));
     fstate.pos(side, B_FOOT) = T.onPoint(relFootPos);

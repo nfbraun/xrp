@@ -2,7 +2,7 @@
 #define CW_DYNAMICS_H
 
 #include "RobotState.h"
-#include "AffineTransform.h"
+#include "SE3Tr.h"
 #include <Eigen/Dense>
 
 /* Construct the FullState from a given (joint space) JSpState.
@@ -29,13 +29,13 @@ void setBodyState(FullState& fstate, unsigned int id, const BodyQ& q);
    whether all joint constraints are satisfied. */
 JSpState jointFromFull(const FullState& fstate);
 
-AffineTransform hipTransform(double hz, double hy, double hx);
-AffineTransform thighTransform();
-AffineTransform kneeTransform(double ky);
-AffineTransform shankTransform();
-AffineTransform ankleTransform(double ay, double ax);
+SE3Tr hipTransform(double hz, double hy, double hx);
+SE3Tr thighTransform();
+SE3Tr kneeTransform(double ky);
+SE3Tr shankTransform();
+SE3Tr ankleTransform(double ay, double ax);
 
-AffineTransform legTransform(double hz, double hy, double hx, double ky, double ay, double ax);
+SE3Tr legTransform(double hz, double hy, double hx, double ky, double ay, double ax);
 
 /* Transform hip torque from generalized forces to torque in Cartesian coordinates */
 Eigen::Vector3d transformHipTorque(double hz, double hy, double hx, double thz, double thy, double thx);

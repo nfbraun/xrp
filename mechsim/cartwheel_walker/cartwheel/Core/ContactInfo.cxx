@@ -37,7 +37,7 @@ Vector3d ContactInfo::getCoP(unsigned int rb_id, const FullState& fstate) const
 {
     double fn_tot = 0.;
     Point3d cop(0., 0., 0.);
-    AffineTransform toLocal = fstate.trToLocal(rb_id);
+    SE3Tr toLocal = fstate.trToLocal(rb_id);
     
     if(rb_id == B_L_FOOT) {
         for (unsigned int i=0; i<fCData.pLeft.size(); i++) {

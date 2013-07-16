@@ -4,7 +4,7 @@
 #include <Eigen/Dense>
 
 #include "StaticRobotInfo.h"
-#include "AffineTransform.h"
+#include "SE3Tr.h"
 
 /* Full dynamic state of a rigid body (6d position + 6d velocity) */
 class BodyQ {
@@ -19,8 +19,8 @@ class BodyQ {
     const Eigen::Vector3d& vel() const { return fVel; }
     const Eigen::Vector3d& avel() const { return fAVel; }
     
-    const AffineTransform trToWorld() const { return AffineTransform(rot(), pos()); }
-    const AffineTransform trToLocal() const { return AffineTransform(rot(), pos()).inverse(); }
+    const SE3Tr trToWorld() const { return SE3Tr(rot(), pos()); }
+    const SE3Tr trToLocal() const { return SE3Tr(rot(), pos()).inverse(); }
     
     Eigen::Vector3d& pos() { return fPos; }
     Eigen::Quaterniond& rot() { return fRot; }
@@ -54,8 +54,8 @@ class FullState {
     const Eigen::Vector3d& vel(unsigned int id) const    { return q(id).vel(); }
     const Eigen::Vector3d& avel(unsigned int id) const   { return q(id).avel(); }
     
-    const AffineTransform trToWorld(unsigned int id) const { return q(id).trToWorld(); }
-    const AffineTransform trToLocal(unsigned int id) const { return q(id).trToLocal(); }
+    const SE3Tr trToWorld(unsigned int id) const { return q(id).trToWorld(); }
+    const SE3Tr trToLocal(unsigned int id) const { return q(id).trToLocal(); }
     
     Eigen::Vector3d& pos(unsigned int id)    { return q(id).pos(); }
     Eigen::Quaterniond& rot(unsigned int id) { return q(id).rot(); }
@@ -67,8 +67,8 @@ class FullState {
     const Eigen::Vector3d& vel(unsigned int side, unsigned int id) const    { return q(side, id).vel(); }
     const Eigen::Vector3d& avel(unsigned int side, unsigned int id) const   { return q(side, id).avel(); }
     
-    const AffineTransform trToWorld(unsigned int side, unsigned int id) const { return q(side, id).trToWorld(); }
-    const AffineTransform trToLocal(unsigned int side, unsigned int id) const { return q(side, id).trToLocal(); }
+    const SE3Tr trToWorld(unsigned int side, unsigned int id) const { return q(side, id).trToWorld(); }
+    const SE3Tr trToLocal(unsigned int side, unsigned int id) const { return q(side, id).trToLocal(); }
     
     Eigen::Vector3d& pos(unsigned int side, unsigned int id)    { return q(side, id).pos(); }
     Eigen::Quaterniond& rot(unsigned int side, unsigned int id) { return q(side, id).rot(); }

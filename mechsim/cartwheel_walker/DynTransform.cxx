@@ -55,32 +55,32 @@ void decompZYXRot(const Eigen::Quaterniond q, double& z, double& y, double &x)
     x = atan2(R21, R22);
 }
 
-AffineTransform hipTransform(double hz, double hy, double hx)
+SE3Tr hipTransform(double hz, double hy, double hx)
 {
-    return AffineTransform::RotZ(hz) * AffineTransform::RotY(hy) * AffineTransform::RotX(hx);
+    return SE3Tr::RotZ(hz) * SE3Tr::RotY(hy) * SE3Tr::RotX(hx);
 }
 
-AffineTransform thighTransform()
+SE3Tr thighTransform()
 {
-    return AffineTransform::Translation(0., 0., -CharacterConst::thighSizeZ);
+    return SE3Tr::Trans(0., 0., -CharacterConst::thighSizeZ);
 }
 
-AffineTransform kneeTransform(double ky)
+SE3Tr kneeTransform(double ky)
 {
-    return AffineTransform::RotY(ky);
+    return SE3Tr::RotY(ky);
 }
 
-AffineTransform shankTransform()
+SE3Tr shankTransform()
 {
-    return AffineTransform::Translation(0., 0., -CharacterConst::shankSizeZ);
+    return SE3Tr::Trans(0., 0., -CharacterConst::shankSizeZ);
 }
 
-AffineTransform ankleTransform(double ay, double ax)
+SE3Tr ankleTransform(double ay, double ax)
 {
-    return AffineTransform::RotY(ay) * AffineTransform::RotX(ax);
+    return SE3Tr::RotY(ay) * SE3Tr::RotX(ax);
 }
 
-AffineTransform legTransform(double hz, double hy, double hx, double ky, double ay, double ax)
+SE3Tr legTransform(double hz, double hy, double hx, double ky, double ay, double ax)
 {
     return   hipTransform(hz, hy, hx)
            * thighTransform()
@@ -94,10 +94,10 @@ Eigen::Matrix3d hipAVelTransform(double hz, double hy, double hx)
     /* The code below is a faster (?) version of:
     
     const Eigen::Vector3d Qx =
-        (AffineTransform::RotZ(hz) * AffineTransform::RotY(hy)).onVector(
+        (SE3Tr::RotZ(hz) * SE3Tr::RotY(hy)).onVector(
             Eigen::Vector3d::UnitX());
     const Eigen::Vector3d Qy =
-        AffineTransform::RotZ(hz).onVector(Eigen::Vector3d::UnitY());
+        SE3Tr::RotZ(hz).onVector(Eigen::Vector3d::UnitY());
     const Eigen::Vector3d Qz = Eigen::Vector3d::UnitZ();
     Eigen::Matrix3d Q;
     Q << Qx, Qy, Qz;
@@ -156,7 +156,7 @@ void leg_FullFromJoint(unsigned int side, FullState& fstate, const JSpState& jst
     Eigen::Vector3d w(Eigen::Vector3d::Zero());
     
     /*** Thigh ***/
-    AffineTransform T = AffineTransform::Translation(relHipPos);
+    SE3Tr T = SE3Tr::Trans(relHipPos);
     const Eigen::Vector3d hipPos = T.trans();
     T = T * hipTransform(jstate.phi(side, HZ), jstate.phi(side, HY), jstate.phi(side, HX));
     fstate.pos(side, B_THIGH) = T.onPoint(relThighPos);
@@ -174,7 +174,7 @@ void leg_FullFromJoint(unsigned int side, FullState& fstate, const JSpState& jst
     fstate.vel(side, B_THIGH) = v0 + w.cross(fstate.pos(side, B_THIGH));
     
     /*** Shank ***/
-    T = T * AffineTransform::Translation(Eigen::Vector3d(0., 0., -thighSizeZ));
+    T = T * SE3Tr::Trans(Eigen::Vector3d(0., 0., -thighSizeZ));
     const Eigen::Vector3d kneePos = T.trans();
     T = T * kneeTransform(jstate.phi(side, KY));
     fstate.pos(side, B_SHANK) = T.onPoint(relShankPos);
@@ -192,7 +192,7 @@ void leg_FullFromJoint(unsigned int side, FullState& fstate, const JSpState& jst
     fstate.vel(side, B_SHANK) = v0 + w.cross(fstate.pos(side, B_SHANK));
     
     /*** Foot ***/
-    T = T * AffineTransform::Translation(Eigen::Vector3d(0., 0., -shankSizeZ));
+    T = T * SE3Tr::Trans(Eigen::Vector3d(0., 0., -shankSizeZ));
     const Eigen::Vector3d anklePos = T.trans();
     T = T * ankleTransform(jstate.phi(side, AY), jstate.phi(side, AX));
     fstate.pos(side, B_FOOT) = T.onPoint(relFootPos);
