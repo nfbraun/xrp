@@ -148,7 +148,6 @@ class Cartwheel: public Simulation {
   private:
     void AdvanceInTime(double dt, const JSpTorques& torques);
     void ApplyTorques(const JSpTorques& jt);
-    void setRBState(RigidBody* rb, const BodyQ& q);
     
     void BodyAddTorque(dBodyID body, Vector3d torque);
     

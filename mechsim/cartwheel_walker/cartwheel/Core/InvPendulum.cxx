@@ -70,9 +70,9 @@ bool InvPendulum::detectPossibleLegCrossing(const RobotInfo& rinfo, const Vector
 	Segment swingFootTraj(rinfo.swingFootPos(), desSwingFootPos); swingFootTraj.a.z() = 0; swingFootTraj.b.z() = 0;
 	
 	//and now compute the segment originating at the stance foot that we don't want the swing foot trajectory to pass...
-	Vector3d segDir = Vector3d(100, 0, 0);
-	if (rinfo.stance() == RIGHT_STANCE) segDir.y() = -segDir.y();
-	segDir = rinfo.stanceFoot()->getWorldCoordinatesForVector(segDir); segDir.z() = 0;
+	Vector3d segDir = rinfo.fstate().trToWorld(rinfo.stanceFootIndex()).onVector(Eigen::Vector3d(100., 0., 0.));
+	
+	segDir.z() = 0;
 	Segment stanceFootSafety(rinfo.stanceFootPos(), rinfo.stanceFootPos() + segDir);
 	stanceFootSafety.a.z() = 0; stanceFootSafety.b.z() = 0;
 

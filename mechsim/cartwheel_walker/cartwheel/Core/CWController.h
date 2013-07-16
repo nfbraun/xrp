@@ -18,14 +18,7 @@ class CWController {
     void Init();
     JSpTorques Run(double dt, const FullState& fstate, const JSpState& jstate, const ContactData& cdata, double desiredHeading);
     
-  private:
-    Character* createCharacter();
-    void setRBState(RigidBody* rb, const BodyQ& q);
-    void updateCharacter(const FullState& fstate);
-    
   public:
-    Character* fCharacter;
-    
     StateMachine fStateMachine;
     TorqueController fTorqueCtrl;
     InvPendulum fInvPendCtrl;

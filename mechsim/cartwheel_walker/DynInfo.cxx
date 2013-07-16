@@ -22,7 +22,7 @@ Eigen::Vector3d comVel(const FullState& fstate)
         v += rbMass(b) * fstate.vel(b);
     }
     
-    return v;
+    return v/totalMass();
 }
 
 double Ekin(const FullState& fstate)

@@ -8,7 +8,6 @@
 #include <cmath>
 
 #include <Physics/ContactPoint.h>
-#include <Physics/RigidBody.h>
 #include <Core/TurnController.h>
 #include <Core/WorldOracle.h>
 

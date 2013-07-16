@@ -13,9 +13,9 @@ void TorqueController::COMJT(const RobotInfo& rinfo, const Vector3d& fA, Vector3
 
 	//total mass...
 	// double m = lowerLeg->getMass() + upperLeg->getMass() + pelvis->getMass();
-	const double pelvisMass = rinfo.rbMass(rinfo.rootIndex());
-	const double thighMass = rinfo.rbMass(rinfo.stanceThighIndex());
-	const double shankMass = rinfo.rbMass(rinfo.stanceShankIndex());
+	const double pelvisMass = rbMass(rinfo.rootIndex());
+	const double thighMass = rbMass(rinfo.stanceThighIndex());
+	const double shankMass = rbMass(rinfo.stanceShankIndex());
 	const double m = pelvisMass + thighMass + shankMass;
 
 	Vector3d f1 =	(rinfo.rbPos(rinfo.stanceShankIndex()) - anklePos) * shankMass +
@@ -54,25 +54,26 @@ double TorqueController::getStanceFootWeightRatio(const RobotInfo& rinfo, const 
 	This method returns performes some pre-processing on the virtual torque. The torque is assumed to be in world coordinates,
 	and it will remain in world coordinates.
 */
-Vector3d TorqueController::preprocessAnkleVTorque(const RobotInfo& rinfo, const ContactInfo& cfs, Vector3d ankleVTorque, double phi)
+Vector3d TorqueController::preprocessAnkleVTorque(const RobotInfo& rinfo, const ContactInfo& cfs, const Vector3d& ankleVTorque, double phi)
 {
-	ArticulatedRigidBody* foot = rinfo.character()->getARBs()[rinfo.stanceFootIndex()];
-	ankleVTorque = foot->getLocalCoordinatesForVector(ankleVTorque);
+	AffineTransform footTr = rinfo.fstate().trToWorld(rinfo.stanceFootIndex());
 	
-	if (cfs.toeInContact(rinfo.stanceFootIndex(), foot) == false || phi < 0.2 || phi > 0.8) ankleVTorque.y() = 0;
-
-	Vector3d footRelativeAngularVel = foot->getLocalCoordinatesForVector(foot->getAngularVelocity());
-	if ((footRelativeAngularVel.x() < -0.2 && ankleVTorque.x() > 0) || (footRelativeAngularVel.x() > 0.2 && ankleVTorque.x() < 0))
-		ankleVTorque.x() = 0;
-
-	if (fabs(footRelativeAngularVel.x()) > 1.0) ankleVTorque.x() = 0;
-	if (fabs(footRelativeAngularVel.y()) > 1.0) ankleVTorque.y() = 0;
+	Eigen::Vector3d ankleVTorque_local = footTr.inverse().onVector(ankleVTorque.toEigen());
 	
-	boundToRange(&ankleVTorque.x(), -20, 20);
+	if (cfs.toeInContact(rinfo.stanceFootIndex(), rinfo.fstate()) == false || phi < 0.2 || phi > 0.8) ankleVTorque_local.y() = 0;
 
-	ankleVTorque = foot->getWorldCoordinatesForVector(ankleVTorque);
+	Eigen::Vector3d footAVel = rinfo.fstate().avel(rinfo.stanceFootIndex());
+	Eigen::Vector3d footRelativeAngularVel = footTr.inverse().onVector(footAVel);
 	
-	return ankleVTorque;
+	if ((footRelativeAngularVel.x() < -0.2 && ankleVTorque_local.x() > 0) || (footRelativeAngularVel.x() > 0.2 && ankleVTorque_local.x() < 0))
+		ankleVTorque_local.x() = 0;
+
+	if (fabs(footRelativeAngularVel.x()) > 1.0) ankleVTorque_local.x() = 0;
+	if (fabs(footRelativeAngularVel.y()) > 1.0) ankleVTorque_local.y() = 0;
+	
+	boundToRange(&ankleVTorque_local.x(), -20, 20);
+
+	return footTr.onVector(ankleVTorque_local);
 }
 
 /**
@@ -94,7 +95,7 @@ Vector3d TorqueController::computeVirtualForce(const RobotInfo& rinfo, double de
 	} */
 
 	//and this is the force that would achieve that - make sure it's not too large...
-	Vector3d fA = (desA) * rinfo.totalMass();
+	Vector3d fA = (desA) * totalMass();
 	boundToRange(&fA.x(), -60, 60);
 	boundToRange(&fA.y(), -100, 100);
 
@@ -121,7 +122,7 @@ Vector3d TorqueController::computeRootTorque(const RobotInfo& rinfo, double desH
 	//qRootDW needs to also take into account the desired heading
 	qRootDW = Quaternion::getRotationQuaternion(desHeading, PhysicsGlobals::up);
 
-	Quaternion qErr = rinfo.rootOrient().getComplexConjugate() * qRootDW;
+	Quaternion qErr = rinfo.rootOrient().conjugate() * qRootDW;
 
 	//qErr.v also contains information regarding the axis of rotation and the angle (sin(theta)), but I want to scale it by theta instead
 	double sinTheta = qErr.v.norm();
@@ -150,28 +151,22 @@ Vector3d TorqueController::computeRootTorque(const RobotInfo& rinfo, double desH
 
 void TorqueController::transformLegTorques(JSpTorques& jt, unsigned int side, const RobotInfo& rinfo, const RawTorques& torques)
 {
-    const Character* character = rinfo.character();
-    
-    unsigned int thighId = (side == LEFT ? B_L_THIGH : B_R_THIGH);
-    unsigned int shankId = (side == LEFT ? B_L_SHANK : B_R_SHANK);
-    unsigned int footId = (side == LEFT ? B_L_FOOT : B_R_FOOT);
-    
     unsigned int hipId = (side == LEFT ? J_L_HIP : J_R_HIP);
     unsigned int kneeId = (side == LEFT ? J_L_KNEE : J_R_KNEE);
     unsigned int ankleId = (side == LEFT ? J_L_ANKLE : J_R_ANKLE);
     
-    Vector3d cf_KneeAxis(0., 1., 0.);
-    Eigen::Vector3d KneeAxis = character->getARBs()[thighId]->getOrientation().rotate(cf_KneeAxis).toEigen();
+    Eigen::Vector3d cf_KneeAxis(0., 1., 0.);
+    Eigen::Vector3d KneeAxis = rinfo.fstate().rot(side, B_THIGH)._transformVector(cf_KneeAxis);
     
-    Vector3d cf_AnkleAxis1(1., 0., 0.);
-    Vector3d cf_AnkleAxis2(0., 1., 0.);
-    Eigen::Vector3d AnkleAxis1 = character->getARBs()[footId]->getOrientation().rotate(cf_AnkleAxis1).toEigen();
-    Eigen::Vector3d AnkleAxis2 = character->getARBs()[shankId]->getOrientation().rotate(cf_AnkleAxis2).toEigen();
+    Eigen::Vector3d cf_AnkleAxis1(1., 0., 0.);
+    Eigen::Vector3d cf_AnkleAxis2(0., 1., 0.);
+    Eigen::Vector3d AnkleAxis1 = rinfo.fstate().rot(side, B_FOOT)._transformVector(cf_AnkleAxis1);
+    Eigen::Vector3d AnkleAxis2 = rinfo.fstate().rot(side, B_SHANK)._transformVector(cf_AnkleAxis2);
     
-    Eigen::Vector3d hipTorque = character->getARBs()[B_PELVIS]->getOrientation().inverseRotate(torques.get(hipId)).toEigen();
+    Eigen::Vector3d hipTorque = rinfo.fstate().rot(B_PELVIS).conjugate()._transformVector(torques.get(hipId).toEigen());
     
-    Eigen::Quaterniond hipRot = character->getARBs()[B_PELVIS]->getOrientation().conjugate().toEigen() *
-        character->getARBs()[thighId]->getOrientation().toEigen();
+    Eigen::Quaterniond hipRot = rinfo.fstate().rot(B_PELVIS).conjugate() *
+        rinfo.fstate().rot(side, B_THIGH);
     double hz, hy, hx;
     decompZYXRot(hipRot, hz, hy, hx);
     

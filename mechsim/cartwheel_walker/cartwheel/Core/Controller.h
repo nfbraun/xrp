@@ -2,7 +2,6 @@
 
 // FIXME
 #include "../../StaticRobotInfo.h"
-#include "Character.h"
 #include <Physics/ContactPoint.h>
 #include <vector>
 

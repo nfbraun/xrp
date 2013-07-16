@@ -1,6 +1,4 @@
 #include "ContactInfo.h"
-#include <Physics/RigidBody.h>
-#include <Physics/ArticulatedFigure.h>
 #include <Physics/PhysicsGlobals.h>
 
 ContactInfo::ContactInfo(const ContactData& cdata)
@@ -35,10 +33,11 @@ double ContactInfo::getTangentialForceOnFoot(unsigned int rb_id) const
     return (f - n*(f.dot(n))).norm();
 }
 
-Vector3d ContactInfo::getCoP(unsigned int rb_id, const RigidBody* rb) const
+Vector3d ContactInfo::getCoP(unsigned int rb_id, const FullState& fstate) const
 {
     double fn_tot = 0.;
     Point3d cop(0., 0., 0.);
+    AffineTransform toLocal = fstate.trToLocal(rb_id);
     
     if(rb_id == B_L_FOOT) {
         for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
@@ -56,13 +55,14 @@ Vector3d ContactInfo::getCoP(unsigned int rb_id, const RigidBody* rb) const
         assert(false); // invalid argument
     }
     
-    if(fn_tot < 0.0001)
+    if(fn_tot < 0.0001) {
         return cop;
-    else
-        return rb->getLocalCoordinatesForPoint(cop/fn_tot);
+    } else {
+        return toLocal.onPoint(cop.toEigen()/fn_tot);
+    }
 }
 
-Vector3d ContactInfo::getCoP2(unsigned int rb_id, const RigidBody* rb) const
+Vector3d ContactInfo::getCoP2(unsigned int rb_id, const FullState& fstate) const
 {
     const double h = CharacterConst::footSizeZ / 2.;
     const Vector3d n = PhysicsGlobals::up;
@@ -72,14 +72,16 @@ Vector3d ContactInfo::getCoP2(unsigned int rb_id, const RigidBody* rb) const
             return Vector3d(0., 0., 0.);
         } else {
             Point3d p = (n.cross(fCData.lTtot) - h*fCData.lFtot)/(fCData.lFtot.dot(n));
-            return rb->getLocalCoordinatesForVector(p);
+            
+            return fstate.trToLocal(B_L_FOOT).onVector(p.toEigen());
         }
     } else if(rb_id == B_R_FOOT) {
         if(fCData.rFtot.dot(n) < 0.0001) {
             return Vector3d(0., 0., 0.);
         } else {
             Point3d p = (n.cross(fCData.rTtot) - h*fCData.rFtot)/(fCData.rFtot.dot(n));
-            return rb->getLocalCoordinatesForVector(p);
+            
+            return fstate.trToLocal(B_R_FOOT).onVector(p.toEigen());
         }
     } else {
         assert(false); // invalid argument
@@ -89,19 +91,21 @@ Vector3d ContactInfo::getCoP2(unsigned int rb_id, const RigidBody* rb) const
 /**
 	determines if there are any toe forces on the given RB
 */
-bool ContactInfo::toeInContact(unsigned int rb_id, const RigidBody* rb) const
+bool ContactInfo::toeInContact(unsigned int rb_id, const FullState& fstate) const
 {
     //figure out if the toe/heel are in contact...
     bool toeForce = false;
     
     if(rb_id == B_L_FOOT) {
         for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
-            Point3d tmpP = rb->getLocalCoordinatesForPoint(fCData.pLeft[i].cp);
+            Eigen::Vector3d tmpP = fstate.trToLocal(rb_id).onPoint(fCData.pLeft[i].cp.toEigen());
+            
             if (tmpP.x() > 0) toeForce = true;
         }
     } else if(rb_id == B_R_FOOT) {
         for (unsigned int i=0; i<fCData.pRight.size(); i++) {
-            Point3d tmpP = rb->getLocalCoordinatesForPoint(fCData.pRight[i].cp);
+            Eigen::Vector3d tmpP = fstate.trToLocal(rb_id).onPoint(fCData.pRight[i].cp.toEigen());
+            
             if (tmpP.x() > 0) toeForce = true;
         }
     } else {

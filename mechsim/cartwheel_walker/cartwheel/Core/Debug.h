@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Character.h"
+#include <MathLib/Vector3d.h>
 
 class DebugInfo {
   public:

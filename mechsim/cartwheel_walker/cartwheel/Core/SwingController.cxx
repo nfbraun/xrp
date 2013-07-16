@@ -7,11 +7,9 @@ RawTorques SwingController::gravityCompensation(const RobotInfo& rinfo)
 {
     RawTorques torques;
     
-    unsigned int side = (rinfo.stance() == LEFT_STANCE ? RIGHT : LEFT);
-    
-    const double m_thigh = rbMass(side == LEFT ? B_L_THIGH : B_R_THIGH);
-    const double m_shank = rbMass(side == LEFT ? B_L_SHANK : B_R_SHANK);
-    const double m_foot = rbMass(side == LEFT ? B_L_FOOT : B_R_FOOT);
+    const double m_thigh = rbMass(rinfo.swingThighIndex());
+    const double m_shank = rbMass(rinfo.swingShankIndex());
+    const double m_foot = rbMass(rinfo.swingFootIndex());
     
     const Vector3d g(0., 0., 9.8);
     
@@ -90,9 +88,7 @@ Vector3d SwingController::transformSwingFootTarget(Vector3d step, const Point3d&
 
 void SwingController::swingAnkleControl(JSpTorques& jt, const RobotInfo& rinfo)
 {
-    unsigned int side = (rinfo.stance() == LEFT_STANCE ? RIGHT : LEFT);
-    
-    Quaternion qErr = Quaternion(rinfo.fstate().rot(side, B_FOOT)).getComplexConjugate() * rinfo.characterFrame();
+    Quaternion qErr = Quaternion(rinfo.fstate().rot(rinfo.swingFootIndex())).getComplexConjugate() * rinfo.characterFrame();
     
     Vector3d ankleT;
     
@@ -108,15 +104,16 @@ void SwingController::swingAnkleControl(JSpTorques& jt, const RobotInfo& rinfo)
         ankleT *= 1/sinTheta * absAngle * (-50.0) * SGN(qErr.s);
     }
 
-    ankleT += -Vector3d(rinfo.fstate().avel(side, B_FOOT)) * (-15.0);
+    ankleT += -Vector3d(rinfo.fstate().avel(rinfo.swingFootIndex())) * (-15.0);
     
-    Vector3d cf_AnkleAxis1(1., 0., 0.);
-    Vector3d cf_AnkleAxis2(0., 1., 0.);
-    Vector3d AnkleAxis1 = rinfo.character()->getARBs()[rinfo.swingFootIndex()]->getOrientation().rotate(cf_AnkleAxis1);
-    Vector3d AnkleAxis2 = rinfo.character()->getARBs()[rinfo.swingShankIndex()]->getOrientation().rotate(cf_AnkleAxis2);
+    Eigen::Vector3d cf_AnkleAxis1(1., 0., 0.);
+    Eigen::Vector3d cf_AnkleAxis2(0., 1., 0.);
+    Eigen::Vector3d AnkleAxis1 = rinfo.fstate().rot(rinfo.swingFootIndex())._transformVector(cf_AnkleAxis1);
+    Eigen::Vector3d AnkleAxis2 = rinfo.fstate().rot(rinfo.swingShankIndex())._transformVector(cf_AnkleAxis2);
     
-    jt.t(side, AX) = -AnkleAxis1.dot(ankleT);
-    jt.t(side, AY) = -AnkleAxis2.dot(ankleT);
+    unsigned int side = (rinfo.stance() == LEFT_STANCE ? RIGHT : LEFT);
+    jt.t(side, AX) = -AnkleAxis1.dot(ankleT.toEigen());
+    jt.t(side, AY) = -AnkleAxis2.dot(ankleT.toEigen());
 }
 
 void SwingController::swingLegControl(JSpTorques& jt, const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose)

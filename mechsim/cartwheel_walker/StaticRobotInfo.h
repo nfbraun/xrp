@@ -132,4 +132,37 @@ inline Eigen::Vector3d rbMOI(unsigned int id)
     return mois[id];
 }
 
+inline unsigned int jParent(unsigned int id)
+{
+    const unsigned int jp[J_MAX] =
+    {    B_PELVIS,      // J_L_HIP
+         B_PELVIS,      // J_R_HIP
+         B_L_THIGH,     // J_L_KNEE
+         B_R_THIGH,     // J_R_KNEE
+         B_L_SHANK,     // J_L_ANKLE
+         B_R_SHANK      // J_R_ANKLE
+    };
+    
+    assert(id < J_MAX);
+    return jp[id];
+}
+
+/* Joint position in parents local frame */
+inline Eigen::Vector3d jPos_PF(unsigned int id)
+{
+    using namespace CharacterConst;
+    
+    const Eigen::Vector3d pos[J_MAX] = 
+    {    Eigen::Vector3d(0., legPosY_L, -pelvisSizeZ/2.),    // J_L_HIP
+         Eigen::Vector3d(0., legPosY_R, -pelvisSizeZ/2.),    // J_R_HIP
+         Eigen::Vector3d(0., 0., -thighSizeZ/2.),            // J_L_KNEE
+         Eigen::Vector3d(0., 0., -thighSizeZ/2.),            // J_R_KNEE
+         Eigen::Vector3d(0., 0., -shankSizeZ/2.),            // J_L_ANKLE
+         Eigen::Vector3d(0., 0., -shankSizeZ/2.)             // J_R_ANKLE
+    };
+    
+    assert(id < J_MAX);
+    return pos[id];
+}
+
 #endif
