@@ -1,5 +1,5 @@
-#ifndef CW_CHARACTER_H
-#define CW_CHARACTER_H
+#ifndef CW_CWROBOT_H
+#define CW_CWROBOT_H
 #include "StaticRobotInfo.h"
 #include <Eigen/Dense>
 #include <ode/ode.h>

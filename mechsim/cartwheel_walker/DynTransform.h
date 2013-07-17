@@ -1,5 +1,5 @@
-#ifndef CW_DYNAMICS_H
-#define CW_DYNAMICS_H
+#ifndef CW_DYNTRANSFORM_H
+#define CW_DYNTRANSFORM_H
 
 #include "RobotState.h"
 #include "SE3Tr.h"
