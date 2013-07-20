@@ -9,7 +9,7 @@ ContactInfo::ContactInfo(const ContactData& cdata)
 /**
 	This method returns the net force on the body rb, acting from the ground
 */
-Vector3d ContactInfo::getForceOnFoot(unsigned int rb_id) const
+Eigen::Vector3d ContactInfo::getForceOnFoot(unsigned int rb_id) const
 {
     if(rb_id == B_L_FOOT) {
         return fCData.lFtot;
@@ -22,7 +22,7 @@ Vector3d ContactInfo::getForceOnFoot(unsigned int rb_id) const
 
 double ContactInfo::getNormalForceOnFoot(unsigned int rb_id) const
 {
-    return getForceOnFoot(rb_id).dot(PhysicsGlobals::up);
+    return getForceOnFoot(rb_id).dot(PhysicsGlobals::up.toEigen());
 }
 
 double ContactInfo::getTangentialForceOnFoot(unsigned int rb_id) const
@@ -33,22 +33,22 @@ double ContactInfo::getTangentialForceOnFoot(unsigned int rb_id) const
     return (f - n*(f.dot(n))).norm();
 }
 
-Vector3d ContactInfo::getCoP(unsigned int rb_id, const FullState& fstate) const
+Eigen::Vector3d ContactInfo::getCoP(unsigned int rb_id, const FullState& fstate) const
 {
     double fn_tot = 0.;
-    Point3d cop(0., 0., 0.);
+    Eigen::Vector3d cop(0., 0., 0.);
     SE3Tr toLocal = fstate.trToLocal(rb_id);
     
     if(rb_id == B_L_FOOT) {
         for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
             double fn = fCData.pLeft[i].f.dot(PhysicsGlobals::up);
-            cop += fn * fCData.pLeft[i].cp;
+            cop += fn * fCData.pLeft[i].cp.toEigen();
             fn_tot += fn;
         }
     } else if(rb_id == B_R_FOOT) {
         for (unsigned int i=0; i<fCData.pRight.size(); i++) {
             double fn = fCData.pRight[i].f.dot(PhysicsGlobals::up);
-            cop += fn * fCData.pRight[i].cp;
+            cop += fn * fCData.pRight[i].cp.toEigen();
             fn_tot += fn;
         }
     } else {
@@ -58,30 +58,30 @@ Vector3d ContactInfo::getCoP(unsigned int rb_id, const FullState& fstate) const
     if(fn_tot < 0.0001) {
         return cop;
     } else {
-        return toLocal.onPoint(cop.toEigen()/fn_tot);
+        return toLocal.onPoint(cop/fn_tot);
     }
 }
 
-Vector3d ContactInfo::getCoP2(unsigned int rb_id, const FullState& fstate) const
+Eigen::Vector3d ContactInfo::getCoP2(unsigned int rb_id, const FullState& fstate) const
 {
     const double h = CharacterConst::footSizeZ / 2.;
-    const Vector3d n = PhysicsGlobals::up;
+    const Eigen::Vector3d n = PhysicsGlobals::up.toEigen();
     
     if(rb_id == B_L_FOOT) {
         if(fCData.lFtot.dot(n) < 0.0001) {
-            return Vector3d(0., 0., 0.);
+            return Eigen::Vector3d::Zero();
         } else {
-            Point3d p = (n.cross(fCData.lTtot) - h*fCData.lFtot)/(fCData.lFtot.dot(n));
+            Eigen::Vector3d p = (n.cross(fCData.lTtot) - h*fCData.lFtot)/(fCData.lFtot.dot(n));
             
-            return fstate.trToLocal(B_L_FOOT).onVector(p.toEigen());
+            return fstate.trToLocal(B_L_FOOT).onVector(p);
         }
     } else if(rb_id == B_R_FOOT) {
         if(fCData.rFtot.dot(n) < 0.0001) {
-            return Vector3d(0., 0., 0.);
+            return Eigen::Vector3d::Zero();
         } else {
-            Point3d p = (n.cross(fCData.rTtot) - h*fCData.rFtot)/(fCData.rFtot.dot(n));
+            Eigen::Vector3d p = (n.cross(fCData.rTtot) - h*fCData.rFtot)/(fCData.rFtot.dot(n));
             
-            return fstate.trToLocal(B_R_FOOT).onVector(p.toEigen());
+            return fstate.trToLocal(B_R_FOOT).onVector(p);
         }
     } else {
         assert(false); // invalid argument

@@ -68,7 +68,7 @@ JSpTorques CWController::Run(double dt, const FullState& fstate, const JSpState&
     HighLevelTarget highTarget = fHighCtrl.simStepPlan(rinfo, SimGlobals::dt);
     
     //compute desired swing foot location and velocity
-    Vector3d desiredPos, desiredVel;
+    Eigen::Vector3d desiredPos, desiredVel;
     fInvPendCtrl.calcDesiredSwingFootLocation(rinfo, highTarget.velDSagittal,
         highTarget.velDCoronal, desiredPos, desiredVel);
     

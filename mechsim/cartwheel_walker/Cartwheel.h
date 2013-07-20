@@ -149,8 +149,6 @@ class Cartwheel: public Simulation {
     void AdvanceInTime(double dt, const JSpTorques& torques);
     void ApplyTorques(const JSpTorques& jt);
     
-    void BodyAddTorque(dBodyID body, Vector3d torque);
-    
     void LockStanceFoot(int stance);
     void SetFakeContactData(int stance);
     void SetFakeContactDataForFoot(std::vector<ContactPoint>& cpts, const Vector3d& pos);

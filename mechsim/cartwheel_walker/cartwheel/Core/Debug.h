@@ -1,13 +1,13 @@
 #pragma once
 
-#include <MathLib/Vector3d.h>
+#include <Eigen/Dense>
 
 class DebugInfo {
   public:
     int stance;
     double phi;
     
-    Vector3d desSwingPos, desSwingVel;
+    Eigen::Vector3d desSwingPos, desSwingVel;
     
     double desOffCoronal;
     double desVelCoronal, desVelSagittal;
@@ -16,10 +16,12 @@ class DebugInfo {
     
     double StanceFootWeightRatio;
     
-    Vector3d virtualRootTorque, virtualRootForce;
+    Eigen::Vector3d virtualRootTorque, virtualRootForce;
     
     double lFootNF, lFootTF;
     double rFootNF, rFootTF;
     
-    Vector3d lCoP, rCoP;
+    Eigen::Vector3d lCoP, rCoP;
+    
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

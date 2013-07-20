@@ -16,7 +16,7 @@ void scalarHeader(const std::string& name)
     std::cout << "#:" << col++ << ":" << name << "\n";
 }
 
-void printVect(const Vector3d& v)
+void printVect(const Eigen::Vector3d& v)
 {
     std::cout << v.x() << " ";
     std::cout << v.y() << " ";

@@ -3,27 +3,32 @@
 // FIXME
 #include "../../StaticRobotInfo.h"
 #include <Physics/ContactPoint.h>
-#include <vector>
+#include <Eigen/Dense>
 
 class RawTorques {
   public:
-    RawTorques() : fTorques(J_MAX, Vector3d(0., 0., 0.)) {}
+    RawTorques() {
+        for(unsigned int i=0; i<J_MAX; i++)
+            fTorques[i].setZero();
+    }
     
-    Vector3d get(int jid) const { return fTorques.at(jid); }
-    void set(int jid, const Vector3d& torque)
-        { fTorques.at(jid) = torque; }
+    const Eigen::Vector3d& get(unsigned int jid) const { return at(jid); }
+    void set(unsigned int jid, const Eigen::Vector3d& torque)
+        { at(jid) = torque; }
     
-    const Vector3d& at(int jid) const { return fTorques.at(jid); }
-    Vector3d& at(int jid) { return fTorques.at(jid); }
+    const Eigen::Vector3d& at(unsigned int jid) const { assert(jid < J_MAX); return fTorques[jid]; }
+    Eigen::Vector3d& at(unsigned int jid) { assert(jid < J_MAX); return fTorques[jid]; }
     
     void add(const RawTorques& other) {
         for(unsigned int i=0; i<J_MAX; i++) {
-            fTorques.at(i) += other.at(i);
+            at(i) += other.at(i);
         }
     }
+    
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   
   protected:
-    std::vector<Vector3d> fTorques;
+    Eigen::Vector3d fTorques[J_MAX];
 };
 
 class JSpTorques {

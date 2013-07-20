@@ -43,12 +43,12 @@ double InvPendulum::getPanicLevel(const RobotInfo& rinfo, double velDSagittal, d
 /**
 	determines the desired swing foot location
 */
-void InvPendulum::calcDesiredSwingFootLocation(const RobotInfo& rinfo, double velDSagittal, double velDCoronal, Vector3d& desiredPos, Vector3d& desiredVel)
+void InvPendulum::calcDesiredSwingFootLocation(const RobotInfo& rinfo, double velDSagittal, double velDCoronal, Eigen::Vector3d& desiredPos, Eigen::Vector3d& desiredVel)
 {
-	Vector3d step0 = computeSwingFootLocationEstimate(rinfo, rinfo.comPos(), rinfo.phi(), velDSagittal, velDCoronal);
+	Eigen::Vector3d step0 = computeSwingFootLocationEstimate(rinfo, rinfo.comPos(), rinfo.phi(), velDSagittal, velDCoronal);
 	
 	double dt = 0.001;
-	Vector3d step1 = computeSwingFootLocationEstimate(rinfo, rinfo.comPos() + rinfo.comVel() * dt, rinfo.phi()+dt, velDSagittal, velDCoronal);
+	Eigen::Vector3d step1 = computeSwingFootLocationEstimate(rinfo, rinfo.comPos() + rinfo.comVel() * dt, rinfo.phi()+dt, velDSagittal, velDCoronal);
 	
 	desiredPos = step0;
 	desiredVel = (step1 - step0) / dt;
@@ -63,7 +63,7 @@ void InvPendulum::calcDesiredSwingFootLocation(const RobotInfo& rinfo, double ve
 bool InvPendulum::detectPossibleLegCrossing(const RobotInfo& rinfo, const Vector3d& swingFootPos, Vector3d* viaPoint)
 {
 	//first, compute the world coords of the swing foot pos, since this is in the char. frame 
-	Point3d desSwingFootPos = rinfo.characterFrame().rotate(swingFootPos) + rinfo.comPos();
+	Point3d desSwingFootPos = Quaternion(rinfo.characterFrame()).rotate(swingFootPos) + rinfo.comPos();
 	//now, this is the segment that starts at the current swing foot pos and ends at the final
 	//swing foot position
 
@@ -73,7 +73,7 @@ bool InvPendulum::detectPossibleLegCrossing(const RobotInfo& rinfo, const Vector
 	Vector3d segDir = rinfo.fstate().trToWorld(rinfo.stanceFootIndex()).onVector(Eigen::Vector3d(100., 0., 0.));
 	
 	segDir.z() = 0;
-	Segment stanceFootSafety(rinfo.stanceFootPos(), rinfo.stanceFootPos() + segDir);
+	Segment stanceFootSafety(Vector3d(rinfo.stanceFootPos()), Vector3d(rinfo.stanceFootPos()) + segDir);
 	stanceFootSafety.a.z() = 0; stanceFootSafety.b.z() = 0;
 
 	//now check to see if the two segments intersect...
@@ -91,9 +91,9 @@ bool InvPendulum::detectPossibleLegCrossing(const RobotInfo& rinfo, const Vector
 	double safeDist = 0.02;
 	if ((intersect.b - intersect.a).norm() < safeDist){
 		if (viaPoint != NULL){
-			*viaPoint = rinfo.stanceFootPos() + segDir.unit() * -0.05;
+			*viaPoint = Vector3d(rinfo.stanceFootPos()) + segDir.unit() * -0.05;
 			(*viaPoint) -= Vector3d(rinfo.comPos());
-			*viaPoint = rinfo.characterFrame().inverseRotate(*viaPoint);
+			*viaPoint = Quaternion(rinfo.characterFrame()).inverseRotate(*viaPoint);
 			viaPoint->z() = 0;
 /*
 			viaPointSuggestedDebug = lowLCon->characterFrame.rotate(*viaPoint) + lowLCon->comPosition;
@@ -111,9 +111,9 @@ bool InvPendulum::detectPossibleLegCrossing(const RobotInfo& rinfo, const Vector
 	on the assumption that the character will come to a stop by taking a step at that location. The step location
 	is expressed in the character's frame coordinates.
 */
-Vector3d InvPendulum::computeIPStepLocation(const RobotInfo& rinfo)
+Eigen::Vector3d InvPendulum::computeIPStepLocation(const RobotInfo& rinfo)
 {
-	Vector3d step;
+	Eigen::Vector3d step;
 	const double g = 9.8;
 	const double h = fabs(rinfo.comPos().z() - rinfo.stanceFootPos().z());
 	const double vx = rinfo.getV().x();
@@ -129,9 +129,9 @@ Vector3d InvPendulum::computeIPStepLocation(const RobotInfo& rinfo)
 /**
 	determine the estimate desired location of the swing foot, given the etimated position of the COM, and the phase
 */
-Vector3d InvPendulum::computeSwingFootLocationEstimate(const RobotInfo& rinfo, const Point3d& comPos, double phase, double velDSagittal, double velDCoronal)
+Eigen::Vector3d InvPendulum::computeSwingFootLocationEstimate(const RobotInfo& rinfo, const Eigen::Vector3d& comPos, double phase, double velDSagittal, double velDCoronal)
 {
-	Vector3d step = computeIPStepLocation(rinfo);
+	Eigen::Vector3d step = computeIPStepLocation(rinfo);
 
 	//applying the IP prediction would make the character stop, so take a smaller step if you want it to walk faster, or larger
 	//if you want it to go backwards
@@ -142,9 +142,9 @@ Vector3d InvPendulum::computeSwingFootLocationEstimate(const RobotInfo& rinfo, c
 	boundToRange(&step.x(), -0.4 * legLength, 0.4 * legLength);
 	boundToRange(&step.y(), -0.4 * legLength, 0.4 * legLength);
 
-	Vector3d result;
-	Vector3d initialStep = swingFootStartPos - comPos;
-	initialStep = rinfo.characterFrame().inverseRotate(initialStep);
+	Eigen::Vector3d result = Eigen::Vector3d::Zero();
+	Eigen::Vector3d initialStep = swingFootStartPos - comPos;
+	initialStep = rinfo.characterFrame().conjugate()._transformVector(initialStep);
 	//when phi is small, we want to be much closer to where the initial step is - so compute this quantity in character-relative coordinates
 	//now interpolate between this position and initial foot position - but provide two estimates in order to provide some gradient information
 	double t = (1-phase);
@@ -158,11 +158,11 @@ Vector3d InvPendulum::computeSwingFootLocationEstimate(const RobotInfo& rinfo, c
 		needToStepAroundStanceAnkle = detectPossibleLegCrossing(rinfo, step, &suggestedViaPoint);
 	if (needToStepAroundStanceAnkle){
 		//use the via point...
-		Vector3d currentSwingStepPos = rinfo.swingFootPos() - comPos;
-		currentSwingStepPos = rinfo.characterFrame().inverseRotate(initialStep);currentSwingStepPos.y() = 0;		
+		Vector3d currentSwingStepPos = Vector3d(rinfo.swingFootPos() - comPos);
+		currentSwingStepPos = Quaternion(rinfo.characterFrame()).inverseRotate(initialStep);currentSwingStepPos.y() = 0;		
 		//compute the phase for the via point based on: d1/d2 = 1-x / x-phase, where d1 is the length of the vector from
 		//the via point to the final location, and d2 is the length of the vector from the swing foot pos to the via point...
-		double d1 = (step - suggestedViaPoint).norm();
+		double d1 = (Vector3d(step) - suggestedViaPoint).norm();
 		double d2 = (suggestedViaPoint - currentSwingStepPos).norm();
 		if (d2 < 0.0001) d2 = d1 + 0.001;
 		double c =  d1/d2;
@@ -172,7 +172,7 @@ Vector3d InvPendulum::computeSwingFootLocationEstimate(const RobotInfo& rinfo, c
 		alternateFootTraj.addKnot(viaPointPhase, suggestedViaPoint);
 		alternateFootTraj.addKnot(1, step);
 		//and see what the interpolated position is...
-		result = alternateFootTraj.evaluate_catmull_rom(1-t);
+		result = alternateFootTraj.evaluate_catmull_rom(1-t).toEigen();
 //		tprintf("t: %lf\n", 1-t);
 	}else{
 		result += (1-t)* step;

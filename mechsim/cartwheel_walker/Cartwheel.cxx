@@ -64,7 +64,7 @@ void CartState::Draw(int mode) const
     }
     
     glColor3f(1., 1., 0.);
-    GL::drawSphere(0.1, fDbg.desSwingPos.toEigen());
+    GL::drawSphere(0.1, fDbg.desSwingPos);
 }
 
 void CartState::DrawRobot(bool shadowmode) const
@@ -308,17 +308,17 @@ void Cartwheel::SetFakeContactData(int stance)
     fCData.pRight.clear();
     
     if(stance == LEFT_STANCE) {
-        fCData.lFtot = Vector3d(fLeftFeedback[0].f1[0], fLeftFeedback[0].f1[1], fLeftFeedback[0].f1[2]);
-        fCData.lTtot = Vector3d(fLeftFeedback[0].t1[0], fLeftFeedback[0].t1[1], fLeftFeedback[0].t1[2]);
-        fCData.rFtot = Vector3d(0., 0., 0.);
-        fCData.rTtot = Vector3d(0., 0., 0.);
+        fCData.lFtot = Eigen::Vector3d(fLeftFeedback[0].f1[0], fLeftFeedback[0].f1[1], fLeftFeedback[0].f1[2]);
+        fCData.lTtot = Eigen::Vector3d(fLeftFeedback[0].t1[0], fLeftFeedback[0].t1[1], fLeftFeedback[0].t1[2]);
+        fCData.rFtot = Eigen::Vector3d(0., 0., 0.);
+        fCData.rTtot = Eigen::Vector3d(0., 0., 0.);
         
         SetFakeContactDataForFoot(fCData.pLeft, ODE::BodyGetPosition(fRobot->fBodies[B_L_FOOT]));
     } else {
-        fCData.lFtot = Vector3d(0., 0., 0.);
-        fCData.lTtot = Vector3d(0., 0., 0.);
-        fCData.rFtot = Vector3d(fRightFeedback[0].f1[0], fRightFeedback[0].f1[1], fRightFeedback[0].f1[2]);
-        fCData.rTtot = Vector3d(fRightFeedback[0].t1[0], fRightFeedback[0].t1[1], fRightFeedback[0].t1[2]);
+        fCData.lFtot = Eigen::Vector3d(0., 0., 0.);
+        fCData.lTtot = Eigen::Vector3d(0., 0., 0.);
+        fCData.rFtot = Eigen::Vector3d(fRightFeedback[0].f1[0], fRightFeedback[0].f1[1], fRightFeedback[0].f1[2]);
+        fCData.rTtot = Eigen::Vector3d(fRightFeedback[0].t1[0], fRightFeedback[0].t1[1], fRightFeedback[0].t1[2]);
         
         SetFakeContactDataForFoot(fCData.pRight, ODE::BodyGetPosition(fRobot->fBodies[B_R_FOOT]));
     }
@@ -388,19 +388,19 @@ void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
     assert(fCData.pLeft.size() < MAX_CONTACTS);
     assert(fCData.pRight.size() < MAX_CONTACTS);
     
-    fCData.lFtot = Vector3d(0., 0., 0.);
-    fCData.lTtot = Vector3d(0., 0., 0.);
-    fCData.rFtot = Vector3d(0., 0., 0.);
-    fCData.rTtot = Vector3d(0., 0., 0.);
+    fCData.lFtot = Eigen::Vector3d::Zero();
+    fCData.lTtot = Eigen::Vector3d::Zero();
+    fCData.rFtot = Eigen::Vector3d::Zero();
+    fCData.rTtot = Eigen::Vector3d::Zero();
     
     for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
         fCData.pLeft[i].f = Vector3d(fLeftFeedback[i].f1[0], fLeftFeedback[i].f1[1], fLeftFeedback[i].f1[2]);
         
-        Vector3d f(fLeftFeedback[i].f1[0], fLeftFeedback[i].f1[1], fLeftFeedback[i].f1[2]);
-        Vector3d t(fLeftFeedback[i].t1[0], fLeftFeedback[i].t1[1], fLeftFeedback[i].t1[2]);
+        Eigen::Vector3d f(fLeftFeedback[i].f1[0], fLeftFeedback[i].f1[1], fLeftFeedback[i].f1[2]);
+        Eigen::Vector3d t(fLeftFeedback[i].t1[0], fLeftFeedback[i].t1[1], fLeftFeedback[i].t1[2]);
         /* BEGIN test */
-        Vector3d r = Eigen::Vector3d(fCData.pLeft[i].cp.x(), fCData.pLeft[i].cp.y(), fCData.pLeft[i].cp.z());
-        Vector3d tp = (r - fCData.lPos).cross(f);
+        Eigen::Vector3d r(fCData.pLeft[i].cp.x(), fCData.pLeft[i].cp.y(), fCData.pLeft[i].cp.z());
+        Eigen::Vector3d tp = (r - fCData.lPos).cross(f);
         assert((tp - t).squaredNorm() < 1e-12);
         assert(std::abs(r.z()) < 1e-3);
         /* END test */
@@ -411,8 +411,8 @@ void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
     for (unsigned int i=0; i<fCData.pRight.size(); i++) {
         fCData.pRight[i].f = Vector3d(fRightFeedback[i].f1[0], fRightFeedback[i].f1[1], fRightFeedback[i].f1[2]);
         
-        Vector3d f(fRightFeedback[i].f1[0], fRightFeedback[i].f1[1], fRightFeedback[i].f1[2]);
-        Vector3d t(fRightFeedback[i].t1[0], fRightFeedback[i].t1[1], fRightFeedback[i].t1[2]);
+        Eigen::Vector3d f(fRightFeedback[i].f1[0], fRightFeedback[i].f1[1], fRightFeedback[i].f1[2]);
+        Eigen::Vector3d t(fRightFeedback[i].t1[0], fRightFeedback[i].t1[1], fRightFeedback[i].t1[2]);
         
         fCData.rFtot += f;
         fCData.rTtot += t;

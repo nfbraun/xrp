@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Dense>
 #include <MathLib/Quaternion.h>
 #include "SimGlobals.h"
 #include <Physics/PhysicsGlobals.h>
@@ -19,24 +20,21 @@ class RobotInfo {
     const FullState& fstate() const { return fFState; }
     const JSpState& jstate() const { return fJState; }
     
-    Vector3d comPos() const { return ::comPos(fstate()); }
-    Vector3d comVel() const { return ::comVel(fstate()); }
+    Eigen::Vector3d comPos() const { return ::comPos(fstate()); }
+    Eigen::Vector3d comVel() const { return ::comVel(fstate()); }
     
     /***
     This quaternion gives the current heading of the character. The complex conjugate of this orientation is used to transform quantities from world coordinates into a rotation/heading-independent coordinate frame (called the character frame).
     I will make the asumption that the character frame is a coordinate frame that is aligned with the vertical axis, but has 0 heading, and the characterFrame quaternion is used to rotate vectors from the character frame to the real world frame.
     ***/
-    Quaternion characterFrame() const;
+    Eigen::Quaterniond characterFrame() const;
     double headingAngle() const;
     
-    Quaternion rootOrient() const { return fstate().rot(B_PELVIS); }
-    Vector3d rootAngVel() const { return fstate().avel(B_PELVIS); }
-    
-    // FIXME: remove once transition to Eigen is complete.
-    Vector3d rbPos(unsigned int index) const { return fstate().pos(index); }
+    Eigen::Quaterniond rootOrient() const { return fstate().rot(B_PELVIS); }
+    Eigen::Vector3d rootAngVel() const { return fstate().avel(B_PELVIS); }
     
     // Return joint position in global coordinates
-    Vector3d jPos(unsigned int index) const
+    Eigen::Vector3d jPos(unsigned int index) const
         { return fstate().trToWorld(jParent(index)).onPoint(jPos_PF(index)); }
     
     unsigned int rootIndex() const { return B_PELVIS; }
@@ -70,30 +68,32 @@ class RobotInfo {
     /**
     This method returns the position of the CM of the stance foot, in world coordinates
     */
-    Point3d stanceFootPos() const {
+    Eigen::Vector3d stanceFootPos() const {
         return fstate().pos(stanceFootIndex());
     }
-    Vector3d stanceFootVel() const {
+    Eigen::Vector3d stanceFootVel() const {
         return fstate().vel(stanceFootIndex());
     }
 
     /**
     This method returns the position of the CM of the swing foot, in world coordinates
     */
-    Point3d swingFootPos() const {
+    Eigen::Vector3d swingFootPos() const {
         return fstate().pos(swingFootIndex());
     }
-    Vector3d swingFootVel() const {
+    Eigen::Vector3d swingFootVel() const {
         return fstate().vel(swingFootIndex());
     }
     
     // this is the vector from the cm of the stance foot to the cm of the character
-    Vector3d getD() const
-        { return characterFrame().inverseRotate(comPos() - stanceFootPos()); }
+    Eigen::Vector3d getD() const {
+        return characterFrame().conjugate()._transformVector(comPos() - stanceFootPos());
+    }
     
     // this is the velocity of the cm of the character, in character frame
-    Vector3d getV() const
-        { return characterFrame().inverseRotate(comVel()); }
+    Eigen::Vector3d getV() const {
+        return characterFrame().conjugate()._transformVector(comVel());
+    }
     
   public:
     int fStance;

@@ -44,7 +44,7 @@ void TurnController::adjustStepHeight(const RobotInfo& rinfo)
 	ll_unplannedForHeight = 0;
 	if (wo != NULL)
 		//the trajectory of the foot was generated without taking the environment into account, so check to see if there are any un-planned bumps (at somepoint in the near future)
-		ll_unplannedForHeight = wo->getWorldHeightAt(rinfo.swingFootPos() + rinfo.swingFootVel() * 0.1) * 1.5;
+		ll_unplannedForHeight = wo->getWorldHeightAt(Vector3d(rinfo.swingFootPos() + rinfo.swingFootVel() * 0.1)) * 1.5;
 
 	//if the foot is high enough, we shouldn't do much about it... also, if we're close to the start or end of the
 	//walk cycle, we don't need to do anything... the thing below is a quadratic that is 1 at 0.5, 0 at 0 and 1...
@@ -151,7 +151,7 @@ void TurnController::calcStepPlan(const RobotInfo& rinfo, double dt)
 		t = fabs(curToFinal/turnAngle) - 0.3;
 		boundToRange(&t, 0, 1);
 		Vector3d vD = initialVelocity*t + desiredVelocity*(1-t);
-		vD = rinfo.characterFrame().inverseRotate(vD);
+		vD = Quaternion(rinfo.characterFrame()).inverseRotate(vD);
 		setVelocities(vD.x(), vD.y());
 	}
 

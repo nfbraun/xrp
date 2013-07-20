@@ -1,8 +1,8 @@
 #include "RobotInfo.h"
 
-Quaternion RobotInfo::characterFrame() const
+Eigen::Quaterniond RobotInfo::characterFrame() const
 {
-    return rootOrient().getComplexConjugate().decomposeRotation(PhysicsGlobals::up).getComplexConjugate();
+    return Quaternion(rootOrient()).getComplexConjugate().decomposeRotation(PhysicsGlobals::up).getComplexConjugate().toEigen();
 }
 
 /**

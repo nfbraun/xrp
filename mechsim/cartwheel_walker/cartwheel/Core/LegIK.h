@@ -1,7 +1,6 @@
 #pragma once
 
 #include "TorqueController.h"
-#include <MathLib/Vector3d.h>
 
 IKSwingLegTarget getSwingLegTarget(const Eigen::Vector3d& d, const Eigen::Vector3d& vd);
 Eigen::Vector3d swingLegFK(const IKSwingLegTarget& target);

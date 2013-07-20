@@ -7,6 +7,8 @@
 /**
     This class is mainly a container for a Contact Point. It holds information such as the world coordinates of the contact point, the normal at the contact, the rigid bodies that generated it, etc.
 */
+/* FIXME: Eigen objects cannot easily be put into std::vector s, so we keep
+    using Cartwheel Vector3d s for now. */
 class ContactPoint {
   public:
     // world coordinate of the origin of the contact force
@@ -24,9 +26,9 @@ class ContactData {
     std::vector<ContactPoint> pRight;
     
     // Left and right foot positions, in world coordinates
-    Vector3d lPos, rPos;
+    Eigen::Vector3d lPos, rPos;
     
     // Total force and torque, in world coordinates
-    Vector3d lFtot, lTtot;
-    Vector3d rFtot, rTtot;
+    Eigen::Vector3d lFtot, lTtot;
+    Eigen::Vector3d rFtot, rTtot;
 };

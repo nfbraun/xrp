@@ -11,28 +11,28 @@ RawTorques SwingController::gravityCompensation(const RobotInfo& rinfo)
     const double m_shank = rbMass(rinfo.swingShankIndex());
     const double m_foot = rbMass(rinfo.swingFootIndex());
     
-    const Vector3d g(0., 0., 9.8);
+    const Eigen::Vector3d g(0., 0., 9.8);
     
-    Vector3d tmpV;
+    Eigen::Vector3d tmpV;
     
-    Vector3d hipT, kneeT, ankleT;
+    Eigen::Vector3d hipT, kneeT, ankleT;
     
-    tmpV = rinfo.rbPos(rinfo.swingThighIndex()) - rinfo.jPos(rinfo.swingHipIndex());
+    tmpV = rinfo.fstate().pos(rinfo.swingThighIndex()) - rinfo.jPos(rinfo.swingHipIndex());
     hipT = -tmpV.cross(m_thigh*g);
     
-    tmpV = rinfo.rbPos(rinfo.swingShankIndex()) - rinfo.jPos(rinfo.swingHipIndex());
+    tmpV = rinfo.fstate().pos(rinfo.swingShankIndex()) - rinfo.jPos(rinfo.swingHipIndex());
     hipT += -tmpV.cross(m_shank*g);
     
-    tmpV = rinfo.rbPos(rinfo.swingFootIndex()) - rinfo.jPos(rinfo.swingHipIndex());
+    tmpV = rinfo.fstate().pos(rinfo.swingFootIndex()) - rinfo.jPos(rinfo.swingHipIndex());
     hipT += -tmpV.cross(m_foot*g);
     
-    tmpV = rinfo.rbPos(rinfo.swingShankIndex()) - rinfo.jPos(rinfo.swingKneeIndex());
+    tmpV = rinfo.fstate().pos(rinfo.swingShankIndex()) - rinfo.jPos(rinfo.swingKneeIndex());
     kneeT = -tmpV.cross(m_shank*g);
     
-    tmpV = rinfo.rbPos(rinfo.swingFootIndex()) - rinfo.jPos(rinfo.swingKneeIndex());
+    tmpV = rinfo.fstate().pos(rinfo.swingFootIndex()) - rinfo.jPos(rinfo.swingKneeIndex());
     kneeT += -tmpV.cross(m_foot*g);
     
-    tmpV = rinfo.rbPos(rinfo.swingFootIndex()) - rinfo.jPos(rinfo.swingAnkleIndex());
+    tmpV = rinfo.fstate().pos(rinfo.swingFootIndex()) - rinfo.jPos(rinfo.swingAnkleIndex());
     ankleT = -tmpV.cross(m_foot*g);
     
     torques.at(rinfo.swingHipIndex()) = hipT;
@@ -46,14 +46,14 @@ RawTorques SwingController::gravityCompensation(const RobotInfo& rinfo)
 	This method is used to compute the target angles for the swing hip and swing knee that help 
 	to ensure (approximately) precise foot-placement control.
 */
-IKSwingLegTarget SwingController::computeIKSwingLegTargets(const RobotInfo& rinfo, const Vector3d& swingFootPos, const Vector3d& swingFootVel, double swingFootHeight, double swingFootHeightVel)
+IKSwingLegTarget SwingController::computeIKSwingLegTargets(const RobotInfo& rinfo, const Eigen::Vector3d& swingFootPos, const Eigen::Vector3d& swingFootVel, double swingFootHeight, double swingFootHeightVel)
 {
     const double dt = 0.001;
     
     const double hNow = swingFootHeight;
     const double hFuture = swingFootHeight + swingFootHeightVel*dt;
     
-    Point3d pNow, pFuture;
+    Eigen::Vector3d pNow, pFuture;
     pNow = transformSwingFootTarget(swingFootPos, rinfo.comPos(), rinfo.characterFrame(), hNow);
     pFuture = transformSwingFootTarget(swingFootPos + swingFootVel*dt,
         rinfo.comPos(), rinfo.characterFrame(), hFuture);
@@ -61,8 +61,8 @@ IKSwingLegTarget SwingController::computeIKSwingLegTargets(const RobotInfo& rinf
     // pNow, pFuture are ankle positions in world coordinates
     dbg->desSwingPos = pNow;
     
-    Eigen::Vector3d dNow = rinfo.fstate().rot(B_PELVIS).conjugate()._transformVector((pNow - rinfo.jPos(rinfo.swingHipIndex())).toEigen());
-    Eigen::Vector3d dFuture = rinfo.fstate().rot(B_PELVIS).conjugate()._transformVector((pFuture - rinfo.jPos(rinfo.swingHipIndex())).toEigen());
+    Eigen::Vector3d dNow = rinfo.fstate().rot(B_PELVIS).conjugate()._transformVector(pNow - rinfo.jPos(rinfo.swingHipIndex()));
+    Eigen::Vector3d dFuture = rinfo.fstate().rot(B_PELVIS).conjugate()._transformVector(pFuture - rinfo.jPos(rinfo.swingHipIndex()));
     
     return getSwingLegTarget(dNow, (dFuture - dNow)/dt);
 }
@@ -72,39 +72,39 @@ IKSwingLegTarget SwingController::computeIKSwingLegTargets(const RobotInfo& rinf
 	is expressed in character-relative coordinates (i.e. the sagittal component is the z-component), while the com position, and the
 	initial swing foot position is expressed in world coordinates. The resulting desired foot position is also expressed in world coordinates.
 */
-Vector3d SwingController::transformSwingFootTarget(Vector3d step, const Point3d& com, const Quaternion& charFrameToWorld, double height)
+Eigen::Vector3d SwingController::transformSwingFootTarget(const Eigen::Vector3d& step, const Eigen::Vector3d& comPos, const Eigen::Quaterniond& charFrameToWorld, double height)
 {
 	//now transform this vector into world coordinates
-	step = charFrameToWorld.rotate(step);
+	Eigen::Vector3d result = charFrameToWorld._transformVector(step);
 	//add it to the com location
-	step = com + step;
+	result += comPos;
 	//finally, set the desired height of the foot
-	step.z() = height;
+	result.z() = height;
 
 	// step += computeSwingFootDelta(t);
 	
-	return step;
+	return result;
 }
 
 void SwingController::swingAnkleControl(JSpTorques& jt, const RobotInfo& rinfo)
 {
-    Quaternion qErr = Quaternion(rinfo.fstate().rot(rinfo.swingFootIndex())).getComplexConjugate() * rinfo.characterFrame();
+    Eigen::Quaterniond qErr = rinfo.fstate().rot(rinfo.swingFootIndex()).conjugate() * rinfo.characterFrame();
     
-    Vector3d ankleT;
+    Eigen::Vector3d ankleT;
     
     //qErr.v also contains information regarding the axis of rotation and the angle (sin(theta)), but I want to scale it by theta instead
-    double sinTheta = qErr.v.norm();
+    double sinTheta = qErr.vec().norm();
     if (IS_ZERO(sinTheta)) {
         //avoid the divide by close-to-zero. The orientations match, so the proportional component of the torque should be 0
         
-        ankleT = Vector3d(0., 0., 0.);
+        ankleT = Eigen::Vector3d(0., 0., 0.);
     } else {
         double absAngle = 2 * asin(sinTheta);
-        ankleT = qErr.v;
-        ankleT *= 1/sinTheta * absAngle * (-50.0) * SGN(qErr.s);
+        ankleT = qErr.vec();
+        ankleT *= 1/sinTheta * absAngle * (-50.0) * SGN(qErr.w());
     }
 
-    ankleT += -Vector3d(rinfo.fstate().avel(rinfo.swingFootIndex())) * (-15.0);
+    ankleT += -rinfo.fstate().avel(rinfo.swingFootIndex()) * (-15.0);
     
     Eigen::Vector3d cf_AnkleAxis1(1., 0., 0.);
     Eigen::Vector3d cf_AnkleAxis2(0., 1., 0.);
@@ -112,8 +112,8 @@ void SwingController::swingAnkleControl(JSpTorques& jt, const RobotInfo& rinfo)
     Eigen::Vector3d AnkleAxis2 = rinfo.fstate().rot(rinfo.swingShankIndex())._transformVector(cf_AnkleAxis2);
     
     unsigned int side = (rinfo.stance() == LEFT_STANCE ? RIGHT : LEFT);
-    jt.t(side, AX) = -AnkleAxis1.dot(ankleT.toEigen());
-    jt.t(side, AY) = -AnkleAxis2.dot(ankleT.toEigen());
+    jt.t(side, AX) = -AnkleAxis1.dot(ankleT);
+    jt.t(side, AY) = -AnkleAxis2.dot(ankleT);
 }
 
 void SwingController::swingLegControl(JSpTorques& jt, const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose)
