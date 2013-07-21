@@ -5,7 +5,6 @@ InvPendulum::InvPendulum()
     //we should estimate these from the character info...
     legLength = 1;
     
-    shouldPreventLegIntersections = true;
     coronalStepWidth = 0.1;
 }
 
@@ -54,58 +53,6 @@ void InvPendulum::calcDesiredSwingFootLocation(const RobotInfo& rinfo, double ve
 	desiredVel = (step1 - step0) / dt;
 }
 
-
-/**
-	determines weather a leg crossing is bound to happen or not, given the predicted final desired position	of the swing foot.
-	The suggested via point is expressed in the character frame, relative to the COM position...The via point is only suggested
-	if an intersection is detected.
-*/
-bool InvPendulum::detectPossibleLegCrossing(const RobotInfo& rinfo, const Vector3d& swingFootPos, Vector3d* viaPoint)
-{
-	//first, compute the world coords of the swing foot pos, since this is in the char. frame 
-	Point3d desSwingFootPos = Quaternion(rinfo.characterFrame()).rotate(swingFootPos) + rinfo.comPos();
-	//now, this is the segment that starts at the current swing foot pos and ends at the final
-	//swing foot position
-
-	Segment swingFootTraj(rinfo.swingFootPos(), desSwingFootPos); swingFootTraj.a.z() = 0; swingFootTraj.b.z() = 0;
-	
-	//and now compute the segment originating at the stance foot that we don't want the swing foot trajectory to pass...
-	Vector3d segDir = rinfo.fstate().trToWorld(rinfo.stanceFootIndex()).onVector(Eigen::Vector3d(100., 0., 0.));
-	
-	segDir.z() = 0;
-	Segment stanceFootSafety(Vector3d(rinfo.stanceFootPos()), Vector3d(rinfo.stanceFootPos()) + segDir);
-	stanceFootSafety.a.z() = 0; stanceFootSafety.b.z() = 0;
-
-	//now check to see if the two segments intersect...
-	Segment intersect;
-	stanceFootSafety.getShortestSegmentTo(swingFootTraj, &intersect);
-
-/*
-	predSwingFootPosDebug = desSwingFootPos;predSwingFootPosDebug.y = 0;
-	swingSegmentDebug = swingFootTraj;
-	crossSegmentDebug = stanceFootSafety;
-	viaPointSuggestedDebug.setValues(0,-100,0);
-*/
-
-	//now, if this is too small, then it means the swing leg will cross the stance leg...
-	double safeDist = 0.02;
-	if ((intersect.b - intersect.a).norm() < safeDist){
-		if (viaPoint != NULL){
-			*viaPoint = Vector3d(rinfo.stanceFootPos()) + segDir.unit() * -0.05;
-			(*viaPoint) -= Vector3d(rinfo.comPos());
-			*viaPoint = Quaternion(rinfo.characterFrame()).inverseRotate(*viaPoint);
-			viaPoint->z() = 0;
-/*
-			viaPointSuggestedDebug = lowLCon->characterFrame.rotate(*viaPoint) + lowLCon->comPosition;
-			viaPointSuggestedDebug.y() = 0;
-*/
-		}
-		return true;
-	}
-	
-	return false;
-}
-
 /**
 	returns the required stepping location, as predicted by the inverted pendulum model. The prediction is made
 	on the assumption that the character will come to a stop by taking a step at that location. The step location
@@ -142,7 +89,6 @@ Eigen::Vector3d InvPendulum::computeSwingFootLocationEstimate(const RobotInfo& r
 	boundToRange(&step.x(), -0.4 * legLength, 0.4 * legLength);
 	boundToRange(&step.y(), -0.4 * legLength, 0.4 * legLength);
 
-	Eigen::Vector3d result = Eigen::Vector3d::Zero();
 	Eigen::Vector3d initialStep = swingFootStartPos - comPos;
 	initialStep = rinfo.characterFrame().conjugate()._transformVector(initialStep);
 	//when phi is small, we want to be much closer to where the initial step is - so compute this quantity in character-relative coordinates
@@ -151,39 +97,10 @@ Eigen::Vector3d InvPendulum::computeSwingFootLocationEstimate(const RobotInfo& r
 	t = t * t;
 	boundToRange(&t, 0, 1);
 
-	Vector3d suggestedViaPoint;
-	alternateFootTraj.clear();
-	bool needToStepAroundStanceAnkle = false;
-	if (phase < 0.8 && shouldPreventLegIntersections && getPanicLevel(rinfo, velDSagittal, velDCoronal) < 0.5)
-		needToStepAroundStanceAnkle = detectPossibleLegCrossing(rinfo, step, &suggestedViaPoint);
-	if (needToStepAroundStanceAnkle){
-		//use the via point...
-		Vector3d currentSwingStepPos = Vector3d(rinfo.swingFootPos() - comPos);
-		currentSwingStepPos = Quaternion(rinfo.characterFrame()).inverseRotate(initialStep);currentSwingStepPos.y() = 0;		
-		//compute the phase for the via point based on: d1/d2 = 1-x / x-phase, where d1 is the length of the vector from
-		//the via point to the final location, and d2 is the length of the vector from the swing foot pos to the via point...
-		double d1 = (Vector3d(step) - suggestedViaPoint).norm();
-		double d2 = (suggestedViaPoint - currentSwingStepPos).norm();
-		if (d2 < 0.0001) d2 = d1 + 0.001;
-		double c =  d1/d2;
-		double viaPointPhase = (1+phase*c)/(1+c);
-		//now create the trajectory...
-		alternateFootTraj.addKnot(0, initialStep);
-		alternateFootTraj.addKnot(viaPointPhase, suggestedViaPoint);
-		alternateFootTraj.addKnot(1, step);
-		//and see what the interpolated position is...
-		result = alternateFootTraj.evaluate_catmull_rom(1-t).toEigen();
-//		tprintf("t: %lf\n", 1-t);
-	}else{
-		result += (1-t)* step;
-		result += t * initialStep;
-	}
+	Eigen::Vector3d result = (1-t) * step + t * initialStep;
 
 	result.z() = 0;
 
-/*
-	suggestedFootPosDebug = result;
-*/
 	return result;
 }
 
