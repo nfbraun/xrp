@@ -33,12 +33,12 @@ int calc_xdot(double t, const double x_raw[], double xdot_raw[], void *_p)
     Eigen::VectorXd u(data->kt->npar());
     u.setZero();
     
-    u(0) = -1.5;  // LAY
-    u(1) =  2.3;   // LAX
+    u(0) =  2.3;   // LAX
+    u(1) = -1.5;  // LAY
     u(2) = -0.9;  // LKY
-    u(3) = 1.0 * cos(6*t);   // LHZ
+    u(3) = 2.5 * cos(9*t);  // LHX
     u(4) = 1.4 * cos(4*t);  // LHY
-    u(5) = 2.5 * cos(9*t);  // LHX
+    u(5) = 1.0 * cos(6*t);   // LHZ
     
     u(6) = 0.02 * sin(4*t);   // RHZ
     u(7) = -0.5 * sin(5*t); // RHY
@@ -130,7 +130,7 @@ int main()
     
     RawODESolver solver(2*kt.npar(), calc_xdot, 0, x_ini.data(), &fData);
     
-    const char* names[] = { "LAY", "LAX", "LKY", "LHZ", "LHY", "LHX", "RHZ", "RHY", "RHX", "RKY", "RAY", "RAX" };
+    const char* names[] = { "LAX", "LAY", "LKY", "LHX", "LHY", "LHZ", "RHZ", "RHY", "RHX", "RKY", "RAY", "RAX" };
     
     assert(kt.npar() == 12);
     
