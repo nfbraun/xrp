@@ -51,7 +51,7 @@ LIBS = -lode -lmechsim -lgsl -lblas
 .PHONY: all tests clean
 
 all: simview simprint
-tests: test_trans test_sim
+tests: print_mass test_trans test_sim
 
 clean:
 	rm -f $(OBJS)
@@ -63,6 +63,9 @@ simview: $(OBJS) simview.o
 
 simprint: $(OBJS) simprint.o
 	g++ -o $@ $(LDFLAGS) $(LIBS) $(CARTWHEEL_LIBS) $(OBJS) simprint.o
+
+print_mass: print_mass.o
+	g++ -o $@ print_mass.o
 
 test_trans: DynTransform.o test_trans.o
 	g++ -o $@ DynTransform.o test_trans.o
