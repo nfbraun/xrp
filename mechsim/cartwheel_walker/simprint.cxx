@@ -64,6 +64,9 @@ int main(int argc, char** argv)
     scalarHeader("rfn");  // right foot normal force
     scalarHeader("rft");  // right foot tangential force
     
+    vectHeader("lcop");   // left foot center of pressure
+    vectHeader("rcop");   // right foot center of pressure
+    
     scalarHeader("Ekin");
     scalarHeader("Epot");
     scalarHeader("Pint");
@@ -104,6 +107,9 @@ int main(int argc, char** argv)
         printScalar(state.fDbg.lFootTF);
         printScalar(state.fDbg.rFootNF);
         printScalar(state.fDbg.rFootTF);
+        
+        printVect(state.fDbg.lCoP);
+        printVect(state.fDbg.rCoP);
         
         double Ek = Ekin(state.fFState);
         double Ep = Epot(state.fFState) - Epot0();
