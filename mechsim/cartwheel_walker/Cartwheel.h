@@ -5,6 +5,7 @@
 
 #include "RobotState.h"
 #include "CWRobot.h"
+#include "MotorModel.h"
 #include <Core/CWController.h>
 #include <Core/Debug.h>
 #include <ode/ode.h>
@@ -25,7 +26,8 @@ class CartState: public SimulationState {
     
     Eigen::Vector3d fJPos[J_MAX];
     
-    JSpTorques fTorques;
+    JSpTorques fCtrlTorques;   // joint torques calculated by controller
+    JSpTorques fFiltTorques;   // joint torques filtered by motor model
     
     DebugInfo fDbg;
     
@@ -42,7 +44,9 @@ class CartState: public SimulationState {
         } else if(ch < 2*DOF_MAX) {
             return fJState.omega(ch - DOF_MAX);
         } else if(ch < 3*DOF_MAX) {
-            return fTorques.t(ch - 2*DOF_MAX);
+            return fCtrlTorques.t(ch - 2*DOF_MAX);
+        } else if(ch < 4*DOF_MAX) {
+            return fFiltTorques.t(ch - 3*DOF_MAX);
         } else {
             return std::numeric_limits<double>::quiet_NaN();
         }
@@ -70,7 +74,7 @@ class Cartwheel: public Simulation {
     
     const char* GetTitle() { return TITLE; }
     
-    virtual int GetNDataCh() const { return 36; }
+    virtual int GetNDataCh() const { return 48; }
     virtual const char* GetChName(int ch) const {
     // FIXME: make use of dofName()
         switch(ch) {
@@ -102,22 +106,33 @@ class Cartwheel: public Simulation {
             case 22: return "o_RAY";
             case 23: return "o_RAX";
             
-            case 24: return "t_LHZ";
-            case 25: return "t_LHY";
-            case 26: return "t_LHX";
-            case 27: return "t_LKY";
-            case 28: return "t_LAY";
-            case 29: return "t_LAX";
+            case 24: return "ct_LHZ";
+            case 25: return "ct_LHY";
+            case 26: return "ct_LHX";
+            case 27: return "ct_LKY";
+            case 28: return "ct_LAY";
+            case 29: return "ct_LAX";
             
-            case 30: return "t_RHZ";
-            case 31: return "t_RHY";
-            case 32: return "t_RHX";
-            case 33: return "t_RKY";
-            case 34: return "t_RAY";
-            case 35: return "t_RAX";
+            case 30: return "ct_RHZ";
+            case 31: return "ct_RHY";
+            case 32: return "ct_RHX";
+            case 33: return "ct_RKY";
+            case 34: return "ct_RAY";
+            case 35: return "ct_RAX";
             
-            //case 36: return "con_L";
-            //case 37: return "con_R";
+            case 36: return "ft_LHZ";
+            case 37: return "ft_LHY";
+            case 38: return "ft_LHX";
+            case 39: return "ft_LKY";
+            case 40: return "ft_LAY";
+            case 41: return "ft_LAX";
+            
+            case 42: return "ft_RHZ";
+            case 43: return "ft_RHY";
+            case 44: return "ft_RHX";
+            case 45: return "ft_RKY";
+            case 46: return "ft_RAY";
+            case 47: return "ft_RAX";
             
             default: return "<undefined>";
         }
@@ -161,7 +176,7 @@ class Cartwheel: public Simulation {
     CWRobot *fRobot;
     CWController *fController;
     
-    JSpTorques fDebugJTorques;
+    JSpTorques fCtrlTorques, fFiltTorques;
     
     dGeomID fFloorG;
     
@@ -170,6 +185,8 @@ class Cartwheel: public Simulation {
     dJointID fLFootStickyJ, fRFootStickyJ;
     
     double fPint;
+    
+    MotorModel fMotorModel[DOF_MAX];
 };
 
 #endif

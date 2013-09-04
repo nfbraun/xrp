@@ -225,6 +225,21 @@ Cartwheel::Cartwheel(unsigned int stepPerSec, unsigned int intPerStep)
     
     LockStanceFoot(LEFT_STANCE);
     #endif
+    
+    const double dt = 1./(fStepPerSec * fIntPerStep);
+    fMotorModel[LHZ].setTau(0., dt);
+    fMotorModel[LHY].setTau(0., dt);
+    fMotorModel[LHX].setTau(0., dt);
+    fMotorModel[LKY].setTau(0., dt);
+    fMotorModel[LAY].setTau(0., dt);
+    fMotorModel[LAX].setTau(0., dt);
+    
+    fMotorModel[RHZ].setTau(0., dt);
+    fMotorModel[RHY].setTau(0., dt);
+    fMotorModel[RHX].setTau(0., dt);
+    fMotorModel[RKY].setTau(0., dt);
+    fMotorModel[RAY].setTau(0., dt);
+    fMotorModel[RAX].setTau(0., dt);
 }
 
 Cartwheel::~Cartwheel()
@@ -366,8 +381,15 @@ void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
     }
     #endif
     
+    JSpTorques filtTorques;
+    for(unsigned int i=0; i<DOF_MAX; i++)
+        filtTorques.t(i) = fMotorModel[i].outTorque(torques.t(i));
+    
     //go through all the joints in the world, and apply their torques to the parent and child rb's
-    ApplyTorques(torques);
+    ApplyTorques(filtTorques);
+    
+    fCtrlTorques = torques;
+    fFiltTorques = filtTorques;
     
     //we need to determine the contact points first - delete the previous contacts
     dJointGroupEmpty(fContactGroup);
@@ -463,8 +485,6 @@ void Cartwheel::Advance()
         
         AdvanceInTime(dt, torques);
         fT += dt;
-        
-        fDebugJTorques = torques;
     }
 }
 
@@ -492,7 +512,8 @@ CartState Cartwheel::GetCurrentState()
     dJointGetBallAnchor(fRobot->fRHipJ, tmp); 
     state.fJPos[J_R_HIP] = Eigen::Vector3d(tmp);
     
-    state.fTorques = fDebugJTorques;
+    state.fCtrlTorques = fCtrlTorques;
+    state.fFiltTorques = fFiltTorques;
     
     state.fPint = fPint;
     

@@ -42,7 +42,9 @@ int main(int argc, char** argv)
     for(unsigned int i=0; i<DOF_MAX; i++)
         std::cout << "#:" << col++ << ":o_" << dofName(i) << "\n";
     for(unsigned int i=0; i<DOF_MAX; i++)
-        std::cout << "#:" << col++ << ":t_" << dofName(i) << "\n";
+        std::cout << "#:" << col++ << ":ct_" << dofName(i) << "\n";
+    for(unsigned int i=0; i<DOF_MAX; i++)
+        std::cout << "#:" << col++ << ":ft_" << dofName(i) << "\n";
     
     vectHeader("swp");    // desired swing foot pos
     vectHeader("swv");    // desired swing foot velocity
@@ -72,7 +74,12 @@ int main(int argc, char** argv)
     scalarHeader("Pint");
     scalarHeader("Etot");
     
-    for(int t=0; t<10000; t++) {
+    // Data is irregular for the first two timesteps
+    sim.Advance();
+    
+    for(int t=2; t<10000; t++) {
+        sim.Advance();
+        
         CartState state = sim.GetCurrentState();
         
         std::cout << t*sim.GetTimestep() << " ";
@@ -84,7 +91,10 @@ int main(int argc, char** argv)
             std::cout << state.fJState.omega(i) << " ";
         
         for(unsigned int i=0; i<DOF_MAX; i++)
-            std::cout << state.fTorques.t(i) << " ";
+            std::cout << state.fCtrlTorques.t(i) << " ";
+        
+        for(unsigned int i=0; i<DOF_MAX; i++)
+            std::cout << state.fFiltTorques.t(i) << " ";
         
         printVect(state.fDbg.desSwingPos);
         printVect(state.fDbg.desSwingVel);
@@ -120,8 +130,6 @@ int main(int argc, char** argv)
         printScalar(Ek + Ep - state.fPint);
         
         std::cout << std::endl;
-        
-        sim.Advance();
     }
     
     return 0;
