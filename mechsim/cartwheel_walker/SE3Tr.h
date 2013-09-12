@@ -7,6 +7,8 @@
    a (proper) rotation and a translation. */
 class SE3Tr {
   public:
+    SE3Tr() {}
+    
     SE3Tr(const Eigen::Quaterniond& q, const Eigen::Vector3d& t)
         : fQ(q), fT(t) {}
     

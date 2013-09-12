@@ -10,13 +10,16 @@
 #include "../cartwheel_walker/RobotState.h"
 #include "Spatial.h"
 #include "RNE_CRB.h"
+#include "Robot.h"
+
+const Eigen::Vector3d g(1., 2., 3.);
 
 RigidBody* construct()
 {
     using namespace CharacterConst;
     using Eigen::Vector3d;
     
-    /* RigidBody* lFoot = new RigidBody(0, Vector3d(0.016, legPosY_L, footPosZ), "lFoot");
+    RigidBody* lFoot = new RigidBody(0, Vector3d(footPosX, legPosY_L, footPosZ), "lFoot");
     lFoot->setMass(rbMass(B_L_FOOT), rbMOI(B_L_FOOT));
     
     Joint* lAnkle = new InvAnkleJoint(lFoot, Vector3d(0., legPosY_L, anklePosZ), "lAnkle");
@@ -29,9 +32,9 @@ RigidBody* construct()
     RigidBody* lThigh = new RigidBody(lKnee, Vector3d(0., legPosY_L, thighPosZ), "lThigh");
     lThigh->setMass(rbMass(B_L_THIGH), rbMOI(B_L_THIGH));
     
-    Joint* lHip = new InvHipJoint(lThigh, Vector3d(0., legPosY_L, hipPosZ), "lHip"); */
+    Joint* lHip = new InvHipJoint(lThigh, Vector3d(0., legPosY_L, hipPosZ), "lHip");
     
-    RigidBody* torso = new RigidBody(0, Vector3d(0., 0., pelvisPosZ), "torso");
+    RigidBody* torso = new RigidBody(lHip, Vector3d(0., 0., pelvisPosZ), "torso");
     torso->setMass(rbMass(B_PELVIS), rbMOI(B_PELVIS));
     
     Joint* rHip = new HipJoint(torso, Vector3d(0., legPosY_R, hipPosZ), "rHip");
@@ -54,76 +57,207 @@ RigidBody* construct()
     std::cout << lKnee->pos() << std::endl;
     std::cout << lAnkle->pos() << std::endl; */
     
-    return torso;
+    return lFoot;
 }
 
-/* Return a sort-of random JSpState for testing. */
-JSpState getTestJSpState()
+/* Return a sort-of random VectorXd for testing. */
+Eigen::VectorXd getTestVector(unsigned int set, unsigned int size)
 {
-    JSpState jstate;
+    // Ugly hack to ensure determinism
+    const double rnd[3][12] = {
+        { 0.3, 0.1, 0.5, 0.2, 0.6, -0.7, 0.4, -0.8, 0.7, 0.2, -0.5, 0.9 },
+        { 1.2, 0.4, -1.5, 0.7, 0.4, 1.0, -0.7, 0.2, 0.7, -0.8, -1.7, 0.1 },
+        { 0.7, 0.6, 0.3, -0.4, 0.6, -0.1, -1.0, -0.4, -0.8, 0.6, 0.2, 0.1 }
+    };
     
-    jstate.phi(LHZ) =  0.3;
-    jstate.phi(LHY) =  0.1;
-    jstate.phi(LHX) =  0.5;
-    jstate.phi(LKY) =  0.2;
-    jstate.phi(LAY) =  0.6;
-    jstate.phi(LAX) = -0.7;
-    jstate.phi(RHZ) =  0.4;
-    jstate.phi(RHY) = -0.8;
-    jstate.phi(RHX) =  0.7;
-    jstate.phi(RKY) =  0.2;
-    jstate.phi(RAY) = -0.5;
-    jstate.phi(RAX) =  0.9;
+    assert(set < sizeof(rnd)/sizeof(rnd[0]));
+    assert(size <= sizeof(rnd[set])/sizeof(rnd[set][0]));
     
-    jstate.omega(LHZ) =  1.2;
-    jstate.omega(LHY) =  0.4;
-    jstate.omega(LHX) = -1.5;
-    jstate.omega(LKY) =  0.7;
-    jstate.omega(LAY) =  0.4;
-    jstate.omega(LAX) =  1.0;
-    jstate.omega(RHZ) = -0.7;
-    jstate.omega(RHY) =  0.2;
-    jstate.omega(RHX) =  0.7;
-    jstate.omega(RKY) =  -0.8;
-    jstate.omega(RAY) =  -1.7;
-    jstate.omega(RAX) =  0.1;
+    Eigen::VectorXd test(size);
+    for(unsigned int i=0; i<size; i++)
+        test(i) = rnd[set][i];
     
-    return jstate;
+    return test;
+}
+
+Eigen::VectorXd dynamics(const Eigen::VectorXd& q, const Eigen::VectorXd& qdot, const Eigen::VectorXd& u)
+{
+    Robot rob;
+    Eigen::Matrix<SE3Tr, Robot::N_DOF, 1> expSq = rob.calc_expSq(q);
+    
+    Eigen::VectorXd qddot_0(q.size());
+    qddot_0.setZero();
+    
+    Eigen::VectorXd C = calc_u(rob, expSq, qdot, qddot_0, g);
+    
+    return calc_M(rob, expSq).ldlt().solve(u - C);
+}
+
+Eigen::VectorXd Unit(unsigned int size, unsigned int i)
+{
+    Eigen::VectorXd unit(size);
+    unit.setZero();
+    unit(i) = 1.;
+    
+    return unit;
+}
+
+#if 0
+SpForce foo(const Eigen::VectorXd& q)
+{
+    SE3Tr Tr[6] = {
+        SE3Tr::RotZ(q(0)),
+        SE3Tr::RotY(q(1)),
+        SE3Tr::RotX(q(2)),
+        SE3Tr::RotY(q(3)),
+        SE3Tr::RotY(q(4)),
+        SE3Tr::RotX(q(5))
+    };
+    
+    SpForce f_i(0.3, 0.2, -0.8, 1.2, -0.4, -0.5);
+    
+    /* for(unsigned int i=0; i<6; i++) {
+        v_i = v_i.tr(Tr[i]);
+        v_i += SpMot(0., 1., 0., 0., 0., 0.);
+    } */
+    
+    return f_i.tr(Tr[1]);
+}
+
+SpForce d_foo(const Eigen::VectorXd& q)
+{
+    SE3Tr Tr[6] = {
+        SE3Tr::RotZ(q(0)),
+        SE3Tr::RotY(q(1)),
+        SE3Tr::RotX(q(2)),
+        SE3Tr::RotY(q(3)),
+        SE3Tr::RotY(q(4)),
+        SE3Tr::RotX(q(5))
+    };
+    
+    SpForce f_i(0.3, 0.2, -0.8, 1.2, -0.4, -0.5);
+    
+    /* for(unsigned int i=0; i<6; i++) {
+        v_i = v_i.tr(Tr[i]);
+        if(i == 1)
+            v_i = SpMot(0., 1., 0., 0., 0., 0.).cross(v_i);
+        if(i < 1)
+            v_i += SpMot(0., 1., 0., 0., 0., 0.);
+    } */
+    
+    return SpMot(0., 1., 0., 0., 0., 0.).cross_star(f_i).tr(Tr[1]);
+}
+#endif
+
+void test_dynamics(KinTree& kt)
+{
+    double error;
+    
+    Eigen::Matrix<double, 12, 1> q = getTestVector(0, 12);
+    Eigen::Matrix<double, 12, 1> qdot = getTestVector(1, 12);
+    Eigen::Matrix<double, 12, 1> u = getTestVector(2, 12);
+    
+    Robot rob;
+    Eigen::Matrix<SE3Tr, Robot::N_DOF, 1> expSq = rob.calc_expSq(q);
+    
+    kt.calcDyn(q, qdot);
+    
+    error = (kt.M() - calc_M(rob, expSq)).norm();
+    
+    std::cout << "Mass matrix: ";
+    std::cout << (error < 1e-5 ? "pass" : "FAIL");
+    std::cout << " (error = " << error << ")" << std::endl;
+    
+    Eigen::VectorXd qddot_0(q.size());
+    qddot_0.setZero();
+    Eigen::VectorXd C = calc_u(rob, expSq, qdot, qddot_0, g);
+    error = (kt.C() + kt.dVdq() - C).norm();
+    
+    std::cout << "Bias force: ";
+    std::cout << (error < 1e-5 ? "pass" : "FAIL");
+    std::cout << " (error = " << error << ")" << std::endl;
+    
+    Eigen::VectorXd qddot_kt = kt.M().ldlt().solve(u - kt.C() - kt.dVdq());
+    
+    error = (qddot_kt - dynamics(q, qdot, u)).norm();
+    
+    std::cout << "Dynamics: ";
+    std::cout << (error < 1e-5 ? "pass" : "FAIL");
+    std::cout << " (error = " << error << ")" << std::endl;
+}
+
+void test_deriv()
+{
+    double error;
+    const double dt = 1e-5;
+    
+    Eigen::Matrix<double, 12, 1> q = getTestVector(0, 12);
+    Eigen::Matrix<double, 12, 1> qdot = getTestVector(1, 12);
+    Eigen::Matrix<double, 12, 1> u = getTestVector(2, 12);
+    
+    Eigen::Matrix<double, 12, 1> qddot;
+    qddot = dynamics(q, qdot, u);
+    
+    Robot rob;
+    Eigen::Matrix<SE3Tr, Robot::N_DOF, 1> expSq = rob.calc_expSq(q);
+    
+    Eigen::LDLT<Eigen::MatrixXd> mInv = calc_M(rob, expSq).ldlt();
+    
+    Eigen::Matrix<double, 12, 12> du_dq;
+    du_dq = calc_du_dq(rob, expSq, qdot, qddot, g);
+    Eigen::MatrixXd dqddot_dq = -mInv.solve(du_dq);
+    
+    Eigen::Matrix<double, 12, 12> dqddot_dq_num;
+    for(unsigned int idx=0; idx<12; idx++) {
+        dqddot_dq_num.block<12,1>(0,idx) = (dynamics(q + dt*Unit(12,idx), qdot, u) - dynamics(q - dt*Unit(12,idx), qdot, u))/(2.*dt);
+    }
+    
+    error = (dqddot_dq_num - dqddot_dq).norm();
+    
+    std::cout << "dqddot_dq: ";
+    std::cout << (error < 1e-5 ? "pass" : "FAIL");
+    std::cout << " (error = " << error << ")" << std::endl;
+    
+    Eigen::Matrix<double, 12, 12> du_dqdot;
+    du_dqdot = calc_du_dqdot(rob, expSq, qdot, qddot);
+    Eigen::MatrixXd dqddot_dqdot = -mInv.solve(du_dqdot);
+    
+    Eigen::Matrix<double, 12, 12> dqddot_dqdot_num;
+    for(unsigned int idx=0; idx<12; idx++) {
+        dqddot_dqdot_num.block<12,1>(0,idx) = (dynamics(q, qdot + dt*Unit(12,idx), u) - dynamics(q, qdot - dt*Unit(12,idx), u))/(2.*dt);
+    }
+    
+    error = (dqddot_dqdot_num - dqddot_dqdot).norm();
+    
+    std::cout << "dqddot_dqdot: ";
+    std::cout << (error < 1e-5 ? "pass" : "FAIL");
+    std::cout << " (error = " << error << ")" << std::endl;
+    
+    Eigen::MatrixXd dqddot_du = mInv.solve(Eigen::Matrix<double, 12, 12>::Identity());
+    
+    Eigen::Matrix<double, 12, 12> dqddot_du_num;
+    for(unsigned int idx=0; idx<12; idx++) {
+        dqddot_du_num.block<12,1>(0,idx) = (dynamics(q, qdot, u + dt*Unit(12,idx)) - dynamics(q, qdot, u - dt*Unit(12,idx)))/(2.*dt);
+    }
+    
+    error = (dqddot_du_num - dqddot_du).norm();
+    
+    std::cout << "dqddot_du: ";
+    std::cout << (error < 1e-5 ? "pass" : "FAIL");
+    std::cout << " (error = " << error << ")" << std::endl;
 }
 
 int main()
 {
     KinTree kt(construct());
     kt.AssignParamIDs();
-    kt.setG(Eigen::Vector3d(0., 0., -9.81));
+    assert(kt.npar() == 12);
     
-    assert(kt.npar() == 6);
+    kt.setG(g);
+    //kt.setG(Eigen::Vector3d(0., 0., 0.));
     
-    JSpState jstate = getTestJSpState();
-    
-    Eigen::Matrix<double, 6, 1> q;
-    q << jstate.phi(RHZ), jstate.phi(RHY), jstate.phi(RHX),
-         jstate.phi(RKY), jstate.phi(RAY), jstate.phi(RAX);
-    Eigen::Matrix<double, 6, 1> qdot;
-    qdot << jstate.omega(RHZ), jstate.omega(RHY), jstate.omega(RHX),
-            jstate.omega(RKY), jstate.omega(RAY), jstate.omega(RAX);
-    
-    kt.calcDyn(q, qdot);
-    
-    std::cout << kt.M() << "\n" << std::endl;
-    
-    Eigen::MatrixXd M2 = CRB(q);
-    std::cout << M2 << "\n" << std::endl;
-    
-    std::cout << "M_error = " << (kt.M() - M2).norm() << std::endl;
-    
-    std::cout << kt.C().transpose() << std::endl;
-    
-    Eigen::VectorXd C2 = RNE(q, qdot);
-    
-    std::cout << C2.transpose() << std::endl;
-    
-    std::cout << "C_error = " << (kt.C() - C2).norm() << std::endl;
+    test_dynamics(kt);
+    test_deriv();
     
     return 0;
 }

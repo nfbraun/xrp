@@ -3,7 +3,7 @@
 
 #include <Eigen/Dense>
 #include <iostream>
-#include "../cartwheel_walker/SE3Tr.h"
+#include "SE3Tr.h"
 
 class SpForce;
 
@@ -23,6 +23,9 @@ class SpVec {
     
     const Eigen::Vector3d& ang() const { return fAng; }
     const Eigen::Vector3d& lin() const { return fLin; }
+    
+    Sp_T operator-() const
+        { return Sp_T(-ang(), -lin()); }
     
     Sp_T operator+(const Sp_T& rhs) const
         { return Sp_T(ang() + rhs.ang(), lin() + rhs.lin()); }
@@ -108,6 +111,9 @@ class SpInertia {
     
     SpInertia(double m, const Eigen::Vector3d& c, const Eigen::Matrix3d& I)
         : fm(m), fc(c), fI(I) {}
+    
+    static SpInertia Zero()
+        { return SpInertia(0., Eigen::Vector3d::Zero(), Eigen::Matrix3d::Zero()); }
     
     double m() const { return fm; }
     const Eigen::Vector3d& c() const { return fc; }
