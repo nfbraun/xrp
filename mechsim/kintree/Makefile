@@ -1,4 +1,4 @@
-EIGEN_INCL = -I../../eigen-eigen-3.0.1/
+EIGEN_INCL = -I../../eigen-eigen-3.2.0/
 
 .PHONY: all
 
