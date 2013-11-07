@@ -247,6 +247,106 @@ void test_deriv()
     std::cout << " (error = " << error << ")" << std::endl;
 }
 
+void test_deriv2()
+{
+    const double dt = 1e-5;
+    bool all_passed = true;
+    
+    std::cout << "dM_dq:" << std::endl;
+    
+    Eigen::Matrix<double, 12, 1> q = getTestVector(0, 12);
+    
+    for(unsigned int diff_id = 0; diff_id < Robot::N_DOF; diff_id++) {
+        Eigen::Matrix<double, 12, 1> q_minus = q - Eigen::Matrix<double, 12, 1>::Unit(diff_id)*dt;
+        Eigen::Matrix<double, 12, 1> q_plus = q + Eigen::Matrix<double, 12, 1>::Unit(diff_id)*dt;
+        
+        Robot rob;
+        Eigen::Matrix<SE3Tr, Robot::N_DOF, 1> expSq = rob.calc_expSq(q);
+        Eigen::Matrix<SE3Tr, Robot::N_DOF, 1> expSq_minus = rob.calc_expSq(q_minus);
+        Eigen::Matrix<SE3Tr, Robot::N_DOF, 1> expSq_plus = rob.calc_expSq(q_plus);
+        
+        Eigen::MatrixXd M_plus = calc_M(rob, expSq_plus);
+        Eigen::MatrixXd M_minus = calc_M(rob, expSq_minus);
+        
+        Eigen::MatrixXd dM_dq_num = (M_plus - M_minus) / (2.*dt);
+        
+        const double error = (dM_dq_num - calc_dM_dq(rob, expSq, diff_id)).norm();
+        std::cout << "    diff_id = " << diff_id << ": ";
+        if(error < 1e-8) {
+            std::cout << "pass";
+        } else {
+            std::cout << "FAIL";
+            all_passed = false;
+        }
+        std::cout << " (error = " << error << ")" << std::endl;
+    }
+    
+    std::cout << "dM_dq: ";
+    if(all_passed)
+        std::cout << "All tests passed." << std::endl;
+    else
+        std::cout << "WARNING: some or all tests FAILED!" << std::endl;
+}
+
+void test_coriolis()
+{
+    Eigen::Matrix<double, 12, 1> q = getTestVector(0, 12);
+    Eigen::Matrix<double, 12, 1> qdot = Eigen::Matrix<double, 12, 1>::Unit(3);
+    
+    Robot rob;
+    Eigen::Matrix<SE3Tr, Robot::N_DOF, 1> expSq = rob.calc_expSq(q);
+    
+    Eigen::Matrix<Eigen::Matrix<double, 12, 1>, 12, 12> C;
+    
+    // Extract diagonal components
+    for(unsigned int i=0; i<12; i++) {
+        C(i,i) = calc_u(rob, expSq,
+                        Eigen::Matrix<double, 12, 1>::Unit(i),
+                        Eigen::Matrix<double, 12, 1>::Zero(),
+                        Eigen::Vector3d::Zero());
+    }
+    
+    // Extract non-diagonal components
+    for(unsigned int i=0; i<12; i++) {
+        for(unsigned int j=0; j<i; j++) {
+            Eigen::Matrix<double, 12, 1> u_tilde =
+                calc_u(rob, expSq,
+                       Eigen::Matrix<double, 12, 1>::Unit(i)
+                           + Eigen::Matrix<double, 12, 1>::Unit(j),
+                       Eigen::Matrix<double, 12, 1>::Zero(),
+                       Eigen::Vector3d::Zero());
+            C(i,j) = (u_tilde - C(i,i) - C(j,j))/2.;
+            C(j,i) = C(i,j);
+        }
+    }
+    
+    // Calculate all mass matrix derivatives directly
+    Eigen::Matrix<Eigen::Matrix<double, 12, 12>, 12, 1> dM_dq;
+    for(unsigned int i=0; i<12; i++) {
+        dM_dq(i) = calc_dM_dq(rob, expSq, i);
+    }
+    
+    // Calculate mass matrix derivatives from Coriolis terms
+    Eigen::Matrix<Eigen::Matrix<double, 12, 12>, 12, 1> dM_dq_2;
+    for(unsigned int i=0; i<12; i++) {
+        for(unsigned int j=0; j<12; j++) {
+            for(unsigned int k=0; k<12; k++) {
+                dM_dq_2(i)(j,k) = C(i,j)(k) + C(k,i)(j);
+            }
+        }
+    }
+    
+    double sqError = 0.;
+    // Compare dM_dq and dM_dq_2
+    for(unsigned int i=0; i<12; i++) {
+        sqError += (dM_dq(i) - dM_dq_2(i)).squaredNorm();
+    }
+    
+    std::cout << "Coriolis: ";
+    std::cout << (sqrt(sqError) < 1e-13 ? "pass" : "FAIL");
+    std::cout << " (error = " << sqrt(sqError) << ")" << std::endl;
+}
+
 int main()
 {
     KinTree kt(construct());
@@ -258,6 +358,8 @@ int main()
     
     test_dynamics(kt);
     test_deriv();
+    test_deriv2();
+    test_coriolis();
     
     return 0;
 }

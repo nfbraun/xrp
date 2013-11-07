@@ -12,5 +12,6 @@ Eigen::MatrixXd calc_du_dq(const KinChain2& sys, const Eigen::Matrix<SE3Tr, Eige
 Eigen::MatrixXd calc_du_dqdot(const KinChain2& sys, const Eigen::Matrix<SE3Tr, Eigen::Dynamic, 1>& expSq, const Eigen::VectorXd& qdot, const Eigen::VectorXd& qddot);
 
 Eigen::MatrixXd calc_M(const KinChain2& sys, const Eigen::Matrix<SE3Tr, Eigen::Dynamic, 1>& expSq);
+Eigen::MatrixXd calc_dM_dq(const KinChain2& sys, const Eigen::Matrix<SE3Tr, Eigen::Dynamic, 1>& expSq, unsigned int diff_id);
 
 #endif

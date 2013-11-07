@@ -324,3 +324,81 @@ Eigen::MatrixXd calc_M(const KinChain2& sys, const Eigen::Matrix<SE3Tr, Eigen::D
     return M;
 }
 
+Eigen::MatrixXd calc_dM_dq(const KinChain2& sys, const Eigen::Matrix<SE3Tr, Eigen::Dynamic, 1>& expSq, unsigned int diff_id)
+{
+    Eigen::MatrixXd M(sys.nDof(), sys.nDof());
+    M.setZero();
+    Eigen::MatrixXd dM(sys.nDof(), sys.nDof());
+    dM.setZero();
+    
+    SpInertia I = sys.I(sys.nJoints()-1);
+    SpInertia I_comb = I;
+    
+    SE3Tr Tr[sys.nDof()];
+    int dof_id = sys.nDof();
+    for(int joint_id=sys.nJoints()-1; joint_id>=0; joint_id--) {
+        for(int jnt_dof=0; jnt_dof < sys.nJntDof(joint_id); jnt_dof++) {
+            dof_id--;
+            Tr[dof_id] = expSq(dof_id).inverse();
+        }
+        if(joint_id > 0)
+            Tr[dof_id] = Tr[dof_id] * sys.bodyT(joint_id-1).inverse();
+    }
+    
+    SpForce F;
+    SpForce dF = SpForce::Zero();
+    
+    SE3Tr Ti = SE3Tr::Identity();
+    SpMot dTi = SpMot::Zero();
+    SpMot dTi_inv = sys.S(diff_id);
+    
+    int dof_i = sys.nDof();
+    for(int body_id=sys.nJoints()-1; body_id>=0; body_id--) {
+        for(int jnt_dof=0; jnt_dof < sys.nJntDof(body_id); jnt_dof++) {
+            dof_i--;
+            
+            SE3Tr Tj = SE3Tr::Identity();
+            SpMot dTj = SpMot::Zero();
+            
+            F = I_comb.tr(Ti.inverse()) * sys.S(dof_i);
+            dF = (I * dTi.cross(sys.S(dof_i).tr(Ti))).tr(Ti.inverse())
+                   + dTi_inv.cross_star((I*sys.S(dof_i).tr(Ti)).tr(Ti.inverse()));
+            
+            for(int dof_j=dof_i; dof_j>=0; dof_j--) {
+                // M(dof_i, dof_j) = sys.S(dof_j).tr(Tj).dot(F);
+                
+                if(dof_i < diff_id)
+                    dM(dof_i, dof_j) = sys.S(dof_j).tr(Tj).dot(dF);
+                
+                if(dof_j == diff_id)
+                    dTj = -sys.S(diff_id).tr(Tj);
+                
+                if(dof_j < diff_id) {
+                    dM(dof_i, dof_j) += dTj.cross(sys.S(dof_j).tr(Tj)).dot(F);
+                }
+                Tj = Tj * Tr[dof_j];
+            }
+            
+            if(dof_i == diff_id) {
+                dTi = -sys.S(diff_id).tr(Ti);
+            }
+            Ti = Ti * Tr[dof_i];
+            
+            if(dof_i <= diff_id)
+                dTi_inv = dTi_inv.tr(Tr[dof_i].inverse());
+        }
+        if(body_id > 0)
+            I_comb = I_comb + sys.I(body_id-1).tr(Ti);
+        if(body_id > 0 && dof_i > diff_id)
+            I = I + sys.I(body_id-1).tr(Ti);
+    }
+    
+    /* Fill up (redundant) upper triangle */
+    for(unsigned int i=0; i<sys.nDof(); i++) {
+        for(unsigned int j=0; j<i; j++) {
+            dM(j,i) = dM(i,j);
+        }
+    }
+    return dM;
+}
+
