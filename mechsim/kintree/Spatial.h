@@ -21,6 +21,14 @@ class SpVec {
   public:
     static Sp_T Zero() { return Sp_T(Eigen::Vector3d::Zero(), Eigen::Vector3d::Zero()); }
     
+    static Sp_T UnitRotX() { return Sp_T(Eigen::Vector3d::UnitX(), Eigen::Vector3d::Zero()); }
+    static Sp_T UnitRotY() { return Sp_T(Eigen::Vector3d::UnitY(), Eigen::Vector3d::Zero()); }
+    static Sp_T UnitRotZ() { return Sp_T(Eigen::Vector3d::UnitZ(), Eigen::Vector3d::Zero()); }
+    
+    static Sp_T UnitTransX() { return Sp_T(Eigen::Vector3d::Zero(), Eigen::Vector3d::UnitX()); }
+    static Sp_T UnitTransY() { return Sp_T(Eigen::Vector3d::Zero(), Eigen::Vector3d::UnitY()); }
+    static Sp_T UnitTransZ() { return Sp_T(Eigen::Vector3d::Zero(), Eigen::Vector3d::UnitZ()); }
+    
     const Eigen::Vector3d& ang() const { return fAng; }
     const Eigen::Vector3d& lin() const { return fLin; }
     

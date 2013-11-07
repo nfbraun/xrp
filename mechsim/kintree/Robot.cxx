@@ -3,19 +3,19 @@
 const unsigned int Robot::fNJntDof[N_JOINTS] = { 2, 1, 3, 3, 1, 2 };
 
 const SpMot Robot::fS[N_DOF] = {
-    SpMot(Eigen::Vector3d(-1., 0., 0.), Eigen::Vector3d(0., 0., 0.)),
-    SpMot(Eigen::Vector3d(0., -1., 0.), Eigen::Vector3d(0., 0., 0.)),
-    SpMot(Eigen::Vector3d(0., -1., 0.), Eigen::Vector3d(0., 0., 0.)),
-    SpMot(Eigen::Vector3d(-1., 0., 0.), Eigen::Vector3d(0., 0., 0.)),
-    SpMot(Eigen::Vector3d(0., -1., 0.), Eigen::Vector3d(0., 0., 0.)),
-    SpMot(Eigen::Vector3d(0., 0., -1.), Eigen::Vector3d(0., 0., 0.)),
+    -SpMot::UnitRotX(),   // LAX
+    -SpMot::UnitRotY(),   // LAY
+    -SpMot::UnitRotY(),   // LKY
+    -SpMot::UnitRotX(),   // LHX
+    -SpMot::UnitRotY(),   // LHY
+    -SpMot::UnitRotZ(),   // LHZ
     
-    SpMot(Eigen::Vector3d(0., 0., 1.), Eigen::Vector3d(0., 0., 0.)),
-    SpMot(Eigen::Vector3d(0., 1., 0.), Eigen::Vector3d(0., 0., 0.)),
-    SpMot(Eigen::Vector3d(1., 0., 0.), Eigen::Vector3d(0., 0., 0.)),
-    SpMot(Eigen::Vector3d(0., 1., 0.), Eigen::Vector3d(0., 0., 0.)),
-    SpMot(Eigen::Vector3d(0., 1., 0.), Eigen::Vector3d(0., 0., 0.)),
-    SpMot(Eigen::Vector3d(1., 0., 0.), Eigen::Vector3d(0., 0., 0.))
+    SpMot::UnitRotZ(),    // RHZ
+    SpMot::UnitRotY(),    // RHY
+    SpMot::UnitRotX(),    // RHX
+    SpMot::UnitRotY(),    // RKY
+    SpMot::UnitRotY(),    // RAY
+    SpMot::UnitRotX()     // RAX
 };
 
 const SpInertia Robot::fI[N_JOINTS] = {
