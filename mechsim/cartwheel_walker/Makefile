@@ -47,7 +47,7 @@ CARTWHEEL=cartwheel
 EIGEN_INCL_DIR = ../../eigen-eigen-3.2.0/
 CFLAGS = -I../common/mechsim -I$(CARTWHEEL) -I$(EIGEN_INCL_DIR) $(shell ode-config --cflags) -g
 LDFLAGS = -L../common/mechsim
-LIBS = -lode -lmechsim -lgsl -lblas
+LIBS = -lode -lmechsim -lgsl -lblas -lGL
 
 .PHONY: all tests clean
 
@@ -60,10 +60,10 @@ clean:
 	rm -f simview
 
 simview: $(OBJS) simview.o
-	g++ -o $@ $(LDFLAGS) $(LIBS) $(CARTWHEEL_LIBS) $(OBJS) simview.o
+	g++ -o $@ $(LDFLAGS) $(OBJS) simview.o $(LIBS)
 
 simprint: $(OBJS) simprint.o
-	g++ -o $@ $(LDFLAGS) $(LIBS) $(CARTWHEEL_LIBS) $(OBJS) simprint.o
+	g++ -o $@ $(LDFLAGS) $(OBJS) simprint.o $(LIBS)
 
 print_mass: print_mass.o
 	g++ -o $@ print_mass.o
@@ -72,7 +72,7 @@ test_trans: DynTransform.o test_trans.o
 	g++ -o $@ DynTransform.o test_trans.o
 
 test_sim: $(OBJS) test_sim.o
-	g++ -o $@ $(LDFLAGS) $(LIBS) $(CARTWHEEL_LIBS) $(OBJS) test_sim.o
+	g++ -o $@ $(LDFLAGS) $(OBJS) test_sim.o $(LIBS)
 
 %.o: %.cxx $(HEADERS) $(CW_HEADERS) Makefile
 	g++ $(CFLAGS) -O2 -o $@ -c $<
