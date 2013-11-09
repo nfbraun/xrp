@@ -44,7 +44,8 @@ cartwheel/Core/Debug.h
 
 OBJS = $(SOURCES:.cxx=.o) $(CW_SOURCES:.cxx=.o)
 CARTWHEEL=cartwheel
-CFLAGS = -I../common/mechsim -I$(CARTWHEEL) -I../../eigen-eigen-3.0.1 $(shell ode-config --cflags) -g
+EIGEN_INCL_DIR = ../../eigen-eigen-3.2.0/
+CFLAGS = -I../common/mechsim -I$(CARTWHEEL) -I$(EIGEN_INCL_DIR) $(shell ode-config --cflags) -g
 LDFLAGS = -L../common/mechsim
 LIBS = -lode -lmechsim -lgsl -lblas
 
