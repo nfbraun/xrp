@@ -1,5 +1,5 @@
 SOURCES = Cartwheel.cxx CWRobot.cxx DynTransform.cxx DynInfo.cxx MotorModel.cxx
-HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h SE3Tr.h DynTransform.h DynInfo.h MotorModel.h
+HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h DynTransform.h DynInfo.h MotorModel.h kintree/SE3Tr.h
 
 CW_SOURCES = \
 cartwheel/MathLib/Quaternion.cxx \

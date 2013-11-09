@@ -1,5 +1,5 @@
 #include "Cartwheel.h"
-#include "SE3Tr.h"
+#include "kintree/SE3Tr.h"
 #include "StaticRobotInfo.h"
 #include "RobotState.h"
 #include "DynTransform.h"

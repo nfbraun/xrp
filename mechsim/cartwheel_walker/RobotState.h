@@ -4,7 +4,7 @@
 #include <Eigen/Dense>
 
 #include "StaticRobotInfo.h"
-#include "SE3Tr.h"
+#include "kintree/SE3Tr.h"
 
 /* Full dynamic state of a rigid body (6d position + 6d velocity) */
 class BodyQ {

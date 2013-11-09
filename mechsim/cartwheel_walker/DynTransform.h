@@ -2,7 +2,7 @@
 #define CW_DYNTRANSFORM_H
 
 #include "RobotState.h"
-#include "SE3Tr.h"
+#include "kintree/SE3Tr.h"
 #include <Eigen/Dense>
 
 /* Construct the FullState from a given (joint space) JSpState.
