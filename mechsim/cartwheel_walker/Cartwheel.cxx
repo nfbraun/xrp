@@ -4,6 +4,7 @@
 #include "ODEHelper.h"
 #include "DynTransform.h"
 #include "DynInfo.h"
+#include "Reaction.h"
 #include <GL/gl.h>
 #include <cmath>
 
@@ -497,6 +498,13 @@ CartState Cartwheel::GetCurrentState()
         state.fFState.q(b) = QFromODE(fRobot->fBodies[b]);
     
     state.fJState = jointFromFull(state.fFState);
+    
+    state.fLF = fCData.lFtot;
+    state.fLT = fCData.lTtot;
+    state.fRF = fCData.rFtot;
+    state.fRT = fCData.rTtot;
+    
+    calcReaction(state.fStF_pred, state.fStT_pred, state.fFState, state.fJState, fCtrlTorques, fController->fDbg.stance);
     
     double tmp[4];
     dJointGetUniversalAnchor(fRobot->fLAnkleJ, tmp);

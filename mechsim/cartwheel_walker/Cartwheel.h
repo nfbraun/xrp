@@ -22,6 +22,14 @@ class CartState: public SimulationState {
     FullState fFState;
     JSpState fJState;
     
+    // Total reaction force and torque, in world coordinates
+    Eigen::Vector3d fLF, fLT;
+    Eigen::Vector3d fRF, fRT;
+    
+    // Total reaction force and torque on stance foot, predicted by RNE
+    // algorithm from applied torques for stationary stance foot
+    Eigen::Vector3d fStF_pred, fStT_pred;
+    
     double fPint;
     
     Eigen::Vector3d fJPos[J_MAX];

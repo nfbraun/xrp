@@ -6,6 +6,9 @@
 
 class Robot: public KinChain2 {
   public:
+    Robot(unsigned int stance = LEFT_STANCE)
+        : KinChain2(), fStance(stance) {}
+    
     static const unsigned int N_DOF = 12;
     static const unsigned int N_JOINTS = 6;
     
@@ -28,13 +31,19 @@ class Robot: public KinChain2 {
     virtual SpInertia I(unsigned int idx) const
     {
         assert(idx < N_JOINTS);
-        return fI[idx];
+        if(fStance == RIGHT_STANCE && idx == 2)
+            return fI[N_JOINTS];
+        else
+            return fI[idx];
     }
     
     virtual SE3Tr bodyT(unsigned int body_id) const
     {
         assert(body_id < N_JOINTS);
-        return fBodyT[body_id];
+        if(fStance == RIGHT_STANCE && body_id == 2)
+            return fBodyT[N_JOINTS];
+        else
+            return fBodyT[body_id];
     }
     
     Eigen::Matrix<SE3Tr, N_DOF, 1> calc_expSq(const Eigen::VectorXd& q)
@@ -60,8 +69,12 @@ class Robot: public KinChain2 {
     
     static const unsigned int fNJntDof[N_JOINTS];
     static const SpMot fS[N_DOF];
-    static const SpInertia fI[N_JOINTS];
-    static const SE3Tr fBodyT[N_JOINTS];
+    static const SpInertia fI[N_JOINTS+1];
+    static const SE3Tr fBodyT[N_JOINTS+1];
+    
+    unsigned int fStance;
+    static const unsigned int LEFT_STANCE = 0;
+    static const unsigned int RIGHT_STANCE = 1;
 };
 
 #endif

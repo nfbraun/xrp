@@ -74,6 +74,14 @@ int main(int argc, char** argv)
     scalarHeader("Pint");
     scalarHeader("Etot");
     
+    vectHeader("lF");  // total reaction force on left foot
+    vectHeader("lT");
+    vectHeader("rF");  // total reaction force on right foot
+    vectHeader("rT");
+    
+    vectHeader("stF"); // predicted reaction force on stance foot
+    vectHeader("stT");
+    
     // Data is irregular for the first two timesteps
     sim.Advance();
     
@@ -128,6 +136,14 @@ int main(int argc, char** argv)
         printScalar(Ep);
         printScalar(state.fPint);
         printScalar(Ek + Ep - state.fPint);
+        
+        printVect(state.fLF);
+        printVect(state.fLT);
+        printVect(state.fRF);
+        printVect(state.fRT);
+        
+        printVect(state.fStF_pred);
+        printVect(state.fStT_pred);
         
         std::cout << std::endl;
     }

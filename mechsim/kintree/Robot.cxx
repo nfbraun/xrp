@@ -18,7 +18,7 @@ const SpMot Robot::fS[N_DOF] = {
     SpMot::UnitRotX()     // RAX
 };
 
-const SpInertia Robot::fI[N_JOINTS] = {
+const SpInertia Robot::fI[N_JOINTS+1] = {
     SpInertia(rbMass(B_L_SHANK),
               Eigen::Vector3d(0., 0., CharacterConst::shankSizeZ/2.),
               rbMOI(B_L_SHANK).asDiagonal()),
@@ -36,14 +36,22 @@ const SpInertia Robot::fI[N_JOINTS] = {
               rbMOI(B_R_SHANK).asDiagonal()),
     SpInertia(rbMass(B_R_FOOT),
               Eigen::Vector3d(CharacterConst::footPosX, 0., -CharacterConst::footSizeZ/2.),
-              rbMOI(B_R_FOOT).asDiagonal())
+              rbMOI(B_R_FOOT).asDiagonal()),
+    
+    // for stance == RIGHT_STANCE
+    SpInertia(rbMass(B_PELVIS),
+              Eigen::Vector3d(0., -CharacterConst::legPosY_R, CharacterConst::pelvisSizeZ/2.),
+              rbMOI(B_PELVIS).asDiagonal())
 };
 
-const SE3Tr Robot::fBodyT[N_JOINTS] = {
+const SE3Tr Robot::fBodyT[N_JOINTS+1] = {
     SE3Tr::Trans(0., 0., CharacterConst::shankSizeZ),
     SE3Tr::Trans(0., 0., CharacterConst::thighSizeZ),
     SE3Tr::Trans(0., -CharacterConst::legPosY_L + CharacterConst::legPosY_R, 0.),
     SE3Tr::Trans(0., 0., -CharacterConst::thighSizeZ),
     SE3Tr::Trans(0., 0., -CharacterConst::shankSizeZ),
-    SE3Tr::Identity()
+    SE3Tr::Identity(),
+    
+    // for stance == RIGHT_STANCE
+    SE3Tr::Trans(0., -CharacterConst::legPosY_R + CharacterConst::legPosY_L, 0.)
 };
