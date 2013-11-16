@@ -366,7 +366,7 @@ void Cartwheel::SetFakeContactDataForFoot(std::vector<ContactPoint>& cpts, const
     
     cpts.push_back(ContactPoint());
     cpts.at(3).f = Vector3d(0., 0., 100.);
-    cpts.at(3).cp = Vector3d(-1., -1., 0.);
+    cpts.at(3).cp = pos + Vector3d(-1., -1., 0.);
 }
 
 void Cartwheel::SetFakeContactData(int stance)
