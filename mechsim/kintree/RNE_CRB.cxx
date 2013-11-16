@@ -106,6 +106,60 @@ Eigen::VectorXd calc_u(const KinChain2& sys, const Eigen::Matrix<SE3Tr, Eigen::D
     return C;
 }
 
+Eigen::VectorXd calc_u_2(const KinChain2& sys, const Eigen::Matrix<SE3Tr, Eigen::Dynamic, 1>& expSq, const Eigen::VectorXd& qdot, const Eigen::VectorXd& qddot, const SpMot& v0, const SpMot& a0, const SpForce& f0)
+{
+    Eigen::VectorXd C(sys.nDof());
+    C.setZero();
+    
+    SpMot v[sys.nJoints()];
+    SpMot a[sys.nJoints()];
+    
+    SpMot v_i = v0;
+    SpMot a_i = a0;
+    
+    int body_id = 0;
+    int dof_id = 0;
+    
+    /*** Velocity/acceleration calculation ***/
+    while(1) {
+        for(int jnt_dof = 0; jnt_dof < sys.nJntDof(body_id); jnt_dof++, dof_id++) {
+            v_i = v_i.tr(expSq(dof_id).inverse()) + sys.S(dof_id) * qdot(dof_id);
+            a_i = a_i.tr(expSq(dof_id).inverse()) + sys.S(dof_id) * qddot(dof_id)
+                + v_i.cross(sys.S(dof_id) * qdot(dof_id));
+        }
+        
+        v[body_id] = v_i;
+        a[body_id] = a_i;
+        
+        if(body_id >= (sys.nJoints() - 1))
+            break;
+        
+        v_i = v_i.tr(sys.bodyT(body_id).inverse());
+        a_i = a_i.tr(sys.bodyT(body_id).inverse());
+        
+        body_id++;
+    }
+    
+    dof_id--;
+    assert(dof_id == (sys.nDof() - 1));
+    assert(body_id == (sys.nJoints() - 1));
+    
+    /*** Force calculation ***/
+    SpForce f_i = f0;
+    
+    for(body_id; body_id >= 0; body_id--) {
+        f_i = f_i.tr(sys.bodyT(body_id));
+        f_i += sys.I(body_id) * a[body_id] + v[body_id].cross_star(sys.I(body_id) * v[body_id]);
+        
+        for(int jnt_dof = 0; jnt_dof < sys.nJntDof(body_id); jnt_dof++, dof_id--) {
+            C(dof_id) = sys.S(dof_id).dot(f_i);
+            f_i = f_i.tr(expSq(dof_id));
+        }
+    }
+    
+    return C;
+}
+
 Eigen::MatrixXd calc_du_dq(const KinChain2& sys, const Eigen::Matrix<SE3Tr, Eigen::Dynamic, 1>& expSq, const Eigen::VectorXd& qdot, const Eigen::VectorXd& qddot, const Eigen::Vector3d& g)
 {
     SpMot v[sys.nJoints()];

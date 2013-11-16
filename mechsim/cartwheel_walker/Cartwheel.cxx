@@ -504,6 +504,8 @@ CartState Cartwheel::GetCurrentState()
     state.fRF = fCData.rFtot;
     state.fRT = fCData.rTtot;
     
+    state.fStance = fController->fDbg.stance;
+    
     calcReaction(state.fStF_pred, state.fStT_pred, state.fFState, state.fJState, fCtrlTorques, fController->fDbg.stance);
     
     double tmp[4];

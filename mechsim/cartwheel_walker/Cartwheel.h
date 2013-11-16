@@ -30,6 +30,8 @@ class CartState: public SimulationState {
     // algorithm from applied torques for stationary stance foot
     Eigen::Vector3d fStF_pred, fStT_pred;
     
+    int fStance;
+    
     double fPint;
     
     Eigen::Vector3d fJPos[J_MAX];

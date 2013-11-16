@@ -65,6 +65,9 @@ simview: $(OBJS) simview.o
 simprint: $(OBJS) simprint.o
 	g++ -o $@ $(LDFLAGS) $(OBJS) simprint.o $(LIBS)
 
+print_invdyn: $(OBJS) print_invdyn.o
+	g++ -o $@ $(LDFLAGS) $(OBJS) print_invdyn.o $(LIBS)
+
 print_mass: print_mass.o
 	g++ -o $@ print_mass.o
 
