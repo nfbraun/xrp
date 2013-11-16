@@ -275,6 +275,57 @@ unsigned int Cartwheel::Collide(dGeomID g1, dGeomID g2, std::vector<ContactPoint
     return num_contacts;
 }
 
+void Cartwheel::GetContactMask(unsigned int& lContactMask, unsigned int& rContactMask, const FullState& fstate) const
+{
+    lContactMask = 0;
+    rContactMask = 0;
+    
+    for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
+        Eigen::Vector3d tmpP = fstate.trToLocal(B_L_FOOT).onPoint(fCData.pLeft[i].cp.toEigen());
+        
+        if(std::abs(std::abs(tmpP.x()) - CharacterConst::footSizeX/2.) > 1e-4
+          || std::abs(std::abs(tmpP.y()) - CharacterConst::footSizeY/2.) > 1e-4) {
+            std::cerr << "WARNING: strange contact encountered.";
+            std::cerr << "   x=" << tmpP.x() << " y=" << tmpP.y() << std::endl;
+        }
+        
+        if (tmpP.x() > 0 && tmpP.y() > 0) lContactMask |= 0x08;
+        if (tmpP.x() > 0 && tmpP.y() < 0) lContactMask |= 0x04;
+        if (tmpP.x() < 0 && tmpP.y() > 0) lContactMask |= 0x02;
+        if (tmpP.x() < 0 && tmpP.y() < 0) lContactMask |= 0x01;
+    }
+    
+    for (unsigned int i=0; i<fCData.pRight.size(); i++) {
+        Eigen::Vector3d tmpP = fstate.trToLocal(B_R_FOOT).onPoint(fCData.pRight[i].cp.toEigen());
+        
+        if(std::abs(std::abs(tmpP.x()) - CharacterConst::footSizeX/2.) > 1e-4
+          || std::abs(std::abs(tmpP.y()) - CharacterConst::footSizeY/2.) > 1e-4) {
+            std::cerr << "WARNING: strange contact encountered.";
+            std::cerr << "   x=" << tmpP.x() << " y=" << tmpP.y() << std::endl;
+        }
+        
+        if (tmpP.x() > 0 && tmpP.y() > 0) rContactMask |= 0x08;
+        if (tmpP.x() > 0 && tmpP.y() < 0) rContactMask |= 0x04;
+        if (tmpP.x() < 0 && tmpP.y() > 0) rContactMask |= 0x02;
+        if (tmpP.x() < 0 && tmpP.y() < 0) rContactMask |= 0x01;
+    }
+}
+
+unsigned int Cartwheel::TransformContactMask(unsigned int mask) const
+{
+    /*
+        0            - 0 contacts active
+        1,2,3,4      - 1 contact active
+        5,6,7,8,9,10 - 2 contacts active
+        11,12,13,14  - 3 contacts active
+        15           - 4 contacts active
+    */
+
+    unsigned int lookup[16] =
+        { 0, 1, 2, 5, 3, 6, 7, 11, 4, 8, 9, 12, 10, 13, 14, 15 };
+    return lookup[mask & 0xF];
+}
+
 void Cartwheel::LockStanceFoot(int stance)
 {
     if(fLFootStickyJ != 0) {
@@ -507,6 +558,17 @@ CartState Cartwheel::GetCurrentState()
     state.fStance = fController->fDbg.stance;
     
     calcReaction(state.fStF_pred, state.fStT_pred, state.fFState, state.fJState, fCtrlTorques, fController->fDbg.stance);
+    
+    #ifdef USE_FOOT_COLLISION
+    GetContactMask(state.fLContactMask, state.fRContactMask, state.fFState);
+    state.fLContacts = TransformContactMask(state.fLContactMask);
+    state.fRContacts = TransformContactMask(state.fRContactMask);
+    #else
+    state.fLContactMask = (fStance == LEFT_STANCE) ? 0xF : 0x0;
+    state.fRContactMask = (fStance == LEFT_STANCE) ? 0x0 : 0xF;
+    state.fLContacts = (fStance == LEFT_STANCE) ? 15 : 0;
+    state.fRContacts = (fStance == LEFT_STANCE) ? 0 : 15;
+    #endif
     
     double tmp[4];
     dJointGetUniversalAnchor(fRobot->fLAnkleJ, tmp);

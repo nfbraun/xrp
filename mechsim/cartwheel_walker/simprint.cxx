@@ -23,12 +23,8 @@ void printVect(const Eigen::Vector3d& v)
     std::cout << v.z() << " ";
 }
 
-void printScalar(double x)
-{
-    std::cout << x << " ";
-}
-
-void printScalar(int x)
+template<typename T>
+void printScalar(T x)
 {
     std::cout << x << " ";
 }
@@ -65,6 +61,9 @@ int main(int argc, char** argv)
     scalarHeader("lft");  // left foot tangential force
     scalarHeader("rfn");  // right foot normal force
     scalarHeader("rft");  // right foot tangential force
+    
+    scalarHeader("lcm");  // left foot contact mask
+    scalarHeader("rcm");  // right foot contact mask
     
     vectHeader("lcop");   // left foot center of pressure
     vectHeader("rcop");   // right foot center of pressure
@@ -125,6 +124,9 @@ int main(int argc, char** argv)
         printScalar(state.fDbg.lFootTF);
         printScalar(state.fDbg.rFootNF);
         printScalar(state.fDbg.rFootTF);
+        
+        printScalar(state.fLContacts);
+        printScalar(state.fRContacts);
         
         printVect(state.fDbg.lCoP);
         printVect(state.fDbg.rCoP);

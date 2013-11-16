@@ -30,6 +30,12 @@ class CartState: public SimulationState {
     // algorithm from applied torques for stationary stance foot
     Eigen::Vector3d fStF_pred, fStT_pred;
     
+    // Contact mask, showing which contacts on each foot are active
+    unsigned int fLContactMask, fRContactMask;
+    
+    // Transformed contact mask (ordered by number of active contacts)
+    unsigned int fLContacts, fRContacts;
+    
     int fStance;
     
     double fPint;
@@ -174,6 +180,8 @@ class Cartwheel: public Simulation {
     void AdvanceInTime(double dt, const JSpTorques& torques);
     void ApplyTorques(const JSpTorques& jt);
     
+    void GetContactMask(unsigned int& lContactMask, unsigned int& rContactMask, const FullState& fstate) const;
+    unsigned int TransformContactMask(unsigned int mask) const;
     void LockStanceFoot(int stance);
     void SetFakeContactData(int stance);
     void SetFakeContactDataForFoot(std::vector<ContactPoint>& cpts, const Vector3d& pos);
