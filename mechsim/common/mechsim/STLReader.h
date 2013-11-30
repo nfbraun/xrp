@@ -1,9 +1,6 @@
 #ifndef MSIM_STLREADER_H
 #define MSIM_STLREADER_H
 
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <inttypes.h>
 
 class STLReader
