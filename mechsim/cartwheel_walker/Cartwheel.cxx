@@ -472,12 +472,6 @@ void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
         
         Eigen::Vector3d f(fLeftFeedback[i].f1[0], fLeftFeedback[i].f1[1], fLeftFeedback[i].f1[2]);
         Eigen::Vector3d t(fLeftFeedback[i].t1[0], fLeftFeedback[i].t1[1], fLeftFeedback[i].t1[2]);
-        /* BEGIN test */
-        Eigen::Vector3d r(fCData.pLeft[i].cp.x(), fCData.pLeft[i].cp.y(), fCData.pLeft[i].cp.z());
-        Eigen::Vector3d tp = (r - fCData.lPos).cross(f);
-        assert((tp - t).squaredNorm() < 1e-12);
-        assert(std::abs(r.z()) < 1e-3);
-        /* END test */
         
         fCData.lFtot += f;
         fCData.lTtot += t;
