@@ -13,6 +13,8 @@ namespace ODE {
         { dBodySetLinearVel(id, v.x(), v.y(), v.z()); }
     inline void BodySetAngularVel(dBodyID id, const _Vector3& o)
         { dBodySetAngularVel(id, o.x(), o.y(), o.z()); }
+    inline void BodyAddForce(dBodyID id, const _Vector3& f)
+        { dBodyAddForce(id, f.x(), f.y(), f.z()); }
     inline void BodyAddTorque(dBodyID id, const _Vector3& t)
         { dBodyAddTorque(id, t.x(), t.y(), t.z()); }
         
