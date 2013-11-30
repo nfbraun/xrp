@@ -149,8 +149,10 @@ Eigen::Vector3d TorqueController::computeRootTorque(const RobotInfo& rinfo, doub
 	return rootTorque;
 }
 
-void TorqueController::transformLegTorques(JSpTorques& jt, unsigned int side, const RobotInfo& rinfo, const RawTorques& torques)
+JSpTorques TorqueController::transformLegTorques(unsigned int side, const RobotInfo& rinfo, const RawTorques& torques)
 {
+    JSpTorques jt = JSpTorques::Zero();
+    
     unsigned int hipId = (side == LEFT ? J_L_HIP : J_R_HIP);
     unsigned int kneeId = (side == LEFT ? J_L_KNEE : J_R_KNEE);
     unsigned int ankleId = (side == LEFT ? J_L_ANKLE : J_R_ANKLE);
@@ -175,10 +177,12 @@ void TorqueController::transformLegTorques(JSpTorques& jt, unsigned int side, co
     jt.t(side, KY) = -KneeAxis.dot(torques.get(kneeId));
     jt.t(side, AX) = -AnkleAxis1.dot(torques.get(ankleId));
     jt.t(side, AY) = -AnkleAxis2.dot(torques.get(ankleId));
+    
+    return jt;
 }
 
 /* Compute the torques for the stance leg. */
-void TorqueController::stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, const ContactInfo& cfs, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
+JSpTorques TorqueController::stanceLegControl(const RobotInfo& rinfo, const ContactInfo& cfs, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
 {
     RawTorques torques;
     
@@ -201,11 +205,13 @@ void TorqueController::stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, 
         // FIXME: maybe re-include: - torques.at(rinfo.swingHipIndex());
     }
     
-    transformLegTorques(jt, rinfo.stance() == LEFT_STANCE ? LEFT : RIGHT,
-                        rinfo, torques);
+    JSpTorques jt = transformLegTorques(rinfo.stance() == LEFT_STANCE ? LEFT : RIGHT,
+                                        rinfo, torques);
     
     unsigned int side = (rinfo.stance() == LEFT_STANCE ? LEFT : RIGHT);
     jt.t(side, KY) += 300.0*(-rinfo.jstate().phi(side, KY)) + 35.0 * (-rinfo.jstate().omega(side, KY));
+    
+    return jt;
 }
 
 /**
@@ -213,10 +219,10 @@ void TorqueController::stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, 
 */
 JSpTorques TorqueController::computeTorques(const RobotInfo& rinfo, const ContactInfo& cfs, const IKSwingLegTarget& desiredPose, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
 {
-    JSpTorques jt;
+    JSpTorques jt_swing, jt_stance;
     
-    SwingController::swingLegControl(jt, rinfo, desiredPose);
-    stanceLegControl(jt, rinfo, cfs, comOffsetCoronal, velDSagittal, velDCoronal, desiredHeading);
+    jt_swing = SwingController::swingLegControl(rinfo, desiredPose);
+    jt_stance = stanceLegControl(rinfo, cfs, comOffsetCoronal, velDSagittal, velDCoronal, desiredHeading);
     
-    return jt;
+    return jt_swing + jt_stance;
 }

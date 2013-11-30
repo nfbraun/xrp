@@ -116,13 +116,13 @@ void SwingController::swingAnkleControl(JSpTorques& jt, const RobotInfo& rinfo)
     jt.t(side, AY) = -AnkleAxis2.dot(ankleT);
 }
 
-void SwingController::swingLegControl(JSpTorques& jt, const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose)
+JSpTorques SwingController::swingLegControl(const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose)
 {
     unsigned int side = (rinfo.stance() == LEFT_STANCE ? RIGHT : LEFT);
     
     RawTorques t_gcomp = gravityCompensation(rinfo);
     
-    TorqueController::transformLegTorques(jt, side, rinfo, t_gcomp);
+    JSpTorques jt = TorqueController::transformLegTorques(side, rinfo, t_gcomp);
     
     jt.t(side, HZ) += 300.0*(desiredPose.phz - rinfo.jstate().phi(side, HZ)) + 35.0*(desiredPose.ohz - rinfo.jstate().omega(side, HZ));
     jt.t(side, HY) += 300.0*(desiredPose.phy - rinfo.jstate().phi(side, HY)) + 35.0 * (desiredPose.ohy - rinfo.jstate().omega(side, HY));
@@ -131,5 +131,7 @@ void SwingController::swingLegControl(JSpTorques& jt, const RobotInfo& rinfo, co
     jt.t(side, KY) += 300.0*(desiredPose.pky - rinfo.jstate().phi(side, KY)) + 35.0 * (desiredPose.oky - rinfo.jstate().omega(side, KY));
     
     swingAnkleControl(jt, rinfo);
+    
+    return jt;
 }
 

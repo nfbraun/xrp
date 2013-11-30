@@ -52,7 +52,40 @@ class JSpTorques {
     double& t(unsigned int side, unsigned int id)
         { assert(side < SIDE_MAX); assert(id < RDOF_MAX); return fTorques[side*RDOF_MAX+id]; }
     
+    JSpTorques operator+(const JSpTorques& rhs) const {
+        JSpTorques result;
+        for(unsigned int i=0; i<DOF_MAX; i++) {
+            result.t(i) = t(i) + rhs.t(i);
+        }
+        return result;
+    }
+    
+    JSpTorques operator*(double rhs) const {
+        JSpTorques result;
+        for(unsigned int i=0; i<DOF_MAX; i++) {
+            result.t(i) = rhs*t(i);
+        }
+        return result;
+    }
+    
+    void operator+=(const JSpTorques& rhs) {
+        for(unsigned int i=0; i<DOF_MAX; i++) {
+            t(i) += rhs.t(i);
+        }
+    }
+    
+    void operator*=(double rhs) {
+        for(unsigned int i=0; i<DOF_MAX; i++) {
+            t(i) *= rhs;
+        }
+    }
+    
   private:
     double fTorques[DOF_MAX];
 };
+
+inline JSpTorques operator*(double lhs, const JSpTorques& rhs)
+{
+    return rhs * lhs;
+}
 

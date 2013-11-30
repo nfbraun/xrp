@@ -28,7 +28,7 @@ class SwingController {
     IKSwingLegTarget computeIKSwingLegTargets(const RobotInfo& rinfo, const Eigen::Vector3d& swingFootPos, const Eigen::Vector3d& swingFootVel, double swingFootHeight, double swingFootHeightVel);
     Eigen::Vector3d transformSwingFootTarget(const Eigen::Vector3d& step, const Eigen::Vector3d& comPos, const Eigen::Quaterniond& charFrameToWorld, double height);
     static RawTorques gravityCompensation(const RobotInfo& rinfo);
-    static void swingLegControl(JSpTorques& jt, const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose);
+    static JSpTorques swingLegControl(const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose);
     
     static void swingAnkleControl(JSpTorques& jt, const RobotInfo& rinfo);
 };

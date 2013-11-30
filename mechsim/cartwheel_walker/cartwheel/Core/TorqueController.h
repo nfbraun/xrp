@@ -12,10 +12,10 @@ class TorqueController {
     
     DebugInfo* dbg;
     
-    static void transformLegTorques(JSpTorques& jt, unsigned int side, const RobotInfo& rinfo, const RawTorques& torques);
+    static JSpTorques transformLegTorques(unsigned int side, const RobotInfo& rinfo, const RawTorques& torques);
     
   private:
-    void stanceLegControl(JSpTorques& jt, const RobotInfo& rinfo, const ContactInfo& cfs, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading);
+    JSpTorques stanceLegControl(const RobotInfo& rinfo, const ContactInfo& cfs, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading);
     
     /**
     This method is used to compute torques for the stance leg that help achieve a desired speed in the sagittal and lateral planes
