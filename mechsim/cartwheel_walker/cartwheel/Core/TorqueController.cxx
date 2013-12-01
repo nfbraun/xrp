@@ -1,5 +1,6 @@
 #include "TorqueController.h"
 #include "../../DynTransform.h"
+#include "../../Reaction.h"
 #include "SwingController.h"
 
 void TorqueController::COMJT(const RobotInfo& rinfo, const Eigen::Vector3d& fA, Eigen::Vector3d& stanceAnkleTorque, Eigen::Vector3d& stanceKneeTorque, Eigen::Vector3d& stanceHipTorque)
@@ -36,47 +37,6 @@ void TorqueController::COMJT(const RobotInfo& rinfo, const Eigen::Vector3d& fA, 
 }
 
 /**
-	This method is used to return the ratio of the weight that is supported by the stance foot.
-*/
-double TorqueController::getStanceFootWeightRatio(const RobotInfo& rinfo, const ContactInfo& cfs)
-{
-	Vector3d stanceFootForce = cfs.getForceOnFoot(rinfo.stanceFootIndex());
-	Vector3d swingFootForce = cfs.getForceOnFoot(rinfo.swingFootIndex());
-	double totalZForce = (stanceFootForce + swingFootForce).dot(PhysicsGlobals::up);
-
-	if (IS_ZERO(totalZForce))
-		return -1;
-	else
-		return stanceFootForce.dot(PhysicsGlobals::up) / totalZForce;
-}
-
-/**
-	This method returns performes some pre-processing on the virtual torque. The torque is assumed to be in world coordinates,
-	and it will remain in world coordinates.
-*/
-Eigen::Vector3d TorqueController::preprocessAnkleVTorque(const RobotInfo& rinfo, const ContactInfo& cfs, const Eigen::Vector3d& ankleVTorque, double phi)
-{
-	SE3Tr footTr = rinfo.fstate().trToWorld(rinfo.stanceFootIndex());
-	
-	Eigen::Vector3d ankleVTorque_local = footTr.inverse().onVector(ankleVTorque);
-	
-	if (cfs.toeInContact(rinfo.stanceFootIndex(), rinfo.fstate()) == false || phi < 0.2 || phi > 0.8) ankleVTorque_local.y() = 0;
-
-	Eigen::Vector3d footAVel = rinfo.fstate().avel(rinfo.stanceFootIndex());
-	Eigen::Vector3d footRelativeAngularVel = footTr.inverse().onVector(footAVel);
-	
-	if ((footRelativeAngularVel.x() < -0.2 && ankleVTorque_local.x() > 0) || (footRelativeAngularVel.x() > 0.2 && ankleVTorque_local.x() < 0))
-		ankleVTorque_local.x() = 0;
-
-	if (fabs(footRelativeAngularVel.x()) > 1.0) ankleVTorque_local.x() = 0;
-	if (fabs(footRelativeAngularVel.y()) > 1.0) ankleVTorque_local.y() = 0;
-	
-	boundToRange(&ankleVTorque_local.x(), -20, 20);
-
-	return footTr.onVector(ankleVTorque_local);
-}
-
-/**
 	This method is used to compute the force that the COM of the character should be applying.
 */
 Eigen::Vector3d TorqueController::computeVirtualForce(const RobotInfo& rinfo, double desOffCoronal, double desVSagittal, double desVCoronal)
@@ -94,10 +54,8 @@ Eigen::Vector3d TorqueController::computeVirtualForce(const RobotInfo& rinfo, do
 		desA.z = (-errV.z + comOffsetSagittal) * 10 + (velDSagittal - getV().z) * 150;
 	} */
 
-	//and this is the force that would achieve that - make sure it's not too large...
+	//and this is the force that would achieve that
 	Eigen::Vector3d fA = (desA) * totalMass();
-	boundToRange(&fA.x(), -60, 60);
-	boundToRange(&fA.y(), -100, 100);
 
 	//now change this quantity to world coordinates...
 	fA = rinfo.characterFrame()._transformVector(fA);
@@ -182,28 +140,14 @@ JSpTorques TorqueController::transformLegTorques(unsigned int side, const RobotI
 }
 
 /* Compute the torques for the stance leg. */
-JSpTorques TorqueController::stanceLegControl(const RobotInfo& rinfo, const ContactInfo& cfs, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
+JSpTorques TorqueController::stanceLegControl(const RobotInfo& rinfo, double desiredHeading)
 {
     RawTorques torques;
     
-    //and now separetely compute the torques for the hips - together with the feedback term, this is what defines simbicon
-    dbg->StanceFootWeightRatio = getStanceFootWeightRatio(rinfo, cfs);
-    
-    if(getStanceFootWeightRatio(rinfo, cfs) > 0.9) {
-        Eigen::Vector3d virtualRootForce = computeVirtualForce(rinfo, comOffsetCoronal, velDSagittal, velDCoronal);
-        Eigen::Vector3d virtualRootTorque = computeRootTorque(rinfo, desiredHeading);
-        
-        dbg->virtualRootForce = virtualRootForce;
-        dbg->virtualRootTorque = virtualRootTorque;
-        
-        Eigen::Vector3d stanceAnkleTorque, stanceKneeTorque, stanceHipTorque;
-        COMJT(rinfo, virtualRootForce, stanceAnkleTorque, stanceKneeTorque, stanceHipTorque);
-        
-        torques.at(rinfo.stanceAnkleIndex()) += preprocessAnkleVTorque(rinfo, cfs, stanceAnkleTorque, rinfo.phi());
-        torques.at(rinfo.stanceKneeIndex()) += stanceKneeTorque;
-        torques.at(rinfo.stanceHipIndex()) = stanceHipTorque - virtualRootTorque;
-        // FIXME: maybe re-include: - torques.at(rinfo.swingHipIndex());
-    }
+    Eigen::Vector3d virtualRootTorque = computeRootTorque(rinfo, desiredHeading);
+    dbg->virtualRootTorque = virtualRootTorque;
+    torques.at(rinfo.stanceHipIndex()) -= virtualRootTorque;
+    // FIXME: maybe re-include: - torques.at(rinfo.swingHipIndex());
     
     JSpTorques jt = transformLegTorques(rinfo.stance() == LEFT_STANCE ? LEFT : RIGHT,
                                         rinfo, torques);
@@ -214,15 +158,90 @@ JSpTorques TorqueController::stanceLegControl(const RobotInfo& rinfo, const Cont
     return jt;
 }
 
+/* Compute the torques resulting from applying a virtual force at the root. */
+JSpTorques TorqueController::rootForceControl(const RobotInfo& rinfo, double comOffsetCoronal, double velDSagittal, double velDCoronal)
+{
+    Eigen::Vector3d virtualRootForce = computeVirtualForce(rinfo, comOffsetCoronal, velDSagittal, velDCoronal);
+    dbg->virtualRootForce = virtualRootForce;
+    
+    Eigen::Vector3d stanceAnkleTorque, stanceKneeTorque, stanceHipTorque;
+    COMJT(rinfo, virtualRootForce, stanceAnkleTorque, stanceKneeTorque, stanceHipTorque);
+    
+    RawTorques torques;
+    torques.at(rinfo.stanceAnkleIndex()) = stanceAnkleTorque;
+    torques.at(rinfo.stanceKneeIndex()) = stanceKneeTorque;
+    torques.at(rinfo.stanceHipIndex()) = stanceHipTorque;
+    
+    return transformLegTorques(rinfo.stance() == LEFT_STANCE ? LEFT : RIGHT,
+                               rinfo, torques);
+}
+
+/* Calculate the center of pressure resulting from the reaction force (T,F)
+   on the stance foot. */
+Eigen::Vector3d TorqueController::calcCoP(const RobotInfo& rinfo, const Eigen::Vector3d& T, const Eigen::Vector3d& F)
+{
+    const double h = CharacterConst::footSizeZ / 2.;
+    const Eigen::Vector3d n = PhysicsGlobals::up.toEigen();
+    
+    if(F.dot(n) < 0.0001) {
+        return Eigen::Vector3d::Zero();
+    } else {
+        Eigen::Vector3d p = (n.cross(T) - h*F)/(F.dot(n));
+        if(rinfo.stance() == LEFT_STANCE)
+            return rinfo.fstate().trToLocal(B_L_FOOT).onVector(p);
+        else
+            return rinfo.fstate().trToLocal(B_R_FOOT).onVector(p);
+    }
+}
+
+/* Calculate the maximum gain, 0 < gain < 1, such that applying the joint space
+   torques jt0 + gain*jt on the robot keeps the center of pressure inside the
+   90% foot area, and the tangential component of the reaction force smaller
+   than its normal component. */
+double TorqueController::calcMaxGain(const RobotInfo& rinfo, const JSpTorques& jt0, const JSpTorques& jt)
+{
+    double gain = 0.5;
+    double inc = 0.25;
+    
+    const double maxCoP_x = 0.9 * CharacterConst::footSizeX/2.;
+    const double maxCoP_y = 0.9 * CharacterConst::footSizeY/2.;
+    
+    Eigen::Vector3d F0, T0;
+    Eigen::Vector3d F1, T1;
+    calcReaction(F0, T0, rinfo.fstate(), rinfo.jstate(), jt0, rinfo.stance());
+    calcReaction(F1, T1, rinfo.fstate(), rinfo.jstate(), jt0+jt, rinfo.stance());
+    
+    for(unsigned int iter=0; iter<24; iter++) {
+        Eigen::Vector3d CoP = calcCoP(rinfo, T0 + gain*(T1-T0), F0 + gain*(F1-F0));
+        
+        Eigen::Vector3d F = F0 + gain*(F1-F0);
+        double Ft = sqrt(F.x()*F.x() + F.y()*F.y());
+        double Fn = F.z();
+        
+        if(std::abs(CoP.x()) < maxCoP_x && std::abs(CoP.y()) < maxCoP_y && Ft < Fn)
+            gain += inc;
+        else
+            gain -= inc;
+        
+        inc *= 0.5;
+    }
+    
+    return gain;
+}
+
 /**
 	This method is used to compute the torques
 */
-JSpTorques TorqueController::computeTorques(const RobotInfo& rinfo, const ContactInfo& cfs, const IKSwingLegTarget& desiredPose, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
+JSpTorques TorqueController::computeTorques(const RobotInfo& rinfo, const IKSwingLegTarget& desiredPose, double comOffsetCoronal, double velDSagittal, double velDCoronal, double desiredHeading)
 {
-    JSpTorques jt_swing, jt_stance;
+    JSpTorques jt_swing, jt_stance, jt_vrf;
     
     jt_swing = SwingController::swingLegControl(rinfo, desiredPose);
-    jt_stance = stanceLegControl(rinfo, cfs, comOffsetCoronal, velDSagittal, velDCoronal, desiredHeading);
+    jt_stance = stanceLegControl(rinfo, desiredHeading);
+    jt_vrf = rootForceControl(rinfo, comOffsetCoronal, velDSagittal, velDCoronal);
     
-    return jt_swing + jt_stance;
+    double vrfGain = calcMaxGain(rinfo, jt_swing + jt_stance, jt_vrf);
+    dbg->vrfGain = vrfGain;
+    
+    return jt_swing + jt_stance + vrfGain*jt_vrf;
 }

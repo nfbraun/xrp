@@ -14,14 +14,14 @@ class DebugInfo {
     double offCoronal;
     double velCoronal, velSagittal;
     
-    double StanceFootWeightRatio;
-    
     Eigen::Vector3d virtualRootTorque, virtualRootForce;
     
     double lFootNF, lFootTF;
     double rFootNF, rFootTF;
     
     Eigen::Vector3d lCoP, rCoP;
+    
+    double vrfGain;
     
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };

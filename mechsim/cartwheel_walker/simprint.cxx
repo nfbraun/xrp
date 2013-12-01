@@ -53,7 +53,6 @@ int main(int argc, char** argv)
     vectHeader("vrf");    // virtual root force
     vectHeader("vrt");    // virtual root torque
     
-    scalarHeader("sfwr"); // swing foot weight ratio
     scalarHeader("stance");
     scalarHeader("phi");
     
@@ -80,6 +79,8 @@ int main(int argc, char** argv)
     
     vectHeader("stF"); // predicted reaction force on stance foot
     vectHeader("stT");
+    
+    scalarHeader("vrfg"); // virtual root force gain
     
     // Data is irregular for the first two timesteps
     sim.Advance();
@@ -116,7 +117,6 @@ int main(int argc, char** argv)
         printVect(state.fDbg.virtualRootForce);
         printVect(state.fDbg.virtualRootTorque);
         
-        printScalar(state.fDbg.StanceFootWeightRatio);
         printScalar(state.fDbg.stance);
         printScalar(state.fDbg.phi);
         
@@ -146,6 +146,8 @@ int main(int argc, char** argv)
         
         printVect(state.fStF_pred);
         printVect(state.fStT_pred);
+        
+        printScalar(state.fDbg.vrfGain);
         
         std::cout << std::endl;
     }

@@ -85,7 +85,7 @@ JSpTorques CWController::Run(double dt, const FullState& fstate, const JSpState&
     fDbg.desVelCoronal = highTarget.velDCoronal;
     fDbg.desVelSagittal = highTarget.velDSagittal;
     
-    return fTorqueCtrl.computeTorques(rinfo, cinfo, swingLegTarget,
+    return fTorqueCtrl.computeTorques(rinfo, swingLegTarget,
         comOffsetCoronal, highTarget.velDSagittal, highTarget.velDCoronal,
         highTarget.desiredHeading);
 }
