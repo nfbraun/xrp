@@ -14,10 +14,10 @@
 
 // ** Simulation parameters **
 // Generate contact joints between the feet and the ground
-//#define USE_FOOT_COLLISION
+#define USE_FOOT_COLLISION
 
 // Lock stance foot once it reaches the ground
-#define USE_STANCE_FOOT_LOCKING
+//#define USE_STANCE_FOOT_LOCKING
 
 // ** Title **
 const char Cartwheel::TITLE[] = "Cartwheel Walker";
@@ -260,10 +260,8 @@ unsigned int Cartwheel::Collide(dGeomID g1, dGeomID g2, std::vector<ContactPoint
     cps.reserve(num_contacts);
     
     for(int i=0; i<num_contacts; ++i) {
-        contact[i].surface.mode = dContactBounce | dContactApprox1;
-        contact[i].surface.bounce = 0.0;
-        contact[i].surface.bounce_vel = 1000.0;
-        contact[i].surface.mu = 1000.0;
+        contact[i].surface.mode = dContactApprox1;
+        contact[i].surface.mu = 1.0;
         dJointID c = dJointCreateContact(fWorld, fContactGroup, &contact[i]);
         dJointAttach(c, dGeomGetBody(g1), dGeomGetBody(g2));
         
@@ -283,8 +281,8 @@ void Cartwheel::GetContactMask(unsigned int& lContactMask, unsigned int& rContac
     for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
         Eigen::Vector3d tmpP = fstate.trToLocal(B_L_FOOT).onPoint(fCData.pLeft[i].cp.toEigen());
         
-        if(std::abs(std::abs(tmpP.x()) - CharacterConst::footSizeX/2.) > 1e-4
-          || std::abs(std::abs(tmpP.y()) - CharacterConst::footSizeY/2.) > 1e-4) {
+        if(std::abs(std::abs(tmpP.x()) - CharacterConst::footSizeX/2.) > 1e-3
+          || std::abs(std::abs(tmpP.y()) - CharacterConst::footSizeY/2.) > 1e-3) {
             std::cerr << "WARNING: strange contact encountered.";
             std::cerr << "   x=" << tmpP.x() << " y=" << tmpP.y() << std::endl;
         }
@@ -298,8 +296,8 @@ void Cartwheel::GetContactMask(unsigned int& lContactMask, unsigned int& rContac
     for (unsigned int i=0; i<fCData.pRight.size(); i++) {
         Eigen::Vector3d tmpP = fstate.trToLocal(B_R_FOOT).onPoint(fCData.pRight[i].cp.toEigen());
         
-        if(std::abs(std::abs(tmpP.x()) - CharacterConst::footSizeX/2.) > 1e-4
-          || std::abs(std::abs(tmpP.y()) - CharacterConst::footSizeY/2.) > 1e-4) {
+        if(std::abs(std::abs(tmpP.x()) - CharacterConst::footSizeX/2.) > 1e-3
+          || std::abs(std::abs(tmpP.y()) - CharacterConst::footSizeY/2.) > 1e-3) {
             std::cerr << "WARNING: strange contact encountered.";
             std::cerr << "   x=" << tmpP.x() << " y=" << tmpP.y() << std::endl;
         }
