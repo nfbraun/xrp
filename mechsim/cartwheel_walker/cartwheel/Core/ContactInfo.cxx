@@ -1,5 +1,5 @@
 #include "ContactInfo.h"
-#include <Physics/PhysicsGlobals.h>
+#include "CWConfig.h"
 
 ContactInfo::ContactInfo(const ContactData& cdata)
 {
@@ -22,13 +22,13 @@ Eigen::Vector3d ContactInfo::getForceOnFoot(unsigned int rb_id) const
 
 double ContactInfo::getNormalForceOnFoot(unsigned int rb_id) const
 {
-    return getForceOnFoot(rb_id).dot(PhysicsGlobals::up.toEigen());
+    return getForceOnFoot(rb_id).dot(CWConfig::UP);
 }
 
 double ContactInfo::getTangentialForceOnFoot(unsigned int rb_id) const
 {
     const Vector3d f = getForceOnFoot(rb_id);
-    const Vector3d n = PhysicsGlobals::up;
+    const Vector3d n = CWConfig::UP;
     
     return (f - n*(f.dot(n))).norm();
 }
@@ -41,13 +41,13 @@ Eigen::Vector3d ContactInfo::getCoP(unsigned int rb_id, const FullState& fstate)
     
     if(rb_id == B_L_FOOT) {
         for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
-            double fn = fCData.pLeft[i].f.dot(PhysicsGlobals::up);
+            double fn = fCData.pLeft[i].f.dot(CWConfig::UP);
             cop += fn * fCData.pLeft[i].cp.toEigen();
             fn_tot += fn;
         }
     } else if(rb_id == B_R_FOOT) {
         for (unsigned int i=0; i<fCData.pRight.size(); i++) {
-            double fn = fCData.pRight[i].f.dot(PhysicsGlobals::up);
+            double fn = fCData.pRight[i].f.dot(CWConfig::UP);
             cop += fn * fCData.pRight[i].cp.toEigen();
             fn_tot += fn;
         }
@@ -65,7 +65,7 @@ Eigen::Vector3d ContactInfo::getCoP(unsigned int rb_id, const FullState& fstate)
 Eigen::Vector3d ContactInfo::getCoP2(unsigned int rb_id, const FullState& fstate) const
 {
     const double h = CharacterConst::footSizeZ / 2.;
-    const Eigen::Vector3d n = PhysicsGlobals::up.toEigen();
+    const Eigen::Vector3d n = CWConfig::UP;
     
     if(rb_id == B_L_FOOT) {
         if(fCData.lFtot.dot(n) < 0.0001) {

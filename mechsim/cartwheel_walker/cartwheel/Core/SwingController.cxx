@@ -1,6 +1,7 @@
 #include "SwingController.h"
 #include "TorqueController.h"
 #include "LegIK.h"
+#include "CWConfig.h"
 #include "../../DynTransform.h"
 
 RawTorques SwingController::gravityCompensation(const RobotInfo& rinfo)
@@ -11,29 +12,27 @@ RawTorques SwingController::gravityCompensation(const RobotInfo& rinfo)
     const double m_shank = rbMass(rinfo.swingShankIndex());
     const double m_foot = rbMass(rinfo.swingFootIndex());
     
-    const Eigen::Vector3d g(0., 0., 9.8);
-    
     Eigen::Vector3d tmpV;
     
     Eigen::Vector3d hipT, kneeT, ankleT;
     
     tmpV = rinfo.fstate().pos(rinfo.swingThighIndex()) - rinfo.jPos(rinfo.swingHipIndex());
-    hipT = -tmpV.cross(m_thigh*g);
+    hipT = tmpV.cross(m_thigh * CWConfig::G);
     
     tmpV = rinfo.fstate().pos(rinfo.swingShankIndex()) - rinfo.jPos(rinfo.swingHipIndex());
-    hipT += -tmpV.cross(m_shank*g);
+    hipT += tmpV.cross(m_shank * CWConfig::G);
     
     tmpV = rinfo.fstate().pos(rinfo.swingFootIndex()) - rinfo.jPos(rinfo.swingHipIndex());
-    hipT += -tmpV.cross(m_foot*g);
+    hipT += tmpV.cross(m_foot * CWConfig::G);
     
     tmpV = rinfo.fstate().pos(rinfo.swingShankIndex()) - rinfo.jPos(rinfo.swingKneeIndex());
-    kneeT = -tmpV.cross(m_shank*g);
+    kneeT = tmpV.cross(m_shank * CWConfig::G);
     
     tmpV = rinfo.fstate().pos(rinfo.swingFootIndex()) - rinfo.jPos(rinfo.swingKneeIndex());
-    kneeT += -tmpV.cross(m_foot*g);
+    kneeT += tmpV.cross(m_foot * CWConfig::G);
     
     tmpV = rinfo.fstate().pos(rinfo.swingFootIndex()) - rinfo.jPos(rinfo.swingAnkleIndex());
-    ankleT = -tmpV.cross(m_foot*g);
+    ankleT = tmpV.cross(m_foot * CWConfig::G);
     
     torques.at(rinfo.swingHipIndex()) = hipT;
     torques.at(rinfo.swingKneeIndex()) = kneeT;
@@ -101,10 +100,10 @@ void SwingController::swingAnkleControl(JSpTorques& jt, const RobotInfo& rinfo)
     } else {
         double absAngle = 2 * asin(sinTheta);
         ankleT = qErr.vec();
-        ankleT *= 1/sinTheta * absAngle * (-50.0) * SGN(qErr.w());
+        ankleT *= 1/sinTheta * absAngle * (-CWConfig::SW_A_P_GAIN) * SGN(qErr.w());
     }
 
-    ankleT += -rinfo.fstate().avel(rinfo.swingFootIndex()) * (-15.0);
+    ankleT += rinfo.fstate().avel(rinfo.swingFootIndex()) * CWConfig::SW_A_D_GAIN;
     
     Eigen::Vector3d cf_AnkleAxis1(1., 0., 0.);
     Eigen::Vector3d cf_AnkleAxis2(0., 1., 0.);
@@ -124,11 +123,15 @@ JSpTorques SwingController::swingLegControl(const RobotInfo& rinfo, const IKSwin
     
     JSpTorques jt = TorqueController::transformLegTorques(side, rinfo, t_gcomp);
     
-    jt.t(side, HZ) += 300.0*(desiredPose.phz - rinfo.jstate().phi(side, HZ)) + 35.0*(desiredPose.ohz - rinfo.jstate().omega(side, HZ));
-    jt.t(side, HY) += 300.0*(desiredPose.phy - rinfo.jstate().phi(side, HY)) + 35.0 * (desiredPose.ohy - rinfo.jstate().omega(side, HY));
-    jt.t(side, HX) += 300.0*(desiredPose.phx - rinfo.jstate().phi(side, HX)) + 35.0 * (desiredPose.ohx - rinfo.jstate().omega(side, HX));
+    jt.t(side, HZ) += CWConfig::SW_H_P_GAIN * (desiredPose.phz - rinfo.jstate().phi(side, HZ))
+                        + CWConfig::SW_H_D_GAIN * (desiredPose.ohz - rinfo.jstate().omega(side, HZ));
+    jt.t(side, HY) += CWConfig::SW_H_P_GAIN * (desiredPose.phy - rinfo.jstate().phi(side, HY))
+                        + CWConfig::SW_H_D_GAIN * (desiredPose.ohy - rinfo.jstate().omega(side, HY));
+    jt.t(side, HX) += CWConfig::SW_H_P_GAIN*(desiredPose.phx - rinfo.jstate().phi(side, HX))
+                        + CWConfig::SW_H_D_GAIN * (desiredPose.ohx - rinfo.jstate().omega(side, HX));
     
-    jt.t(side, KY) += 300.0*(desiredPose.pky - rinfo.jstate().phi(side, KY)) + 35.0 * (desiredPose.oky - rinfo.jstate().omega(side, KY));
+    jt.t(side, KY) += CWConfig::SW_KY_P_GAIN * (desiredPose.pky - rinfo.jstate().phi(side, KY))
+                        + CWConfig::SW_KY_D_GAIN * (desiredPose.oky - rinfo.jstate().omega(side, KY));
     
     swingAnkleControl(jt, rinfo);
     

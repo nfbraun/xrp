@@ -5,7 +5,6 @@ CW_SOURCES = \
 cartwheel/MathLib/Quaternion.cxx \
 cartwheel/MathLib/Segment.cxx \
 cartwheel/MathLib/Vector3d.cxx \
-cartwheel/Physics/PhysicsGlobals.cxx \
 cartwheel/Core/ContactInfo.cxx \
 cartwheel/Core/RobotInfo.cxx \
 cartwheel/Core/TorqueController.cxx \
@@ -16,7 +15,8 @@ cartwheel/Core/WalkController.cxx \
 cartwheel/Core/CWController.cxx \
 cartwheel/Core/StateMachine.cxx \
 cartwheel/Core/LegIK.cxx \
-cartwheel/Core/SwingController.cxx
+cartwheel/Core/SwingController.cxx \
+cartwheel/Core/CWConfig.cxx
 
 CW_HEADERS = \
 cartwheel/MathLib/MathLib.h \
@@ -25,8 +25,6 @@ cartwheel/MathLib/Quaternion.h \
 cartwheel/MathLib/Segment.h \
 cartwheel/MathLib/Trajectory.h \
 cartwheel/MathLib/Vector3d.h \
-cartwheel/Physics/ContactPoint.h \
-cartwheel/Physics/PhysicsGlobals.h \
 cartwheel/Core/ContactInfo.h \
 cartwheel/Core/RobotInfo.h \
 cartwheel/Core/Controller.h \
@@ -40,6 +38,7 @@ cartwheel/Core/CWController.h \
 cartwheel/Core/StateMachine.h \
 cartwheel/Core/LegIK.h \
 cartwheel/Core/SwingController.h \
+cartwheel/Core/CWConfig.h \
 cartwheel/Core/Debug.h
 
 OBJS = $(SOURCES:.cxx=.o) $(CW_SOURCES:.cxx=.o)

@@ -2,6 +2,7 @@
 #include "../../DynTransform.h"
 #include "../../Reaction.h"
 #include "SwingController.h"
+#include "CWConfig.h"
 
 void TorqueController::COMJT(const RobotInfo& rinfo, const Eigen::Vector3d& fA, Eigen::Vector3d& stanceAnkleTorque, Eigen::Vector3d& stanceKneeTorque, Eigen::Vector3d& stanceHipTorque)
 {
@@ -43,8 +44,8 @@ Eigen::Vector3d TorqueController::computeVirtualForce(const RobotInfo& rinfo, do
 {
 	//this is the desired acceleration of the center of mass
 	Eigen::Vector3d desA;
-	desA.x() = (desVSagittal - rinfo.getV().x()) * 30;
-	desA.y() = (desOffCoronal - rinfo.getD().y()) * 20 + (desVCoronal - rinfo.getV().y()) * 9;
+	desA.x() = (desVSagittal - rinfo.getV().x()) * CWConfig::VRF_SAG_D_GAIN;
+	desA.y() = (desOffCoronal - rinfo.getD().y()) * CWConfig::VRF_COR_P_GAIN + (desVCoronal - rinfo.getV().y()) * CWConfig::VRF_COR_D_GAIN;
 	desA.z() = 0.;
 	
 	/* if (doubleStanceMode == true){
@@ -78,7 +79,7 @@ Eigen::Vector3d TorqueController::computeRootTorque(const RobotInfo& rinfo, doub
 	Eigen::Quaterniond qRootDW;
 
 	//qRootDW needs to also take into account the desired heading
-	qRootDW = Quaternion::getRotationQuaternion(desHeading, PhysicsGlobals::up).toEigen();
+	qRootDW = Quaternion::getRotationQuaternion(desHeading, CWConfig::UP).toEigen();
 
 	Eigen::Quaterniond qErr = rinfo.rootOrient().conjugate() * qRootDW;
 
@@ -90,14 +91,14 @@ Eigen::Vector3d TorqueController::computeRootTorque(const RobotInfo& rinfo, doub
 	}else{
 		double absAngle = 2 * asin(sinTheta);
 		rootTorque = qErr.vec();
-		rootTorque *= 1/sinTheta * absAngle * (-1000.0) * SGN(qErr.w());
+		rootTorque *= 1/sinTheta * absAngle * (-CWConfig::VRT_P_GAIN) * SGN(qErr.w());
 	}
 
 	//qErr represents the rotation from the desired child frame to the actual child frame, which
 	//means that the torque is now expressed in child coordinates. We need to express it in parent coordinates!
 	rootTorque = rinfo.rootOrient()._transformVector(rootTorque);
 	//the angular velocities are stored in parent coordinates, so it is ok to add this term now
-	rootTorque += -rinfo.rootAngVel() * (-200.0);
+	rootTorque += rinfo.rootAngVel() * CWConfig::VRT_D_GAIN;
 
 	//now, based on the ratio of the forces the feet exert on the ground, and the ratio of the forces between the two feet, we will compute the forces that need to be applied
 	//to the two hips, to make up the root makeup torque - which means the final torque the root sees is rootTorque!
@@ -153,7 +154,8 @@ JSpTorques TorqueController::stanceLegControl(const RobotInfo& rinfo, double des
                                         rinfo, torques);
     
     unsigned int side = (rinfo.stance() == LEFT_STANCE ? LEFT : RIGHT);
-    jt.t(side, KY) += 300.0*(-rinfo.jstate().phi(side, KY)) + 35.0 * (-rinfo.jstate().omega(side, KY));
+    jt.t(side, KY) += CWConfig::ST_KY_P_GAIN * (-rinfo.jstate().phi(side, KY))
+                        + CWConfig::ST_KY_D_GAIN * (-rinfo.jstate().omega(side, KY));
     
     return jt;
 }
@@ -181,7 +183,7 @@ JSpTorques TorqueController::rootForceControl(const RobotInfo& rinfo, double com
 Eigen::Vector3d TorqueController::calcCoP(const RobotInfo& rinfo, const Eigen::Vector3d& T, const Eigen::Vector3d& F)
 {
     const double h = CharacterConst::footSizeZ / 2.;
-    const Eigen::Vector3d n = PhysicsGlobals::up.toEigen();
+    const Eigen::Vector3d n = CWConfig::UP;
     
     if(F.dot(n) < 0.0001) {
         return Eigen::Vector3d::Zero();

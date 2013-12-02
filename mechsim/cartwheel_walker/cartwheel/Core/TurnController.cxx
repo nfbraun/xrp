@@ -1,4 +1,5 @@
 #include "TurnController.h"
+#include "CWConfig.h"
 
 TurnController::TurnController(WorldOracle* w)
 {
@@ -66,9 +67,9 @@ void TurnController::requestHeading(const RobotInfo& rinfo, double v)
 
 	//if the turn angle is pretty small, then just turn right away (or the old way... who knows).
 	const Quaternion currentHeadingQ = rinfo.characterFrame();
-	const Quaternion finalHeadingQ = Quaternion::QFromAngleAndAxis(v, PhysicsGlobals::up);
+	const Quaternion finalHeadingQ = Quaternion::QFromAngleAndAxis(v, CWConfig::UP);
 	const Quaternion tmpQ = finalHeadingQ * currentHeadingQ.getComplexConjugate();
-	turnAngle = tmpQ.getRotationAngle(PhysicsGlobals::up);
+	turnAngle = tmpQ.getRotationAngle(CWConfig::UP);
 	//printf("turnAngle: %lf\n", turnAngle);
 
 	initialTiming = stepTime;
@@ -117,16 +118,16 @@ void TurnController::calcStepPlan(const RobotInfo& rinfo, double dt)
 
 	const Quaternion currentHeadingQ = rinfo.characterFrame();
 	const Quaternion currentDesiredHeadingQ =
-	    Quaternion::QFromAngleAndAxis(turningDesiredHeading, PhysicsGlobals::up);
+	    Quaternion::QFromAngleAndAxis(turningDesiredHeading, CWConfig::UP);
 	const Quaternion finalHeadingQ =
-	    Quaternion::QFromAngleAndAxis(finalHeading, PhysicsGlobals::up);
+	    Quaternion::QFromAngleAndAxis(finalHeading, CWConfig::UP);
 
 	//this is the angle between the current heading and the final desired heading...
 	const Quaternion tmpQ = currentHeadingQ * finalHeadingQ.getComplexConjugate();
-	double curToFinal = tmpQ.getRotationAngle(PhysicsGlobals::up);
+	double curToFinal = tmpQ.getRotationAngle(CWConfig::UP);
 	//this is the angle between the set desired heading and the final heading - adding this to the current desired heading would reach finalHeading in one go...
 	const Quaternion tmpQ2 = finalHeadingQ * currentDesiredHeadingQ.getComplexConjugate();
-	double desToFinal = tmpQ2.getRotationAngle(PhysicsGlobals::up);
+	double desToFinal = tmpQ2.getRotationAngle(CWConfig::UP);
 
 	//do we still need to increase the desired heading?
 	if (fabs(desToFinal) > 0.01){
@@ -212,11 +213,11 @@ void TurnController::initiateTurn(const RobotInfo& rinfo, double finalDHeading)
 	stillTurning = true;
 
 	const Quaternion currentHeadingQ = rinfo.characterFrame();
-	const Quaternion finalHeadingQ = Quaternion::QFromAngleAndAxis(finalDHeading, PhysicsGlobals::up);
+	const Quaternion finalHeadingQ = Quaternion::QFromAngleAndAxis(finalDHeading, CWConfig::UP);
 	const Quaternion tmpQ = finalHeadingQ * currentHeadingQ.getComplexConjugate();
-	turnAngle = tmpQ.getRotationAngle(PhysicsGlobals::up);
-	finalHeading = finalHeadingQ.getRotationAngle(PhysicsGlobals::up);
-	initialHeading = currentHeadingQ.getRotationAngle(PhysicsGlobals::up);
+	turnAngle = tmpQ.getRotationAngle(CWConfig::UP);
+	finalHeading = finalHeadingQ.getRotationAngle(CWConfig::UP);
+	initialHeading = currentHeadingQ.getRotationAngle(CWConfig::UP);
 
 	//printf("turnAngle: %lf. InitialHeading: %lf. Final Heading: %lf\n", turnAngle, initialHeading, finalHeading);
 

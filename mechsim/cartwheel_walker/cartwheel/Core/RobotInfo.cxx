@@ -1,8 +1,9 @@
 #include "RobotInfo.h"
+#include "CWConfig.h"
 
 Eigen::Quaterniond RobotInfo::characterFrame() const
 {
-    return Quaternion(rootOrient()).getComplexConjugate().decomposeRotation(PhysicsGlobals::up).getComplexConjugate().toEigen();
+    return Quaternion(rootOrient()).getComplexConjugate().decomposeRotation(CWConfig::UP).getComplexConjugate().toEigen();
 }
 
 /**
@@ -17,7 +18,7 @@ double RobotInfo::headingAngle() const
         q.v = -q.v;
     }
     double currentHeading = 2 * safeACOS(q.s);
-    if (q.v.dot(PhysicsGlobals::up) < 0)
+    if (q.v.dot(CWConfig::UP) < 0)
         currentHeading = -currentHeading;
     
     return currentHeading;
