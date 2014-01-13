@@ -215,10 +215,10 @@ void drawHeightfield(const Heightfield& hfield)
 {
     glPushMatrix();
     
-    glTranslatef(hfield.x1(), 0., hfield.y1());
+    glTranslatef(hfield.x1(), hfield.y1(), 0.);
     glScalef((hfield.x2() - hfield.x1())/hfield.xsize(),
-             1.,
-             (hfield.y2() - hfield.y1())/hfield.ysize());
+             (hfield.y2() - hfield.y1())/hfield.ysize(),
+             1.);
     
     glBegin(GL_QUADS);
     
@@ -231,12 +231,12 @@ void drawHeightfield(const Heightfield& hfield)
             
             double zx = hfield.at(x,y) - hfield.at(x-1,y);
             double zy = hfield.at(x,y) - hfield.at(x, y-1);
-            glNormal3f(-zx, 1., -zy);
+            glNormal3f(-zx, -zy, 1.);
             
-            glVertex3f(x-1, hfield.at(x-1, y-1), y-1);
-            glVertex3f(x,   hfield.at(x,   y-1), y-1);
-            glVertex3f(x,   hfield.at(x,   y), y);
-            glVertex3f(x-1, hfield.at(x-1, y), y);
+            glVertex3f(x-1, y-1, hfield.at(x-1, y-1));
+            glVertex3f(x,   y-1, hfield.at(x,   y-1));
+            glVertex3f(x,   y,   hfield.at(x,   y));
+            glVertex3f(x-1, y,   hfield.at(x-1, y));
         }
     }
     glEnd();

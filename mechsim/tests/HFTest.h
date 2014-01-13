@@ -17,7 +17,7 @@ class HFState: public SimulationState {
     Eigen::Vector3d GetObjectPos() const { return fBPos; }
     
     Eigen::Vector3d GetCenter() const
-        { return Eigen::AngleAxis<double>(M_PI/2., Eigen::Vector3d::UnitX()) * Eigen::Vector3d(0., 2., 0.); }
+        { return Eigen::Vector3d(0., 0., 2.); }
     
     virtual double GetData(int ch) const
     {

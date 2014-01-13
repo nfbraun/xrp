@@ -31,8 +31,7 @@ void near_callback(void* data, dGeomID g1, dGeomID g2)
 void HFState::Draw(int) const
 {
     glPushMatrix();
-    GL::Rotate(Eigen::AngleAxis<double>(M_PI/2., Eigen::Vector3d::UnitX()));
-
+    
     glColor3f(1., 1., 0.);
     GL::drawSphere(.3, fBPos);
     
@@ -57,7 +56,7 @@ HFTest::HFTest()
     fWorld = dWorldCreate();
     fSpace = dSimpleSpaceCreate(0);
     
-    dWorldSetGravity(fWorld, 0., -9.81, 0.);
+    dWorldSetGravity(fWorld, 0., 0., -9.81);
     
     fHFData = dGeomHeightfieldDataCreate();
     dGeomHeightfieldDataBuildDouble(fHFData, fHField.raw_data(), false,
@@ -68,8 +67,11 @@ HFTest::HFTest()
                                     0., // offset
                                     1., // thickness
                                     0); // wrap
+    dGeomHeightfieldDataSetBounds(fHFData, -1.0, 1.0);
     
-    fFloorG = dCreateHeightfield(fSpace, fHFData, false);
+    fFloorG = dCreateHeightfield(fSpace, fHFData, true);
+    dQuaternion Q = { 1./sqrt(2.), 1./sqrt(2.), 0., 0. };
+    dGeomSetQuaternion(fFloorG, Q);
     
     //fFloorG = dCreatePlane(fSpace, 0., 0., 1., 0.);
     
@@ -78,7 +80,7 @@ HFTest::HFTest()
 
     dMassSetSphere(&m, 1000.0, 0.2);
     dBodySetMass(fBall, &m);
-    dBodySetPosition(fBall, 1., 5., 1.);
+    dBodySetPosition(fBall, 1., 1., 5.);
     
     fBallG = dCreateSphere(fSpace, 0.2);
     dGeomSetBody(fBallG, fBall);
