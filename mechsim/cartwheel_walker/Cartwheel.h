@@ -166,7 +166,7 @@ class Cartwheel: public Simulation {
     void Advance();
     CartState GetCurrentState();
     
-    unsigned int Collide(dGeomID g1, dGeomID g2, std::vector<ContactPoint>& cps, dJointFeedback* feedback);
+    unsigned int Collide(dGeomID g1, dGeomID g2, Eigen::Matrix<ContactPoint, Eigen::Dynamic, 1>& cps, dJointFeedback* feedback);
     
     dWorldID fWorld;
     dJointGroupID fContactGroup;
@@ -184,7 +184,7 @@ class Cartwheel: public Simulation {
     unsigned int TransformContactMask(unsigned int mask) const;
     void LockStanceFoot(int stance);
     void SetFakeContactData(int stance);
-    void SetFakeContactDataForFoot(std::vector<ContactPoint>& cpts, const Vector3d& pos);
+    void SetFakeContactDataForFoot(Eigen::Matrix<ContactPoint, Eigen::Dynamic, 1>& cpts, const Eigen::Vector3d& pos);
     
     static const unsigned int MAX_CONTACTS = 4;
     dJointFeedback fLeftFeedback[MAX_CONTACTS];

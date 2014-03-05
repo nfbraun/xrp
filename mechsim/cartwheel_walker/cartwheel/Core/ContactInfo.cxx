@@ -27,8 +27,8 @@ double ContactInfo::getNormalForceOnFoot(unsigned int rb_id) const
 
 double ContactInfo::getTangentialForceOnFoot(unsigned int rb_id) const
 {
-    const Vector3d f = getForceOnFoot(rb_id);
-    const Vector3d n = CWConfig::UP;
+    const Eigen::Vector3d f = getForceOnFoot(rb_id);
+    const Eigen::Vector3d n = CWConfig::UP;
     
     return (f - n*(f.dot(n))).norm();
 }
@@ -42,13 +42,13 @@ Eigen::Vector3d ContactInfo::getCoP(unsigned int rb_id, const FullState& fstate)
     if(rb_id == B_L_FOOT) {
         for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
             double fn = fCData.pLeft[i].f.dot(CWConfig::UP);
-            cop += fn * fCData.pLeft[i].cp.toEigen();
+            cop += fn * fCData.pLeft[i].cp;
             fn_tot += fn;
         }
     } else if(rb_id == B_R_FOOT) {
         for (unsigned int i=0; i<fCData.pRight.size(); i++) {
             double fn = fCData.pRight[i].f.dot(CWConfig::UP);
-            cop += fn * fCData.pRight[i].cp.toEigen();
+            cop += fn * fCData.pRight[i].cp;
             fn_tot += fn;
         }
     } else {
@@ -98,13 +98,13 @@ bool ContactInfo::toeInContact(unsigned int rb_id, const FullState& fstate) cons
     
     if(rb_id == B_L_FOOT) {
         for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
-            Eigen::Vector3d tmpP = fstate.trToLocal(rb_id).onPoint(fCData.pLeft[i].cp.toEigen());
+            Eigen::Vector3d tmpP = fstate.trToLocal(rb_id).onPoint(fCData.pLeft[i].cp);
             
             if (tmpP.x() > 0) toeForce = true;
         }
     } else if(rb_id == B_R_FOOT) {
         for (unsigned int i=0; i<fCData.pRight.size(); i++) {
-            Eigen::Vector3d tmpP = fstate.trToLocal(rb_id).onPoint(fCData.pRight[i].cp.toEigen());
+            Eigen::Vector3d tmpP = fstate.trToLocal(rb_id).onPoint(fCData.pRight[i].cp);
             
             if (tmpP.x() > 0) toeForce = true;
         }

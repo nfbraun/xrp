@@ -249,15 +249,15 @@ Cartwheel::~Cartwheel()
     dWorldDestroy(fWorld);
 }
 
-unsigned int Cartwheel::Collide(dGeomID g1, dGeomID g2, std::vector<ContactPoint>& cps,
+unsigned int Cartwheel::Collide(dGeomID g1, dGeomID g2,
+    Eigen::Matrix<ContactPoint, Eigen::Dynamic, 1>& cps,
     dJointFeedback* feedback)
 {
     dContact contact[MAX_CONTACTS];
     
     int num_contacts = dCollide(g1, g2, MAX_CONTACTS, &contact[0].geom, sizeof(dContact));
     
-    cps.clear();
-    cps.reserve(num_contacts);
+    cps.resize(num_contacts, 1);
     
     for(int i=0; i<num_contacts; ++i) {
         contact[i].surface.mode = dContactApprox1;
@@ -265,8 +265,7 @@ unsigned int Cartwheel::Collide(dGeomID g1, dGeomID g2, std::vector<ContactPoint
         dJointID c = dJointCreateContact(fWorld, fContactGroup, &contact[i]);
         dJointAttach(c, dGeomGetBody(g1), dGeomGetBody(g2));
         
-        cps.push_back(ContactPoint());
-        cps.at(i).cp = Point3d(contact[i].geom.pos[0], contact[i].geom.pos[1], contact[i].geom.pos[2]);
+        cps(i).cp = Eigen::Vector3d(contact[i].geom.pos[0], contact[i].geom.pos[1], contact[i].geom.pos[2]);
         dJointSetFeedback(c,&(feedback[i]));
     }
     
@@ -279,7 +278,7 @@ void Cartwheel::GetContactMask(unsigned int& lContactMask, unsigned int& rContac
     rContactMask = 0;
     
     for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
-        Eigen::Vector3d tmpP = fstate.trToLocal(B_L_FOOT).onPoint(fCData.pLeft[i].cp.toEigen());
+        Eigen::Vector3d tmpP = fstate.trToLocal(B_L_FOOT).onPoint(fCData.pLeft[i].cp);
         
         if(std::abs(std::abs(tmpP.x()) - CharacterConst::footSizeX/2.) > 1e-3
           || std::abs(std::abs(tmpP.y()) - CharacterConst::footSizeY/2.) > 1e-3) {
@@ -294,7 +293,7 @@ void Cartwheel::GetContactMask(unsigned int& lContactMask, unsigned int& rContac
     }
     
     for (unsigned int i=0; i<fCData.pRight.size(); i++) {
-        Eigen::Vector3d tmpP = fstate.trToLocal(B_R_FOOT).onPoint(fCData.pRight[i].cp.toEigen());
+        Eigen::Vector3d tmpP = fstate.trToLocal(B_R_FOOT).onPoint(fCData.pRight[i].cp);
         
         if(std::abs(std::abs(tmpP.x()) - CharacterConst::footSizeX/2.) > 1e-3
           || std::abs(std::abs(tmpP.y()) - CharacterConst::footSizeY/2.) > 1e-3) {
@@ -348,30 +347,24 @@ void Cartwheel::LockStanceFoot(int stance)
     }
 }
 
-void Cartwheel::SetFakeContactDataForFoot(std::vector<ContactPoint>& cpts, const Vector3d& pos)
+void Cartwheel::SetFakeContactDataForFoot(Eigen::Matrix<ContactPoint, Eigen::Dynamic, 1>& cpts, const Eigen::Vector3d& pos)
 {
-    cpts.push_back(ContactPoint());
-    cpts.at(0).f = Vector3d(0., 0., 100.);
-    cpts.at(0).cp = pos + Vector3d(1., 1., 0.);
+    cpts.resize(4, 1);
+    cpts(0).f = Eigen::Vector3d(0., 0., 100.);
+    cpts(0).cp = pos + Eigen::Vector3d(1., 1., 0.);
     
-    cpts.push_back(ContactPoint());
-    cpts.at(1).f = Vector3d(0., 0., 100.);
-    cpts.at(1).cp = pos + Vector3d(1., -1., 0.);
+    cpts(1).f = Eigen::Vector3d(0., 0., 100.);
+    cpts(1).cp = pos + Eigen::Vector3d(1., -1., 0.);
     
-    cpts.push_back(ContactPoint());
-    cpts.at(2).f = Vector3d(0., 0., 100.);
-    cpts.at(2).cp = pos + Vector3d(-1., 1., 0.);
+    cpts(2).f = Eigen::Vector3d(0., 0., 100.);
+    cpts(2).cp = pos + Eigen::Vector3d(-1., 1., 0.);
     
-    cpts.push_back(ContactPoint());
-    cpts.at(3).f = Vector3d(0., 0., 100.);
-    cpts.at(3).cp = pos + Vector3d(-1., -1., 0.);
+    cpts(3).f = Eigen::Vector3d(0., 0., 100.);
+    cpts(3).cp = pos + Eigen::Vector3d(-1., -1., 0.);
 }
 
 void Cartwheel::SetFakeContactData(int stance)
 {
-    fCData.pLeft.clear();
-    fCData.pRight.clear();
-    
     if(stance == LEFT_STANCE) {
         fCData.lFtot = Eigen::Vector3d(fLeftFeedback[0].f1[0], fLeftFeedback[0].f1[1], fLeftFeedback[0].f1[2]);
         fCData.lTtot = Eigen::Vector3d(fLeftFeedback[0].t1[0], fLeftFeedback[0].t1[1], fLeftFeedback[0].t1[2]);
@@ -466,19 +459,19 @@ void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
     fCData.rTtot = Eigen::Vector3d::Zero();
     
     for (unsigned int i=0; i<fCData.pLeft.size(); i++) {
-        fCData.pLeft[i].f = Vector3d(fLeftFeedback[i].f1[0], fLeftFeedback[i].f1[1], fLeftFeedback[i].f1[2]);
-        
         Eigen::Vector3d f(fLeftFeedback[i].f1[0], fLeftFeedback[i].f1[1], fLeftFeedback[i].f1[2]);
         Eigen::Vector3d t(fLeftFeedback[i].t1[0], fLeftFeedback[i].t1[1], fLeftFeedback[i].t1[2]);
+        
+        fCData.pLeft[i].f = f;
         
         fCData.lFtot += f;
         fCData.lTtot += t;
     }
     for (unsigned int i=0; i<fCData.pRight.size(); i++) {
-        fCData.pRight[i].f = Vector3d(fRightFeedback[i].f1[0], fRightFeedback[i].f1[1], fRightFeedback[i].f1[2]);
-        
         Eigen::Vector3d f(fRightFeedback[i].f1[0], fRightFeedback[i].f1[1], fRightFeedback[i].f1[2]);
         Eigen::Vector3d t(fRightFeedback[i].t1[0], fRightFeedback[i].t1[1], fRightFeedback[i].t1[2]);
+        
+        fCData.pRight[i].f = f;
         
         fCData.rFtot += f;
         fCData.rTtot += t;
