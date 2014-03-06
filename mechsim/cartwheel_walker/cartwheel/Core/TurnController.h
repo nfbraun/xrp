@@ -1,9 +1,7 @@
 #pragma once
 
 #include "SwingController.h"
-#include <MathLib/Segment.h>
 #include <Core/WorldOracle.h>
-
 #include "InvPendulum.h"
 
 /**

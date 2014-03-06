@@ -1,7 +1,6 @@
 #pragma once
 
 #include <MathLib/Trajectory.h>
-#include <MathLib/Segment.h>
 #include <Core/RobotInfo.h>
 
 class InvPendulum {

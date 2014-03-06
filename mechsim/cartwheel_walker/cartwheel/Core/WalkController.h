@@ -1,8 +1,6 @@
 #pragma once
 
 #include "SwingController.h"
-#include <MathLib/Segment.h>
-
 #include "InvPendulum.h"
 
 /**

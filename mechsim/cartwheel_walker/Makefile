@@ -3,7 +3,6 @@ HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h DynTransform.h Dy
 
 CW_SOURCES = \
 cartwheel/MathLib/Quaternion.cxx \
-cartwheel/MathLib/Segment.cxx \
 cartwheel/MathLib/Vector3d.cxx \
 cartwheel/Core/ContactInfo.cxx \
 cartwheel/Core/RobotInfo.cxx \
@@ -22,7 +21,6 @@ CW_HEADERS = \
 cartwheel/MathLib/MathLib.h \
 cartwheel/MathLib/Point3d.h \
 cartwheel/MathLib/Quaternion.h \
-cartwheel/MathLib/Segment.h \
 cartwheel/MathLib/Trajectory.h \
 cartwheel/MathLib/Vector3d.h \
 cartwheel/Core/ContactInfo.h \
