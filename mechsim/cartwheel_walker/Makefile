@@ -19,7 +19,6 @@ cartwheel/Core/CWConfig.cxx
 
 CW_HEADERS = \
 cartwheel/MathLib/MathLib.h \
-cartwheel/MathLib/Point3d.h \
 cartwheel/MathLib/Quaternion.h \
 cartwheel/MathLib/Trajectory.h \
 cartwheel/MathLib/Vector3d.h \

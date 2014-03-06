@@ -6,7 +6,6 @@
 #include <cmath>
 
 #include <MathLib/Vector3d.h>
-#include <MathLib/Point3d.h>
 #include <MathLib/MathLib.h>
 
 #include <stdexcept>
@@ -307,8 +306,6 @@ public:
 };
 
 //MATHLIB_TEMPLATE( GenericTrajectory<double> )
-//MATHLIB_TEMPLATE( GenericTrajectory<Point3d> )
 
 typedef GenericTrajectory<double> Trajectory1d;
-typedef GenericTrajectory<Point3d> Trajectory3d;
 typedef GenericTrajectory<Vector3d> Trajectory3dv;
