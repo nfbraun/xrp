@@ -4,7 +4,7 @@
 #include "../../DynTransform.h"
 
 /* Return knee and ankle rotations such that the distance between the ankle and the hip, measured in the foot frame, is d. */
-void LegIK(Vector3d d, double& hz, double& hy, double& hx, double& ky, double &ay, double &ax)
+void LegIK(const Eigen::Vector3d& d, double& hz, double& hy, double& hx, double& ky, double &ay, double &ax)
 {
     using namespace CharacterConst;
     
@@ -13,16 +13,20 @@ void LegIK(Vector3d d, double& hz, double& hy, double& hx, double& ky, double &a
     const double l1 = CharacterConst::thighSizeZ;
     const double l2 = CharacterConst::shankSizeZ;
     
+    Eigen::Vector3d d_clamp;
     if(d.norm() > 0.99*(l1+l2)) {
-        d = d / d.norm() * (l1 + l2) * 0.99;
+        d_clamp = d / d.norm() * (l1 + l2) * 0.99;
+    } else {
+        d_clamp = d;
     }
     
     // Calculate knee angle
-    const double c_ky = -(l1*l1 + l2*l2 - d.squaredNorm())/(2.*l1*l2);
+    const double c_ky = -(l1*l1 + l2*l2 - d_clamp.squaredNorm())/(2.*l1*l2);
     ky = acos(c_ky);
     
-    ax = atan2(-d.y(), -d.z());
-    ay = -atan(-d.x()/sqrt(d.y()*d.y() + d.z()*d.z())) - asin(sin(ky) * l1/d.norm());
+    ax = atan2(-d_clamp.y(), -d_clamp.z());
+    ay = -atan(-d_clamp.x()/sqrt(d_clamp.y()*d_clamp.y() + d_clamp.z()*d_clamp.z()))
+            - asin(sin(ky) * l1/d_clamp.norm());
     
     Eigen::Quaterniond q = (Eigen::AngleAxisd(ky, Eigen::Vector3d::UnitY())
                           * Eigen::AngleAxisd(ay, Eigen::Vector3d::UnitY())
