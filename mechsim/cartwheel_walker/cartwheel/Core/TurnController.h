@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Eigen/Dense>
 #include "SwingController.h"
 #include <Core/WorldOracle.h>
 #include "InvPendulum.h"
@@ -55,8 +56,8 @@ class TurnController {
 	double finalHeading;
 	double turnAngle;
 	bool stillTurning;
-	Vector3d desiredVelocity;
-	Vector3d initialVelocity;
+	Eigen::Vector3d desiredVelocity;
+	Eigen::Vector3d initialVelocity;
 
 	bool headingRequested;
 	double requestedHeadingValue;
@@ -82,5 +83,7 @@ class TurnController {
 	double ll_panicHeight;
 	//and this should be used to add height for the leg (i.e. if it needs to step over an obstacle that wasn't planned for).
 	double ll_unplannedForHeight;
+	
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 

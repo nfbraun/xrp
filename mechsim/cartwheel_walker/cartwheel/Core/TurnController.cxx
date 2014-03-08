@@ -66,12 +66,9 @@ void TurnController::requestHeading(const RobotInfo& rinfo, double v)
 	requestedHeadingValue = v;
 
 	//if the turn angle is pretty small, then just turn right away (or the old way... who knows).
-	const Quaternion currentHeadingQ = rinfo.characterFrame();
-	const Quaternion finalHeadingQ = Quaternion::QFromAngleAndAxis(v, CWConfig::UP);
-	const Quaternion tmpQ = finalHeadingQ * currentHeadingQ.getComplexConjugate();
-	turnAngle = tmpQ.getRotationAngle(CWConfig::UP);
+	turnAngle = remainder(v - rinfo.headingAngle(), 2*M_PI);
 	//printf("turnAngle: %lf\n", turnAngle);
-
+	
 	initialTiming = stepTime;
 
 	if (fabs(turnAngle) < 1.0)
@@ -115,19 +112,8 @@ void TurnController::calcStepPlan(const RobotInfo& rinfo, double dt)
 
 	//TODO: get all those limits on the twisting deltas to be related to dt, so that we get uniform turning despite the
 	//having different dts
-
-	const Quaternion currentHeadingQ = rinfo.characterFrame();
-	const Quaternion currentDesiredHeadingQ =
-	    Quaternion::QFromAngleAndAxis(turningDesiredHeading, CWConfig::UP);
-	const Quaternion finalHeadingQ =
-	    Quaternion::QFromAngleAndAxis(finalHeading, CWConfig::UP);
-
-	//this is the angle between the current heading and the final desired heading...
-	const Quaternion tmpQ = currentHeadingQ * finalHeadingQ.getComplexConjugate();
-	double curToFinal = tmpQ.getRotationAngle(CWConfig::UP);
-	//this is the angle between the set desired heading and the final heading - adding this to the current desired heading would reach finalHeading in one go...
-	const Quaternion tmpQ2 = finalHeadingQ * currentDesiredHeadingQ.getComplexConjugate();
-	double desToFinal = tmpQ2.getRotationAngle(CWConfig::UP);
+	double curToFinal = remainder(rinfo.headingAngle() - finalHeading, 2*M_PI);
+	double desToFinal = remainder(finalHeading - turningDesiredHeading, 2*M_PI);
 
 	//do we still need to increase the desired heading?
 	if (fabs(desToFinal) > 0.01){
@@ -151,8 +137,8 @@ void TurnController::calcStepPlan(const RobotInfo& rinfo, double dt)
 		//still turning... so we need to still specify the desired velocity, in character frame...
 		t = fabs(curToFinal/turnAngle) - 0.3;
 		boundToRange(&t, 0, 1);
-		Vector3d vD = initialVelocity*t + desiredVelocity*(1-t);
-		vD = Quaternion(rinfo.characterFrame()).inverseRotate(vD);
+		Eigen::Vector3d vD = initialVelocity*t + desiredVelocity*(1-t);
+		vD = rinfo.characterFrame().conjugate()._transformVector(vD);
 		setVelocities(vD.x(), vD.y());
 	}
 
@@ -212,13 +198,10 @@ void TurnController::initiateTurn(const RobotInfo& rinfo, double finalDHeading)
 	headingRequested = false;
 	stillTurning = true;
 
-	const Quaternion currentHeadingQ = rinfo.characterFrame();
-	const Quaternion finalHeadingQ = Quaternion::QFromAngleAndAxis(finalDHeading, CWConfig::UP);
-	const Quaternion tmpQ = finalHeadingQ * currentHeadingQ.getComplexConjugate();
-	turnAngle = tmpQ.getRotationAngle(CWConfig::UP);
-	finalHeading = finalHeadingQ.getRotationAngle(CWConfig::UP);
-	initialHeading = currentHeadingQ.getRotationAngle(CWConfig::UP);
-
+	turnAngle = remainder(finalDHeading - rinfo.headingAngle(), 2*M_PI);
+	finalHeading = remainder(finalDHeading, 2*M_PI);
+	initialHeading = rinfo.headingAngle();
+	
 	//printf("turnAngle: %lf. InitialHeading: %lf. Final Heading: %lf\n", turnAngle, initialHeading, finalHeading);
 
 	initialVelocity = rinfo.comVel();
@@ -226,7 +209,7 @@ void TurnController::initiateTurn(const RobotInfo& rinfo, double finalDHeading)
 	boundToRange(&finalVDSagittal, -0.5, 0.6);
 	if (fabs(turnAngle) > 2.5)
 		boundToRange(&finalVDSagittal, -0.2, 0.3);
-	desiredVelocity = Vector3d(finalVDSagittal, 0., 0.).rotate(finalHeading, Vector3d(0,0,1));
+	desiredVelocity = Eigen::AngleAxisd(finalHeading, Eigen::Vector3d::UnitZ())._transformVector(Eigen::Vector3d(finalVDSagittal, 0., 0.));
 
 	if (((rinfo.stance() == LEFT_STANCE && turnAngle < -1.5) || (rinfo.stance() == RIGHT_STANCE && turnAngle > 1.5)) && finalVDSagittal >=0){
 		std::cout << "this is the bad side... try a smaller heading first..." << std::endl;
