@@ -3,7 +3,7 @@
 #include "../../Reaction.h"
 #include "SwingController.h"
 #include "CWConfig.h"
-#include <MathLib/Quaternion.h>
+#include <MathLib/MathLib.h>
 
 void TorqueController::COMJT(const RobotInfo& rinfo, const Eigen::Vector3d& fA, Eigen::Vector3d& stanceAnkleTorque, Eigen::Vector3d& stanceKneeTorque, Eigen::Vector3d& stanceHipTorque)
 {
@@ -77,10 +77,8 @@ Eigen::Vector3d TorqueController::computeRootTorque(const RobotInfo& rinfo, doub
 	Eigen::Vector3d rootTorque;
 	
 	//this is the desired orientation in world coordinates
-	Eigen::Quaterniond qRootDW;
-
 	//qRootDW needs to also take into account the desired heading
-	qRootDW = Quaternion::getRotationQuaternion(desHeading, CWConfig::UP).toEigen();
+	Eigen::Quaterniond qRootDW(Eigen::AngleAxisd(desHeading, CWConfig::UP));
 
 	Eigen::Quaterniond qErr = rinfo.rootOrient().conjugate() * qRootDW;
 
