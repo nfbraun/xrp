@@ -1,7 +1,6 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include <MathLib/Quaternion.h>
 #include "SimGlobals.h"
 #include "../../RobotState.h"
 #include "../../DynInfo.h"

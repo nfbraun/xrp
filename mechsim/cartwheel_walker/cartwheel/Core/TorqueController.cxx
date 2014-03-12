@@ -3,6 +3,7 @@
 #include "../../Reaction.h"
 #include "SwingController.h"
 #include "CWConfig.h"
+#include <MathLib/Quaternion.h>
 
 void TorqueController::COMJT(const RobotInfo& rinfo, const Eigen::Vector3d& fA, Eigen::Vector3d& stanceAnkleTorque, Eigen::Vector3d& stanceKneeTorque, Eigen::Vector3d& stanceHipTorque)
 {
