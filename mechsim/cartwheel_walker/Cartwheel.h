@@ -1,13 +1,13 @@
 #ifndef CW_CARTWHEEL_H
 #define CW_CARTWHEEL_H
 
-#include "Simulation.h"
+#include <Simulation.h>
 
-#include "RobotState.h"
-#include "CWRobot.h"
-#include "MotorModel.h"
-#include <Core/CWController.h>
-#include <Core/Debug.h>
+#include <RobotState.h>
+#include <CWRobot.h>
+#include <MotorModel.h>
+#include <cartwheel/CWController.h>
+#include <cartwheel/Debug.h>
 #include <ode/ode.h>
 
 #include <Eigen/Dense>

@@ -1,5 +1,5 @@
 #include "TurnController.h"
-#include "CWConfig.h"
+#include <cartwheel/CWConfig.h>
 
 TurnController::TurnController(WorldOracle* w)
 {

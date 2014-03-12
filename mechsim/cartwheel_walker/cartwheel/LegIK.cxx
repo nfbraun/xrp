@@ -1,7 +1,7 @@
 #include "LegIK.h"
 #include <iostream>
 #include <Eigen/Dense>
-#include "../../DynTransform.h"
+#include <DynTransform.h>
 
 /* Return knee and ankle rotations such that the distance between the ankle and the hip, measured in the foot frame, is d. */
 void LegIK(const Eigen::Vector3d& d, double& hz, double& hy, double& hx, double& ky, double &ay, double &ax)

@@ -1,6 +1,6 @@
 #include "Reaction.h"
-#include "kintree/RNE_CRB.h"
-#include "kintree/Robot.h"
+#include <kintree/RNE_CRB.h>
+#include <kintree/Robot.h>
 
 void calcReaction(Eigen::Vector3d& F, Eigen::Vector3d& T, const FullState& fstate, const JSpState& jstate, const JSpTorques& jt, unsigned int stance)
 {

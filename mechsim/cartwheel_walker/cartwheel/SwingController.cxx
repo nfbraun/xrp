@@ -1,9 +1,9 @@
 #include "SwingController.h"
-#include "TorqueController.h"
-#include "LegIK.h"
-#include "CWConfig.h"
-#include <MathLib/MathLib.h>
-#include "../../DynTransform.h"
+#include <cartwheel/TorqueController.h>
+#include <cartwheel/LegIK.h>
+#include <cartwheel/CWConfig.h>
+#include <cartwheel/MathLib.h>
+#include <DynTransform.h>
 
 RawTorques SwingController::gravityCompensation(const RobotInfo& rinfo)
 {

@@ -1,5 +1,5 @@
 #include "DynInfo.h"
-#include "StaticRobotInfo.h"
+#include <StaticRobotInfo.h>
 
 /* See DynInfo.h for function documentation. */
 

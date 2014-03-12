@@ -1,7 +1,7 @@
 #pragma once
 
-#include <MathLib/Trajectory.h>
-#include <Core/RobotInfo.h>
+#include <cartwheel/Trajectory.h>
+#include <cartwheel/RobotInfo.h>
 
 class InvPendulum {
   public:

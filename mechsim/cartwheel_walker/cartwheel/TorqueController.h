@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Core/Controller.h>
-#include <Core/RobotInfo.h>
-#include <Core/Debug.h>
-#include "SwingController.h"
+#include <cartwheel/Controller.h>
+#include <cartwheel/RobotInfo.h>
+#include <cartwheel/Debug.h>
+#include <cartwheel/SwingController.h>
 
 class TorqueController {
   public:

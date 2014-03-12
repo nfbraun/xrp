@@ -1,9 +1,9 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include "SimGlobals.h"
-#include "../../RobotState.h"
-#include "../../DynInfo.h"
+#include <cartwheel/SimGlobals.h>
+#include <RobotState.h>
+#include <DynInfo.h>
 
 class RobotInfo {
   public:

@@ -1,9 +1,9 @@
 #pragma once
 
 #include <Eigen/Dense>
-#include "SwingController.h"
-#include <Core/WorldOracle.h>
-#include "InvPendulum.h"
+#include <cartwheel/SwingController.h>
+#include <cartwheel/WorldOracle.h>
+#include <cartwheel/InvPendulum.h>
 
 /**
 	A two-step, arbitrary velocity to arbitrary velocity, parameterizable rotation controller.

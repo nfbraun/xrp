@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../RobotState.h"
-#include <Physics/ContactPoint.h>
+#include <RobotState.h>
+#include <cartwheel/ContactPoint.h>
 
 class ContactInfo {
   public:

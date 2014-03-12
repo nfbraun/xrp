@@ -1,16 +1,16 @@
 #include "Cartwheel.h"
-#include "RotMotion.h"
-#include "GLHelper.h"
-#include "ODEHelper.h"
-#include "DynTransform.h"
-#include "DynInfo.h"
-#include "Reaction.h"
+#include <RotMotion.h>
+#include <GLHelper.h>
+#include <ODEHelper.h>
+#include <DynTransform.h>
+#include <DynInfo.h>
+#include <Reaction.h>
 #include <GL/gl.h>
 #include <cmath>
 
-#include <Physics/ContactPoint.h>
-#include <Core/TurnController.h>
-#include <Core/WorldOracle.h>
+#include <cartwheel/ContactPoint.h>
+#include <cartwheel/TurnController.h>
+#include <cartwheel/WorldOracle.h>
 
 // ** Simulation parameters **
 // Generate contact joints between the feet and the ground

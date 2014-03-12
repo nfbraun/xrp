@@ -1,8 +1,8 @@
 #pragma once
 
-#include "SimGlobals.h"
-#include <Core/RobotInfo.h>
-#include <Core/ContactInfo.h>
+#include <cartwheel/SimGlobals.h>
+#include <cartwheel/RobotInfo.h>
+#include <cartwheel/ContactInfo.h>
 
 class StateMachine {
   public:

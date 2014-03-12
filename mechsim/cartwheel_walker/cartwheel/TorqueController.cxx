@@ -1,9 +1,9 @@
 #include "TorqueController.h"
-#include "../../DynTransform.h"
-#include "../../Reaction.h"
-#include "SwingController.h"
-#include "CWConfig.h"
-#include <MathLib/MathLib.h>
+#include <DynTransform.h>
+#include <Reaction.h>
+#include <cartwheel/SwingController.h>
+#include <cartwheel/CWConfig.h>
+#include <cartwheel/MathLib.h>
 
 void TorqueController::COMJT(const RobotInfo& rinfo, const Eigen::Vector3d& fA, Eigen::Vector3d& stanceAnkleTorque, Eigen::Vector3d& stanceKneeTorque, Eigen::Vector3d& stanceHipTorque)
 {

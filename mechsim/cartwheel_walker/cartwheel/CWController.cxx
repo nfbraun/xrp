@@ -1,6 +1,6 @@
 #include "CWController.h"
-#include "SwingController.h"
-#include "../../DynTransform.h"
+#include <cartwheel/SwingController.h>
+#include <DynTransform.h>
 
 CWController::CWController(WorldOracle* worldOracle)
     : fStateMachine(LEFT_STANCE),

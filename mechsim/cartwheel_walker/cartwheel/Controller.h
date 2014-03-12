@@ -1,8 +1,7 @@
 #pragma once
 
-// FIXME
-#include "../../StaticRobotInfo.h"
-#include <Physics/ContactPoint.h>
+#include <StaticRobotInfo.h>
+#include <cartwheel/ContactPoint.h>
 #include <Eigen/Dense>
 
 class RawTorques {

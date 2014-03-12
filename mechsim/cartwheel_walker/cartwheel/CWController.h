@@ -1,14 +1,14 @@
 #pragma once
 
-#include "RobotInfo.h"
-#include "WorldOracle.h"
-#include "StateMachine.h"
-#include "SwingController.h"
-#include "TorqueController.h"
-#include "TurnController.h"
-#include "WalkController.h"
-#include "Controller.h"
-#include "Debug.h"
+#include <cartwheel/RobotInfo.h>
+#include <cartwheel/WorldOracle.h>
+#include <cartwheel/StateMachine.h>
+#include <cartwheel/SwingController.h>
+#include <cartwheel/TorqueController.h>
+#include <cartwheel/TurnController.h>
+#include <cartwheel/WalkController.h>
+#include <cartwheel/Controller.h>
+#include <cartwheel/Debug.h>
 
 #define USE_WALK_CONTROLLER
 

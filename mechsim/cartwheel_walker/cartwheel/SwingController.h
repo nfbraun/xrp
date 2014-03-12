@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Controller.h"
-#include "RobotInfo.h"
-#include "Debug.h"
+#include <cartwheel/Controller.h>
+#include <cartwheel/RobotInfo.h>
+#include <cartwheel/Debug.h>
 
 class HighLevelTarget {
   public:

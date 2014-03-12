@@ -2,42 +2,42 @@ SOURCES = Cartwheel.cxx CWRobot.cxx DynTransform.cxx DynInfo.cxx MotorModel.cxx 
 HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h DynTransform.h DynInfo.h MotorModel.h Reaction.h kintree/SE3Tr.h kintree/KinChain2.h kintree/RNE_CRB.h kintree/Robot.h kintree/Spatial.h
 
 CW_SOURCES = \
-cartwheel/Core/ContactInfo.cxx \
-cartwheel/Core/RobotInfo.cxx \
-cartwheel/Core/TorqueController.cxx \
-cartwheel/Core/InvPendulum.cxx \
-cartwheel/Core/SimGlobals.cxx \
-cartwheel/Core/TurnController.cxx \
-cartwheel/Core/WalkController.cxx \
-cartwheel/Core/CWController.cxx \
-cartwheel/Core/StateMachine.cxx \
-cartwheel/Core/LegIK.cxx \
-cartwheel/Core/SwingController.cxx \
-cartwheel/Core/CWConfig.cxx
+cartwheel/ContactInfo.cxx \
+cartwheel/RobotInfo.cxx \
+cartwheel/TorqueController.cxx \
+cartwheel/InvPendulum.cxx \
+cartwheel/SimGlobals.cxx \
+cartwheel/TurnController.cxx \
+cartwheel/WalkController.cxx \
+cartwheel/CWController.cxx \
+cartwheel/StateMachine.cxx \
+cartwheel/LegIK.cxx \
+cartwheel/SwingController.cxx \
+cartwheel/CWConfig.cxx
 
 CW_HEADERS = \
-cartwheel/MathLib/MathLib.h \
-cartwheel/MathLib/Trajectory.h \
-cartwheel/Core/ContactInfo.h \
-cartwheel/Core/RobotInfo.h \
-cartwheel/Core/Controller.h \
-cartwheel/Core/TorqueController.h \
-cartwheel/Core/InvPendulum.h \
-cartwheel/Core/SimGlobals.h \
-cartwheel/Core/TurnController.h \
-cartwheel/Core/WalkController.h \
-cartwheel/Core/WorldOracle.h \
-cartwheel/Core/CWController.h \
-cartwheel/Core/StateMachine.h \
-cartwheel/Core/LegIK.h \
-cartwheel/Core/SwingController.h \
-cartwheel/Core/CWConfig.h \
-cartwheel/Core/Debug.h
+cartwheel/MathLib.h \
+cartwheel/Trajectory.h \
+cartwheel/ContactPoint.h \
+cartwheel/ContactInfo.h \
+cartwheel/RobotInfo.h \
+cartwheel/Controller.h \
+cartwheel/TorqueController.h \
+cartwheel/InvPendulum.h \
+cartwheel/SimGlobals.h \
+cartwheel/TurnController.h \
+cartwheel/WalkController.h \
+cartwheel/WorldOracle.h \
+cartwheel/CWController.h \
+cartwheel/StateMachine.h \
+cartwheel/LegIK.h \
+cartwheel/SwingController.h \
+cartwheel/CWConfig.h \
+cartwheel/Debug.h
 
 OBJS = $(SOURCES:.cxx=.o) $(CW_SOURCES:.cxx=.o)
-CARTWHEEL=cartwheel
 EIGEN_INCL_DIR = ../../eigen-eigen-3.2.0/
-CFLAGS = -I../common/mechsim -I$(CARTWHEEL) -I$(EIGEN_INCL_DIR) $(shell ode-config --cflags) -g
+CFLAGS = -I../common/mechsim -I. -I$(EIGEN_INCL_DIR) $(shell ode-config --cflags) -g
 LDFLAGS = -L../common/mechsim
 LIBS = -lode -lmechsim -lgsl -lblas -lGL
 

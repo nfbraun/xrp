@@ -1,6 +1,6 @@
-#include "RobotInfo.h"
-#include "CWConfig.h"
-#include <MathLib/MathLib.h>
+#include <cartwheel/RobotInfo.h>
+#include <cartwheel/CWConfig.h>
+#include <cartwheel/MathLib.h>
 
 /*
 Given a unit quaternion q and a vector v, compute two unit quaterions a and b such that:

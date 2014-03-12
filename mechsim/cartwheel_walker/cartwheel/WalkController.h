@@ -1,7 +1,7 @@
 #pragma once
 
-#include "SwingController.h"
-#include "InvPendulum.h"
+#include <cartwheel/SwingController.h>
+#include <cartwheel/InvPendulum.h>
 
 /**
     A simplified version of TurnController for analysis/testing.

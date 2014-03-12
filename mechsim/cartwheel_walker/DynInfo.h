@@ -2,8 +2,8 @@
 #define CW_DYNINFO_H
 
 #include <Eigen/Dense>
-#include "RobotState.h"
-#include "cartwheel/Core/Controller.h"
+#include <RobotState.h>
+#include <cartwheel/Controller.h>
 
 /* Position of robot center of mass */
 Eigen::Vector3d comPos(const FullState& fstate);
