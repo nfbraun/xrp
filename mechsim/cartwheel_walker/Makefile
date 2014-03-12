@@ -2,8 +2,6 @@ SOURCES = Cartwheel.cxx CWRobot.cxx DynTransform.cxx DynInfo.cxx MotorModel.cxx 
 HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h DynTransform.h DynInfo.h MotorModel.h Reaction.h kintree/SE3Tr.h kintree/KinChain2.h kintree/RNE_CRB.h kintree/Robot.h kintree/Spatial.h
 
 CW_SOURCES = \
-cartwheel/MathLib/Quaternion.cxx \
-cartwheel/MathLib/Vector3d.cxx \
 cartwheel/Core/ContactInfo.cxx \
 cartwheel/Core/RobotInfo.cxx \
 cartwheel/Core/TorqueController.cxx \
@@ -19,9 +17,7 @@ cartwheel/Core/CWConfig.cxx
 
 CW_HEADERS = \
 cartwheel/MathLib/MathLib.h \
-cartwheel/MathLib/Quaternion.h \
 cartwheel/MathLib/Trajectory.h \
-cartwheel/MathLib/Vector3d.h \
 cartwheel/Core/ContactInfo.h \
 cartwheel/Core/RobotInfo.h \
 cartwheel/Core/Controller.h \

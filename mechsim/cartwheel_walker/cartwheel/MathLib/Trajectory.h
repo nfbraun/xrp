@@ -5,7 +5,6 @@
 #include <vector>
 #include <cmath>
 
-#include <MathLib/Vector3d.h>
 #include <MathLib/MathLib.h>
 
 #include <stdexcept>
@@ -29,11 +28,6 @@ inline const char* getTrajectoryClassName(const double&) {
 	return "GenericTrajectory1d";
 }
 
-template<>
-inline const char* getTrajectoryClassName(const Vector3d&) {
-	return "GenericTrajectory3d";
-}
-
 template<class T>
 inline double trajectoryAbs(const T& value) {
 	throw std::runtime_error( "No distance specified for type!" );
@@ -43,11 +37,6 @@ inline double trajectoryAbs(const T& value) {
 template<>
 inline double trajectoryAbs(const double& value) {
 	return fabs(value);
-}
-
-template<>
-inline double trajectoryAbs(const Vector3d& value) {
-	return value.norm();
 }
 
 template <class T> 
@@ -308,4 +297,3 @@ public:
 //MATHLIB_TEMPLATE( GenericTrajectory<double> )
 
 typedef GenericTrajectory<double> Trajectory1d;
-typedef GenericTrajectory<Vector3d> Trajectory3dv;
