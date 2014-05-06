@@ -113,6 +113,15 @@ class SpForce: public SpVec<SpForce> {
 };
 
 /* Spatial inertia (mapping from M^6 to F^6) */
+/* The 6x6 matrix representation of the Spatial inertia is given by
+       [ I + m*cx*cx^T, m*cx;
+         m*cx^T,        m    ]
+   where
+       cx = [  0,   -c_z,  c_y;
+               c_z,  0,   -c_x;
+              -c_y,  c_x,    0 ]
+   is the matrix representation of the cross product.
+*/
 class SpInertia {
   public:
     SpInertia() {}
@@ -141,6 +150,14 @@ class SpInertia {
     SpForce operator*(const SpMot& rhs) const
         { return SpForce(I()*rhs.ang() - m()*c().cross(c().cross(rhs.ang())) + m()*c().cross(rhs.lin()),
                          m()*rhs.lin() - m()*c().cross(rhs.ang())); }
+    
+    /* Calculate (*this)^(-1) * rhs
+       Makes use of the blockwise inversion formula. */
+    SpMot solve(const SpForce& rhs) const {
+        const Eigen::Matrix3d I_inv = I().inverse();
+        return SpMot(I_inv*(rhs.ang() - c().cross(rhs.lin())),
+                     c().cross(I_inv*rhs.ang()) + (1./m())*rhs.lin() - c().cross(I_inv * (c().cross(rhs.lin()))));
+    }
     
     SpInertia tr(const SE3Tr& t) const {
         const Eigen::Matrix3d Rot = t.rot().toRotationMatrix();
