@@ -35,6 +35,13 @@ class RobotInfo {
     Eigen::Vector3d jPos(unsigned int index) const
         { return fstate().trToWorld(jParent(index)).onPoint(jPos_PF(index)); }
     
+    // Return joint velocity in global coordinates
+    Eigen::Vector3d jVel(unsigned int index) const {
+        // Distance from parent body CoM to joint, in world coordinates
+        Eigen::Vector3d r = fstate().rot(jParent(index))._transformVector(jPos_PF(index));
+        return fstate().vel(jParent(index)) + fstate().avel(jParent(index)).cross(r);
+    }
+    
     unsigned int rootIndex() const { return B_PELVIS; }
     
     unsigned int stanceThighIndex() const
