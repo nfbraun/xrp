@@ -87,10 +87,11 @@ class JSpState {
   public:
     static JSpState Null() {
         JSpState jstate;
-        for(unsigned int id=0; id<B_MAX; id++) {
+        for(unsigned int id=0; id<DOF_MAX; id++) {
             jstate.phi(id) = 0.;
             jstate.omega(id) = 0.;
         }
+        return jstate;
     }
     
     double phi(unsigned int id) const
