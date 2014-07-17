@@ -1,4 +1,6 @@
 #include "CWRobot.h"
+#include <ODEHelper.h>
+#include <DynTransform.h>
 
 //#define DEBUG_FIXED_TORSO
 #define SET_LIMITS
@@ -146,3 +148,55 @@ void CWRobot::create(dWorldID world)
     #endif
 }
 
+FullState CWRobot::fullState() const
+{
+    FullState fstate;
+    
+    for(unsigned int b=0; b<B_MAX; b++) {
+        fstate.q(b) = BodyQ(ODE::BodyGetPosition(fBodies[b]),
+                            ODE::BodyGetQuaternion(fBodies[b]),
+                            ODE::BodyGetLinearVel(fBodies[b]),
+                            ODE::BodyGetAngularVel(fBodies[b]));
+    }
+    
+    return fstate;
+}
+
+void CWRobot::setFullState(const FullState& fstate)
+{
+    for(unsigned int b=0; b<B_MAX; b++) {
+        ODE::BodySetPosition(fBodies[b], fstate.pos(b));
+        ODE::BodySetQuaternion(fBodies[b], fstate.rot(b));
+        ODE::BodySetLinearVel(fBodies[b], fstate.vel(b));
+        ODE::BodySetAngularVel(fBodies[b], fstate.avel(b));
+    }
+}
+
+void CWRobot::addTorques(const JSpTorques& jt)
+{
+    Eigen::Quaterniond lHipRot = ODE::BodyGetQuaternion(fBodies[B_PELVIS]).conjugate() *
+        ODE::BodyGetQuaternion(fBodies[B_L_THIGH]);
+    double lhz, lhy, lhx;
+    decompZYXRot(lHipRot, lhz, lhy, lhx);
+    Eigen::Vector3d lHipTorque = transformHipTorque(lhz, lhy, lhx,
+        jt.t(LEFT, HZ), jt.t(LEFT, HY), jt.t(LEFT, HX));
+    lHipTorque = ODE::BodyGetQuaternion(fBodies[B_PELVIS])._transformVector(lHipTorque);
+    ODE::BodyAddTorque(fBodies[B_PELVIS], -lHipTorque);
+    ODE::BodyAddTorque(fBodies[B_L_THIGH], lHipTorque);
+    
+    dJointAddHingeTorque(fLKneeJ, jt.t(LEFT, KY));
+    dJointAddUniversalTorques(fLAnkleJ, jt.t(LEFT, AX), jt.t(LEFT, AY));
+    
+    Eigen::Quaterniond rHipRot = ODE::BodyGetQuaternion(fBodies[B_PELVIS]).conjugate() *
+        ODE::BodyGetQuaternion(fBodies[B_R_THIGH]);
+    double rhz, rhy, rhx;
+    decompZYXRot(rHipRot, rhz, rhy, rhx);
+    Eigen::Vector3d rHipTorque = transformHipTorque(rhz, rhy, rhx,
+        jt.t(RIGHT, HZ), jt.t(RIGHT, HY), jt.t(RIGHT, HX));
+    rHipTorque = ODE::BodyGetQuaternion(fBodies[B_PELVIS])._transformVector(rHipTorque);
+    ODE::BodyAddTorque(fBodies[B_PELVIS], -rHipTorque);
+    ODE::BodyAddTorque(fBodies[B_R_THIGH], rHipTorque);
+    
+    dJointAddHingeTorque(fRKneeJ, jt.t(RIGHT, KY));
+    dJointAddUniversalTorques(fRAnkleJ, jt.t(RIGHT, AX), jt.t(RIGHT, AY));
+}

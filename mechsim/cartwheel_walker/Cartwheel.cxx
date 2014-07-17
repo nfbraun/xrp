@@ -382,35 +382,6 @@ void Cartwheel::SetFakeContactData(int stance)
     }
 }
 
-void Cartwheel::ApplyTorques(const JSpTorques& jt)
-{
-    Eigen::Quaterniond lHipRot = ODE::BodyGetQuaternion(fRobot->fBodies[B_PELVIS]).conjugate() *
-        ODE::BodyGetQuaternion(fRobot->fBodies[B_L_THIGH]);
-    double lhz, lhy, lhx;
-    decompZYXRot(lHipRot, lhz, lhy, lhx);
-    Eigen::Vector3d lHipTorque = transformHipTorque(lhz, lhy, lhx,
-        jt.t(LEFT, HZ), jt.t(LEFT, HY), jt.t(LEFT, HX));
-    lHipTorque = ODE::BodyGetQuaternion(fRobot->fBodies[B_PELVIS])._transformVector(lHipTorque);
-    ODE::BodyAddTorque(fRobot->fBodies[B_PELVIS], -lHipTorque);
-    ODE::BodyAddTorque(fRobot->fBodies[B_L_THIGH], lHipTorque);
-    
-    dJointAddHingeTorque(fRobot->fLKneeJ, jt.t(LEFT, KY));
-    dJointAddUniversalTorques(fRobot->fLAnkleJ, jt.t(LEFT, AX), jt.t(LEFT, AY));
-    
-    Eigen::Quaterniond rHipRot = ODE::BodyGetQuaternion(fRobot->fBodies[B_PELVIS]).conjugate() *
-        ODE::BodyGetQuaternion(fRobot->fBodies[B_R_THIGH]);
-    double rhz, rhy, rhx;
-    decompZYXRot(rHipRot, rhz, rhy, rhx);
-    Eigen::Vector3d rHipTorque = transformHipTorque(rhz, rhy, rhx,
-        jt.t(RIGHT, HZ), jt.t(RIGHT, HY), jt.t(RIGHT, HX));
-    rHipTorque = ODE::BodyGetQuaternion(fRobot->fBodies[B_PELVIS])._transformVector(rHipTorque);
-    ODE::BodyAddTorque(fRobot->fBodies[B_PELVIS], -rHipTorque);
-    ODE::BodyAddTorque(fRobot->fBodies[B_R_THIGH], rHipTorque);
-    
-    dJointAddHingeTorque(fRobot->fRKneeJ, jt.t(RIGHT, KY));
-    dJointAddUniversalTorques(fRobot->fRAnkleJ, jt.t(RIGHT, AX), jt.t(RIGHT, AY));
-}
-
 void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
 {
     #ifdef USE_STANCE_FOOT_LOCKING
@@ -429,7 +400,7 @@ void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
         filtTorques.t(i) = fMotorModel[i].outTorque(torques.t(i));
     
     //go through all the joints in the world, and apply their torques to the parent and child rb's
-    ApplyTorques(filtTorques);
+    fRobot->addTorques(filtTorques);
     
     fCtrlTorques = torques;
     fFiltTorques = filtTorques;
@@ -510,9 +481,7 @@ void Cartwheel::Advance()
     for(int i=0; i<fIntPerStep; ++i) {
         //dBodyAddForce(fRobot->fPelvisB, 40.*sin(fT), 40.*cos(fT), 0.);
         
-        FullState fstate;
-        for(unsigned int b=0; b<B_MAX; b++)
-            fstate.q(b) = QFromODE(fRobot->fBodies[b]);
+        FullState fstate = fRobot->fullState();
         JSpState jstate = jointFromFull(fstate);
         
         const double desiredHeading = fT/4.;
@@ -530,9 +499,8 @@ CartState Cartwheel::GetCurrentState()
     CartState state;
     
     state.fParent = this;
-    for(unsigned int b=0; b<B_MAX; b++)
-        state.fFState.q(b) = QFromODE(fRobot->fBodies[b]);
     
+    state.fFState = fRobot->fullState();
     state.fJState = jointFromFull(state.fFState);
     
     state.fLF = fCData.lFtot;
