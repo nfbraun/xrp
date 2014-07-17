@@ -3,7 +3,7 @@
 
 #include <Eigen/Dense>
 #include <RobotState.h>
-#include <cartwheel/Controller.h>
+#include <Torques.h>
 
 /* Position of robot center of mass */
 Eigen::Vector3d comPos(const FullState& fstate);

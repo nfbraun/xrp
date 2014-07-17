@@ -1,5 +1,5 @@
 SOURCES = Cartwheel.cxx CWRobot.cxx DynTransform.cxx DynInfo.cxx MotorModel.cxx Reaction.cxx kintree/RNE_CRB.cxx kintree/Robot.cxx kintree/Spatial.cxx
-HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h DynTransform.h DynInfo.h MotorModel.h Reaction.h kintree/SE3Tr.h kintree/KinChain2.h kintree/RNE_CRB.h kintree/Robot.h kintree/Spatial.h
+HEADERS = Cartwheel.h CWRobot.h StaticRobotInfo.h RobotState.h DynTransform.h DynInfo.h MotorModel.h Reaction.h Torques.h kintree/SE3Tr.h kintree/KinChain2.h kintree/RNE_CRB.h kintree/Robot.h kintree/Spatial.h
 
 CW_SOURCES = \
 cartwheel/ContactInfo.cxx \
@@ -21,7 +21,6 @@ cartwheel/Trajectory.h \
 cartwheel/ContactPoint.h \
 cartwheel/ContactInfo.h \
 cartwheel/RobotInfo.h \
-cartwheel/Controller.h \
 cartwheel/TorqueController.h \
 cartwheel/InvPendulum.h \
 cartwheel/SimGlobals.h \

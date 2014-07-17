@@ -1,6 +1,6 @@
 #pragma once
 
-#include <cartwheel/Controller.h>
+#include <Torques.h>
 #include <cartwheel/RobotInfo.h>
 #include <cartwheel/Debug.h>
 #include <cartwheel/SwingController.h>

@@ -1,7 +1,7 @@
-#pragma once
+#ifndef CW_TORQUES_H
+#define CW_TORQUES_H
 
 #include <StaticRobotInfo.h>
-#include <cartwheel/ContactPoint.h>
 #include <Eigen/Dense>
 
 class RawTorques {
@@ -88,3 +88,4 @@ inline JSpTorques operator*(double lhs, const JSpTorques& rhs)
     return rhs * lhs;
 }
 
+#endif

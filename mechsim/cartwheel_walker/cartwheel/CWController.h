@@ -7,7 +7,7 @@
 #include <cartwheel/TorqueController.h>
 #include <cartwheel/TurnController.h>
 #include <cartwheel/WalkController.h>
-#include <cartwheel/Controller.h>
+#include <Torques.h>
 #include <cartwheel/Debug.h>
 
 #define USE_WALK_CONTROLLER
