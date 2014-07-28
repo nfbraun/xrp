@@ -421,8 +421,8 @@ void Cartwheel::AdvanceInTime(double dt, const JSpTorques& torques)
     
     #ifdef USE_FOOT_COLLISION
     //copy over the force information for the contact forces
-    assert(fCData.pLeft.size() < MAX_CONTACTS);
-    assert(fCData.pRight.size() < MAX_CONTACTS);
+    assert(fCData.pLeft.size() <= MAX_CONTACTS);
+    assert(fCData.pRight.size() <= MAX_CONTACTS);
     
     fCData.lFtot = Eigen::Vector3d::Zero();
     fCData.lTtot = Eigen::Vector3d::Zero();

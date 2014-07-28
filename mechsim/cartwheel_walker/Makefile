@@ -36,9 +36,9 @@ cartwheel/Debug.h
 
 OBJS = $(SOURCES:.cxx=.o) $(CW_SOURCES:.cxx=.o)
 EIGEN_INCL_DIR = ../../eigen-eigen-3.2.0/
-CFLAGS = -I../common/mechsim -I. -I$(EIGEN_INCL_DIR) $(shell ode-config --cflags) -g
+CFLAGS = -I../common/mechsim -I. -I$(EIGEN_INCL_DIR) $(shell pkg-config --cflags ode) -g
 LDFLAGS = -L../common/mechsim
-LIBS = -lode -lmechsim -lgsl -lblas -lGL
+LIBS = $(shell pkg-config --libs ode) -lmechsim -lgsl -lblas -lGL
 
 .PHONY: all tests clean
 
