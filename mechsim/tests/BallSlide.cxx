@@ -28,6 +28,27 @@ void near_callback(void* data, dGeomID g1, dGeomID g2)
     }
 }
 
+void drawODEBox(dGeomID id, double lx, double ly, double lz)
+{
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    
+    const dReal* pos = dGeomGetPosition(id);
+    const dReal* rot = dGeomGetRotation(id);
+    
+    GLfloat mat[] = { rot[0], rot[4], rot[8], 0.,
+                      rot[1], rot[5], rot[9], 0.,
+                      rot[2], rot[6], rot[10], 0.,
+                      pos[0], pos[1], pos[2], 1. };
+
+    glMultMatrixf(mat);
+    glScalef(lx, ly, lz);
+    
+    GL::drawUnitCube();
+    
+    glPopMatrix();
+}
+
 void BSState::Draw(int) const
 {
     glColor3f(1., 1., 0.);
@@ -35,7 +56,7 @@ void BSState::Draw(int) const
     
     GL::shadowsBeginFloor();
     glColor3f(0., 1., 0.);
-    GL::drawODEBox(gSlideG, 3., 1., .2);
+    drawODEBox(gSlideG, 3., 1., .2);
     Eigen::Vector3d n(sin(.2), 0., cos(.2));
     GL::shadowsBeginObjects(n, n.dot(Eigen::Vector3d(0., 0., 9.) + .1 * n));
     GL::drawSphere(.3, fBPos);

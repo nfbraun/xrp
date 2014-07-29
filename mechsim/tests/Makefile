@@ -1,7 +1,7 @@
 EIGEN_INCL_DIR = ../../eigen-eigen-3.2.0/
-CFLAGS = -g -I$(EIGEN_INCL_DIR) -O3 -I../common/mechsim $(shell ode-config --cflags)
+CFLAGS = -g -I$(EIGEN_INCL_DIR) -O3 -I../common/mechsim $(shell pkg-config --cflags ode)
 LDFLAGS = -L../common/mechsim
-LIBS = -lode -lmechsim -lGLU -lGL
+LIBS = $(shell pkg-config --libs ode) -lmechsim -lGLU -lGL
 
 .PHONY: all
 

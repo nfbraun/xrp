@@ -132,27 +132,6 @@ void drawSphere(double r, Vector3d p)
     glPopMatrix();
 }
 
-void drawODEBox(dGeomID id, double lx, double ly, double lz)
-{
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    
-    const dReal* pos = dGeomGetPosition(id);
-    const dReal* rot = dGeomGetRotation(id);
-    
-    GLfloat mat[] = { rot[0], rot[4], rot[8], 0.,
-                      rot[1], rot[5], rot[9], 0.,
-                      rot[2], rot[6], rot[10], 0.,
-                      pos[0], pos[1], pos[2], 1. };
-
-    glMultMatrixf(mat);
-    glScalef(lx, ly, lz);
-    
-    drawUnitCube();
-    
-    glPopMatrix();
-}
-
 void drawBox(Vector3d p1, Vector3d p2)
 {
     glMatrixMode(GL_MODELVIEW);

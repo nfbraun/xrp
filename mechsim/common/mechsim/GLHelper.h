@@ -3,7 +3,6 @@
 
 #include <Eigen/Dense>
 #include <GL/gl.h>
-#include <ode/ode.h>
 #include <cmath>
 #include "Heightfield.h"
 
@@ -16,7 +15,6 @@ void drawDiscSegment(double r, double h, double alpha);
 void drawCheckerboardFloor();
 void drawCheckerboardFloorOutline();
 void drawTube(double r, Vector3d p1, Vector3d p2);
-void drawODEBox(dGeomID id, double lx, double ly, double lz);
 void drawBox(Vector3d p1, Vector3d p2);
 void drawUnitCube();
 void drawHeightfield(const Heightfield& hfield);
