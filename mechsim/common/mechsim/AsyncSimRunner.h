@@ -135,7 +135,6 @@ class AsyncSimRunner: public SimRunner
     
     void fatal(const char* msg) {
         std::cerr << msg << std::endl;
-        fData.clear();
         fFinished = true;
     }
     
