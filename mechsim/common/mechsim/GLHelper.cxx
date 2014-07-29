@@ -194,12 +194,12 @@ void drawHeightfield(const Heightfield& hfield)
 {
     glPushMatrix();
     
-    glTranslatef(hfield.x1(), hfield.y1(), 0.);
-    glScalef((hfield.x2() - hfield.x1())/hfield.xsize(),
-             (hfield.y2() - hfield.y1())/hfield.ysize(),
+    glTranslatef(hfield.x1(), hfield.y2(), 0.);
+    glScalef((hfield.x2() - hfield.x1())/(hfield.xsize()-1),
+             (hfield.y1() - hfield.y2())/(hfield.ysize()-1),
              1.);
     
-    glBegin(GL_QUADS);
+    glBegin(GL_TRIANGLES);
     
     for(unsigned int x = 1; x < hfield.xsize(); ++x) {
         for(unsigned int y = 1; y < hfield.ysize(); ++y) {
@@ -208,13 +208,21 @@ void drawHeightfield(const Heightfield& hfield)
             else
                 glColor3f(0., 0., 1.);
             
-            double zx = hfield.at(x,y) - hfield.at(x-1,y);
-            double zy = hfield.at(x,y) - hfield.at(x, y-1);
+            double zx, zy;
+            zx = hfield.at(x,y) - hfield.at(x-1,y);
+            zy = hfield.at(x,y) - hfield.at(x, y-1);
+            glNormal3f(-zx, -zy, 1.);
+            
+            glVertex3f(x,   y,   hfield.at(x,   y));
+            glVertex3f(x,   y-1, hfield.at(x,   y-1));
+            glVertex3f(x-1, y,   hfield.at(x-1, y));
+            
+            zx = hfield.at(x-1,y-1) - hfield.at(x-1,y);
+            zy = hfield.at(x-1,y-1) - hfield.at(x, y-1);
             glNormal3f(-zx, -zy, 1.);
             
             glVertex3f(x-1, y-1, hfield.at(x-1, y-1));
             glVertex3f(x,   y-1, hfield.at(x,   y-1));
-            glVertex3f(x,   y,   hfield.at(x,   y));
             glVertex3f(x-1, y,   hfield.at(x-1, y));
         }
     }

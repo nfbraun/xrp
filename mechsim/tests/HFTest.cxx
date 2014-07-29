@@ -33,7 +33,7 @@ void HFState::Draw(int) const
     glPushMatrix();
     
     glColor3f(1., 1., 0.);
-    GL::drawSphere(.3, fBPos);
+    GL::drawSphere(.2, fBPos);
     
     GL::drawHeightfield(fParent->fHField);
     
